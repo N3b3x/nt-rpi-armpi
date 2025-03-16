@@ -1,0 +1,14 @@
+[Unit]
+After=NetworkManager.service
+
+[Service]
+Type=simple
+User=pi
+Restart=always
+RestartSec=5
+ExecStart=/home/pi/hiwonder-toolbox/find_device.py
+StandardOutput=null
+StandardError=null
+
+[Install]
+WantedBy=multi-user.target
