@@ -1,4 +1,4 @@
-  import sys
+import sys
 import time
 import signal
 import threading
@@ -29,22 +29,22 @@ signal.signal(signal.SIGINT, Stop)
 
 if __name__ == '__main__':
     while True:
-        board.pwm_servo_set_position(1, [[1, 1500]]) # 设置1号舵机脉宽为1500
+        board.pwm_servo_set_position(2, [[2, 1500]]) # 设置1号舵机脉宽为1500
         time.sleep(1)
-        board.pwm_servo_set_position(1, [[1, 1000]]) # 设置1号舵机脉宽为1000
+        board.pwm_servo_set_position(2, [[2, 1000]]) # 设置1号舵机脉宽为1000
         time.sleep(1)
-        board.pwm_servo_set_position(1, [[1, 500]]) # 设置1号舵机脉宽为500
+        board.pwm_servo_set_position(2, [[2, 500]]) # 设置1号舵机脉宽为500
         time.sleep(1)
-        board.pwm_servo_set_position(1, [[1, 1000]]) # 设置1号舵机脉宽为1000
+        board.pwm_servo_set_position(2, [[2, 1000]]) # 设置1号舵机脉宽为1000
         time.sleep(1)
-        board.pwm_servo_set_position(1, [[1, 1500]]) # 设置1号舵机脉宽为1500
+        board.pwm_servo_set_position(2, [[2, 1500]]) # 设置1号舵机脉宽为1500
         time.sleep(1)
-        board.pwm_servo_set_position(1, [[1, 2000]]) # 设置1号舵机脉宽为2000
+        board.pwm_servo_set_position(2, [[2, 2000]]) # 设置1号舵机脉宽为2000
         time.sleep(1)
-        board.pwm_servo_set_position(1, [[1, 2500]]) # 设置1号舵机脉宽为2500
+        board.pwm_servo_set_position(2, [[2, 2500]]) # 设置1号舵机脉宽为2500
         time.sleep(1)
         if not start:
-            board.pwm_servo_set_position(1, [[1, 1500]]) # 设置1号舵机脉宽为1500
+            board.pwm_servo_set_position(2, [[2, 1500]]) # 设置1号舵机脉宽为1500
             time.sleep(1)
             print('已关闭')
             break

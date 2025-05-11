@@ -3,16 +3,16 @@
 import sys
 import time
 import signal
-import threading
 import ros_robot_controller_sdk as rrc
+from kinematics.arm_move_ik import ArmIK
 
 if sys.version_info.major == 2:
     print('Please run this program with python3!')
     sys.exit(0)
-    
+
 print('''
 **********************************************************
-********功能:幻尔科技树莓派扩展板，控制多个PWM舵机**********
+********功能:幻尔科技树莓派扩展板，夹爪舵机测试**********
 **********************************************************
 ----------------------------------------------------------
 Official website:https://www.hiwonder.com
@@ -38,9 +38,8 @@ def Stop(signum, frame):
     start = False
     print('关闭中...')
     try:
-        # Reset servo 2 to middle position
-        print("Attempting to reset servo position...")
-        board.pwm_servo_set_position(0.5, [[2, 1500]])
+        # Reset gripper to middle position
+        board.pwm_servo_set_position(0.5, [[1, 1500]])  # Reset servo 1 to middle position
         time.sleep(0.5)
         print("Reset complete")
     except Exception as e:
@@ -50,32 +49,33 @@ def Stop(signum, frame):
 signal.signal(signal.SIGINT, Stop)
 
 if __name__ == '__main__':
-    print("Testing servo 2 with debug information...")
     try:
-        # First move to middle position
-        print("Moving to initial position...")
-        board.pwm_servo_set_position(0.5, [[2, 1500]])
-        time.sleep(1)
-        print("Initial position set")
+        # Test gripper servo (servo 1)
+        print("\nTesting gripper servo (servo 1)...")
         
+        # Set initial position (middle)
+        print("Moving to middle position (1500)")
+        board.pwm_servo_set_position(0.5, [[1, 1500]])
+        time.sleep(1.5)
+
+        # Move gripper to different positions
+        for i in range(2):
+            print("Moving to position 2000 (closed)")
+            board.pwm_servo_set_position(1.0, [[1, 2000]])  # Close gripper
+            time.sleep(1.2)
+            
+            print("Moving to position 1000 (open)")
+            board.pwm_servo_set_position(1.0, [[1, 1000]])  # Open gripper
+            time.sleep(1.2)
+            
+            print("Moving back to middle position")
+            board.pwm_servo_set_position(1.0, [[1, 1500]])  # Middle position
+            time.sleep(1.2)
+
+        print("\nAll tests complete. Press Ctrl+C to exit.")
         while start:
-            try:
-                # Test just two positions with longer delays
-                print("\nMoving to position 1000")
-                board.pwm_servo_set_position(1.0, [[2, 1000]])
-                time.sleep(2)
-                
-                print("Moving to position 2000")
-                board.pwm_servo_set_position(1.0, [[2, 2000]])
-                time.sleep(2)
-                
-            except Exception as e:
-                print(f"Error during movement: {e}")
-                time.sleep(1)
-                
+            time.sleep(1)
+
     except Exception as e:
         print(f"Error in main loop: {e}")
-        sys.exit(1)
-    
-    
-        
+        sys.exit(1) 
