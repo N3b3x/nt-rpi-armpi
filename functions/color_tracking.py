@@ -198,25 +198,25 @@ def run(img):
             
             if __isRunning:
                 # 通过PID算法进行X轴追踪,根据目标的画面像素坐标与画面中心坐标比较进行追踪(Track the X-axis using PID algorithm, based on the comparison of the target's pixel coordinates with the center coordinates of the image.)
-                x_pid.SetPoint = img_w / 2.0  # 设定(set)
-                x_pid.update(center_x)  # 当前(current)
-                dx = x_pid.output
-                x_dis += int(dx)  # 输出(output)
-                # 两边限位(dual limit switches)
+                x_pid.SetPoint = img_w / 2.0  # Set the target to the center of the image width
+                x_pid.update(center_x)        # Update the PID controller with the detected object's x position
+                dx = x_pid.output             # Get the PID output (how much to move)
+                x_dis += int(dx)              # Adjust the arm's x position
+                # Clamp x_dis to safe limits
                 x_dis = 500 if x_dis < 500 else x_dis
                 x_dis = 2500 if x_dis > 2500 else x_dis
                     
                 # 通过PID算法进行Y轴追踪,根据目标的画面像素面积和设定值比较进行追踪(Track the Y-axis using PID algorithm, based on the comparison of the target image's pixel area with the set value.)
-                y_pid.SetPoint = 80  # 设定(set)
+                y_pid.SetPoint = 80           # Target radius (size of the detected object in pixels)
                 if abs(radius - 80) < 10:
                     radius = 80
                 else:
                     if radius > 80:
                         radius = radius * 0.85
-                y_pid.update(radius)  # 当前(current)
-                dy = y_pid.output
-                y_dis += dy  # 输出(output)
-                # 机械臂限位(the limit switch of the robotic arm)
+                y_pid.update(radius)          # Update PID with current radius
+                dy = y_pid.output             # Get PID output
+                y_dis += dy                   # Adjust arm's y position
+                # Clamp y_dis to safe limits
                 y_dis = 5.00 if y_dis < 5.00 else y_dis
                 y_dis = 10.00 if y_dis > 10.00 else y_dis
                 
@@ -229,17 +229,20 @@ def run(img):
                 z_pid.update(center_y)
                 dy = z_pid.output
                 z_dis += dy
-                # 机械臂限位(the limit switch of the robotic arm)
+                # Clamp z_dis to safe limits
                 z_dis = 32.00 if z_dis > 32.00 else z_dis
                 z_dis = 10.00 if z_dis < 10.00 else z_dis
                 
                 target = AK.setPitchRange((0, round(y_dis, 2), round(z_dis, 2)), -90, 90) # 逆运动学求解(inverse kinematics solution)
-                if target: # 如果有解，则按照求出的解驱动舵机(if there is a solution, the servo will be driven based on the calculated solution)
+                if target: # 如果有解，则按照求出的解驱动舵机
                     servo_data = target[0]                  
-                    board.pwm_servo_set_position(0.02, [[3, servo_data['servo3']],
-                                                        [4, servo_data['servo4']],
-                                                        [5, servo_data['servo5']],
-                                                        [6, int(x_dis)]])
+                    # Only move if the change is significant
+                    if abs(dx) > 2 or abs(dy) > 0.1:
+                        board.pwm_servo_set_position(0.02, [[3, servo_data['servo3']],
+                                                            [4, servo_data['servo4']],
+                                                            [5, servo_data['servo5']],
+                                                            [6, int(x_dis)]])
+                        time.sleep(0.05)
     return img
 
 if __name__ == '__main__':
@@ -268,4 +271,5 @@ if __name__ == '__main__':
                 break
         else:
             time.sleep(0.01)
+        time.sleep(0.01)  # 10ms delay per frame
     cv2.destroyAllWindows()

@@ -1,4 +1,5 @@
 import yaml
+lab_file_path_imx477 = '/home/pi/ArmPi_mini/yaml/lab_config_imx477.yaml'
 lab_file_path = '/home/pi/ArmPi_mini/yaml/lab_config.yaml'
 Deviation_file_path = '/home/pi/ArmPi_mini/yaml/deviation.yaml'
 PickingCoordinates_file_path = '/home/pi/ArmPi_mini/yaml/picking_coordinates.yaml'
