@@ -78,8 +78,9 @@ def init():
 
 __isRunning = False
 def start():
-    global __isRunning
+    global __isRunning, __target_color
     __isRunning = True
+    __target_color = ('red',)  # Set default target color
     print("lab_adjust Start")
 
 def stop():
@@ -97,7 +98,7 @@ def run(img):
     img_copy = img.copy()
     img_h, img_w = img.shape[:2]
     
-    if not __isRunning or __target_color == ():
+    if not __isRunning:
         return img
     
     frame_gb = cv2.GaussianBlur(img_copy, (3, 3), 3)   
@@ -108,10 +109,11 @@ def run(img):
     center_lab = frame_lab[h//2, w//2]
     
     # Display current LAB values
-    cv2.putText(img_copy, f"Center LAB: {center_lab}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-    if __target_color[0] in lab_data:
-        cv2.putText(img_copy, f"Min LAB: {lab_data[__target_color[0]]['min']}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-        cv2.putText(img_copy, f"Max LAB: {lab_data[__target_color[0]]['max']}", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+    blue = (255, 0, 0)
+    cv2.putText(img_copy, f"Center LAB: {center_lab}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, blue, 2)
+    if __target_color and __target_color[0] in lab_data:
+        cv2.putText(img_copy, f"Min LAB: {lab_data[__target_color[0]]['min']}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, blue, 2)
+        cv2.putText(img_copy, f"Max LAB: {lab_data[__target_color[0]]['max']}", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, blue, 2)
     
     for i in lab_data:
         if i in __target_color:
@@ -128,10 +130,10 @@ def run(img):
             img = frame_bgr
     
     # Display controls help
-    cv2.putText(img_copy, "Controls:", (10, img_h - 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-    cv2.putText(img_copy, "L: +/- 1, A: +/- 1, B: +/- 1", (10, img_h - 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-    cv2.putText(img_copy, "Shift+L: +/- 10, Shift+A: +/- 10, Shift+B: +/- 10", (10, img_h - 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-    cv2.putText(img_copy, "S: Save, R: Reset, ESC: Quit", (10, img_h - 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+    blue = (255, 0, 0)
+    cv2.putText(img_copy, "L: +/- 1   A: +/- 1   B: +/- 1", (10, img_h - 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, blue, 2)
+    cv2.putText(img_copy, "j/k: L -10/+10   n/m: A -10/+10   ,/.: B -10/+10", (10, img_h - 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, blue, 2)
+    cv2.putText(img_copy, "S: Save, R: Reset, ESC: Quit", (10, img_h - 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, blue, 2)
     
     return img_copy
 
@@ -149,36 +151,40 @@ if __name__ == '__main__':
             cv2.imshow('Original', frame)
             cv2.imshow('Mask', Frame)
             
-            key = cv2.waitKey(1)
+            key = cv2.waitKey(1) & 0xFF  # Only keep lower 8 bits
             if key == 27:  # ESC
                 break
             elif key == ord('s'):  # Save
-                saveLABValue(__target_color[0])
-                print(f"Saved LAB values for {__target_color[0]}")
+                if __target_color and __target_color[0] in lab_data:
+                    saveLABValue(__target_color[0])
+                    print(f"Saved LAB values for {__target_color[0]}")
             elif key == ord('r'):  # Reset
                 load_config()
                 print("Reset to saved values")
-            elif __target_color[0] in lab_data:
+            elif __target_color and __target_color[0] in lab_data:
                 # Adjust L value
                 if key == ord('l'):
                     lab_data[__target_color[0]]['min'][0] = max(0, lab_data[__target_color[0]]['min'][0] - 1)
                     lab_data[__target_color[0]]['max'][0] = min(255, lab_data[__target_color[0]]['max'][0] + 1)
-                elif key == ord('L'):
+                elif key == ord('j'):
                     lab_data[__target_color[0]]['min'][0] = max(0, lab_data[__target_color[0]]['min'][0] - 10)
+                elif key == ord('k'):
                     lab_data[__target_color[0]]['max'][0] = min(255, lab_data[__target_color[0]]['max'][0] + 10)
                 # Adjust A value
                 elif key == ord('a'):
                     lab_data[__target_color[0]]['min'][1] = max(0, lab_data[__target_color[0]]['min'][1] - 1)
                     lab_data[__target_color[0]]['max'][1] = min(255, lab_data[__target_color[0]]['max'][1] + 1)
-                elif key == ord('A'):
+                elif key == ord('n'):
                     lab_data[__target_color[0]]['min'][1] = max(0, lab_data[__target_color[0]]['min'][1] - 10)
+                elif key == ord('m'):
                     lab_data[__target_color[0]]['max'][1] = min(255, lab_data[__target_color[0]]['max'][1] + 10)
                 # Adjust B value
                 elif key == ord('b'):
                     lab_data[__target_color[0]]['min'][2] = max(0, lab_data[__target_color[0]]['min'][2] - 1)
                     lab_data[__target_color[0]]['max'][2] = min(255, lab_data[__target_color[0]]['max'][2] + 1)
-                elif key == ord('B'):
+                elif key == ord(','):
                     lab_data[__target_color[0]]['min'][2] = max(0, lab_data[__target_color[0]]['min'][2] - 10)
+                elif key == ord('.'):
                     lab_data[__target_color[0]]['max'][2] = min(255, lab_data[__target_color[0]]['max'][2] + 10)
         else:
             time.sleep(0.01)

@@ -24,9 +24,9 @@ if sys.version_info.major == 2:
     sys.exit(0)
 
 range_rgb = {
-    'red': (0, 0, 255),
-    'blue': (255, 0, 0),
-    'green': (0, 255, 0),
+    'red': (0, 0, 255),    # BGR for red
+    'blue': (255, 0, 0),   # BGR for blue
+    'green': (0, 255, 0),  # BGR for green
     'black': (0, 0, 0),
     'white': (255, 255, 255),
 }
@@ -122,54 +122,50 @@ def exit():
     print("ColorTracking Exit")
 
 rect = None
-size = (320, 240)
+size = (640, 480)
+display_size = (640, 480)
 roi = ()
 def run(img):
     global roi, rect, get_roi, __isRunning, detect_color, start_pick_up, img_h, img_w, x_dis, y_dis, z_dis
-    img_copy = img.copy()
     img_h, img_w = img.shape[:2]
-    if not __isRunning:
-        return img
-    frame_resize = cv2.resize(img_copy, size, interpolation=cv2.INTER_NEAREST)
-    frame_gb = cv2.GaussianBlur(frame_resize, (3, 3), 3)
-    frame_lab = cv2.cvtColor(frame_gb, cv2.COLOR_BGR2LAB)
-    print("frame_lab dtype:", frame_lab.dtype, "shape:", frame_lab.shape)
-    h, w = frame_lab.shape[:2]
-    center_lab = frame_lab[h//2, w//2]
-    print("LAB at center pixel:", center_lab)
-    print("Red min:", lab_data['red']['min'])
-    print("Red max:", lab_data['red']['max'])
+    img_small = cv2.resize(img, size, interpolation=cv2.INTER_NEAREST)
+    frame_gb = cv2.GaussianBlur(img_small, (3, 3), 3)
+    frame_rgb = cv2.cvtColor(frame_gb, cv2.COLOR_BGR2RGB)
+    frame_lab = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2LAB)
+    center_y, center_x = size[1] // 2, size[0] // 2
+    #print("BGR at center:", frame_gb[center_y, center_x])
+    #print("LAB at center:", frame_lab[center_y, center_x])
     area_max = 0
     areaMaxContour = 0
     frame_mask = np.zeros((size[1], size[0]), dtype=np.uint8)
     for i in lab_data:
-        print("__target_color:", __target_color)
-        print("i in lab_data loop:", i)
         if i in __target_color:
             detect_color = i
-            frame_mask = cv2.inRange(frame_lab,
-                                         (lab_data[detect_color]['min'][0],
-                                          lab_data[detect_color]['min'][1],
-                                          lab_data[detect_color]['min'][2]),
-                                         (lab_data[detect_color]['max'][0],
-                                          lab_data[detect_color]['max'][1],
-                                          lab_data[detect_color]['max'][2]))
+            frame_mask = cv2.inRange(
+                frame_lab,
+                tuple(lab_data[detect_color]['min']),
+                tuple(lab_data[detect_color]['max'])
+            )
             opened = cv2.morphologyEx(frame_mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
             closed = cv2.morphologyEx(opened, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
             contours = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[-2]
             areaMaxContour, area_max = getAreaMaxContour(contours)
+    # Prepare display image (resize original BGR to display size)
+    display_img = cv2.resize(img, display_size)
+    display_img = cv2.cvtColor(display_img, cv2.COLOR_RGB2BGR)
     if area_max > 500:
         (center_x, center_y), radius = cv2.minEnclosingCircle(areaMaxContour)
-        center_x = int(Misc.map(center_x, 0, size[0], 0, img_w))
-        center_y = int(Misc.map(center_y, 0, size[1], 0, img_h))
-        radius = int(Misc.map(radius, 0, size[0], 0, img_w))
-        print("Object detected at:", center_x, center_y, "radius:", radius)
+        #print("Drawing color for detected:", detect_color)
+        # Map coordinates to display size
+        center_x_disp = int(center_x)
+        center_y_disp = int(center_y)
+        radius_disp = int(radius)
         rect = cv2.minAreaRect(areaMaxContour)
         box = np.intp(cv2.boxPoints(rect))
-        # Convert frame_resize to BGR for drawing
-        draw_img = cv2.cvtColor(frame_resize, cv2.COLOR_LAB2BGR)
-        cv2.circle(draw_img, (int(center_x), int(center_y)), int(radius), range_rgb[detect_color], 2)
-        cv2.drawContours(draw_img, [box], 0, range_rgb[detect_color], 2)
+        box = np.intp(box * [display_size[0] / size[0], display_size[1] / size[1]])
+        cv2.circle(display_img, (center_x_disp, center_y_disp), radius_disp, range_rgb[detect_color], 2)
+        cv2.drawContours(display_img, [box], 0, range_rgb[detect_color], 2)
+        # --- SERVO CONTROL CODE ---
         if __isRunning:
             x_pid.SetPoint = img_w / 2.0
             y_pid.SetPoint = img_h / 2.0
@@ -190,23 +186,12 @@ def run(img):
                 servo_data = target[0]
                 # Only move if the change is significant
                 if abs(dx) > 2 or abs(dy) > 0.1:
-                    print("Moving servos:", dx, dy, servo_data, int(x_dis))
                     board.pwm_servo_set_position(0.02, [[3, servo_data['servo3']],
                                                         [4, servo_data['servo4']],
                                                         [5, servo_data['servo5']],
                                                         [6, int(x_dis)]])
                     time.sleep(0.05)
-    mask = cv2.inRange(frame_lab, (0,0,0), (255,255,255))
-    mean_lab = cv2.mean(frame_lab, mask=mask)
-    print("Mean LAB:", mean_lab)
-    cv2.imshow('mask', frame_mask)
-    cv2.imshow('raw', frame_resize)
-    return frame_resize
-
-def mouse_callback(event, x, y, flags, param):
-    if event == cv2.EVENT_LBUTTONDOWN:
-        lab_val = cv2.cvtColor(np.uint8([[param[y, x]]]), cv2.COLOR_BGR2LAB)[0][0]
-        print(f"LAB at ({x},{y}): {lab_val}")
+    return display_img
 
 if __name__ == '__main__':
     from kinematics.arm_move_ik import *
@@ -217,18 +202,26 @@ if __name__ == '__main__':
     AK.board = board
     init()
     start()
-    camera = Camera(resolution=(640, 480))
+    setTargetColor(('blue',))
+    camera = Camera(resolution=(640, 480))  # Use full IMX477 resolution
     while True:
         frame = camera.get_frame()
         if frame is not None:
-            frame = frame[..., ::-1]  # This swaps R and B channels
             Frame = run(frame)
-            frame_resize = cv2.resize(Frame, size)
-            cv2.imshow('IMX477 Color Tracking', frame_resize)
+            cv2.imshow('IMX477 Color Tracking', Frame)
+            # No mouse callback needed
             key = cv2.waitKey(1)
             if key == 27:
                 break
-            cv2.setMouseCallback('raw', mouse_callback, param=frame)
+            elif key == ord('r'):
+                setTargetColor(('red',))
+                print("Switched to red")
+            elif key == ord('b'):
+                setTargetColor(('blue',))
+                print("Switched to blue")
+            elif key == ord('g'):
+                setTargetColor(('green',))
+                print("Switched to green")
         else:
             time.sleep(0.01)
     stop()
