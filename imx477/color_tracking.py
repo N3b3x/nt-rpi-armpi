@@ -134,7 +134,6 @@ def run(img):
     frame_lab = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2LAB)
     center_y, center_x = size[1] // 2, size[0] // 2
     #print("BGR at center:", frame_gb[center_y, center_x])
-    print("LAB at center (for green):", frame_lab[center_y, center_x])
     area_max = 0
     areaMaxContour = 0
     frame_mask = np.zeros((size[1], size[0]), dtype=np.uint8)
