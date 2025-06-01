@@ -3,12 +3,9 @@
 import sys
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/common_sdk')
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/kinematics')
-#sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/functions')
-#sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/imx477')
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/yaml')
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/CameraCalibration')
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/kinematics')
-#sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/functions')
 import cv2
 import time
 import math
