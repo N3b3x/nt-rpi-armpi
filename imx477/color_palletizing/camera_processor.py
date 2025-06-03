@@ -64,18 +64,18 @@ class CameraProcessor:
             
         # Prepare display image
         display_img = cv2.resize(frame, self.size)
-        display_img = cv2.cvtColor(display_img, cv2.COLOR_RGB2BGR)
         
         # Prepare frame for processing
         frame_resize = cv2.resize(frame, self.size, interpolation=cv2.INTER_NEAREST)
         frame_gb = cv2.GaussianBlur(frame_resize, (3, 3), 3)
         frame_rgb = cv2.cvtColor(frame_gb, cv2.COLOR_BGR2RGB)
-        frame_lab = cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2LAB)
+        frame_lab = cv2.cvtColor(frame_gb, cv2.COLOR_BGR2LAB)
         
         img_h, img_w = frame.shape[:2]
         color_area_max = None
         max_area = 0
         areaMaxContour_max = 0
+        draw_color = self.range_rgb["black"]
         
         # Reset color detection if we've confirmed a color
         if self.start_pick_up:
@@ -89,11 +89,12 @@ class CameraProcessor:
                 frame_mask = cv2.inRange(frame_lab,
                                        tuple(lab_data[i]['min']),
                                        tuple(lab_data[i]['max']))
+                cv2.imshow(f"Mask - {i}", frame_mask)  # Show live masks!
                 opened = cv2.morphologyEx(frame_mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
                 closed = cv2.morphologyEx(opened, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
-                closed[0:80, :] = 0
-                closed[:, 0:120] = 0
-                contours = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[-2]
+                contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+                contours, _ = cv2.findContours(frame_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
                 areaMaxContour, area_max = self.getAreaMaxContour(contours)
                 
                 if areaMaxContour is not None:
@@ -129,12 +130,15 @@ class CameraProcessor:
                     self.color_list = []
                     if color == 1:
                         self.detect_color = 'red'
+                        draw_color = self.range_rgb["red"]
                         self.start_pick_up = True
                     elif color == 2:
                         self.detect_color = 'green'
+                        draw_color = self.range_rgb["green"]
                         self.start_pick_up = True
                     elif color == 3:
                         self.detect_color = 'blue'
+                        draw_color = self.range_rgb["blue"]
                         self.start_pick_up = True
                     else:
                         self.detect_color = 'None'

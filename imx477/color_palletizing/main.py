@@ -52,6 +52,7 @@ class ColorPalletizing:
         
         # Load coordinates
         coordinates_data = yaml_handle.get_yaml_data(yaml_handle.PickingCoordinates_file_path)
+
         self.arm_controller.set_coordinates(
             coordinates_data['X'],
             coordinates_data['Y'],
@@ -178,6 +179,7 @@ class ColorPalletizing:
 
 def main():
     """Main entry point."""
+
     color_palletizing = ColorPalletizing()
     color_palletizing.init()
     color_palletizing.start()
@@ -191,7 +193,8 @@ def main():
         while True:
             frame = color_palletizing.camera_processor.get_frame()
             if frame is not None:
-                processed_frame = color_palletizing.run(frame)
+                frame_rgb = frame[..., ::-1]
+                processed_frame = color_palletizing.run(frame_rgb)
                 cv2.imshow('Color Palletizing', processed_frame)
                 
                 # Check for key press

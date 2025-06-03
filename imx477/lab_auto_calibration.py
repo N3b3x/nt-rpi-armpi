@@ -12,9 +12,10 @@ from Camera import Camera
 def capture_reference_image(frame, save_path='reference_image.jpg'):
     """
     Save the provided frame (from the main script's live camera feed) as the reference image for calibration.
+    The frame should be in RGB order (as returned by Picamera2).
     """
-    frame_rgb = frame[..., ::-1]  # Convert BGR to RGB
-    cv2.imwrite(save_path, frame_rgb)
+    frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+    cv2.imwrite(save_path, frame_bgr)
     print(f"✅ Reference image saved to {save_path}")
 
 def calibrate_lab_ranges(reference_image_path='reference_image.jpg', yaml_output_path='lab_ranges.yaml', lab_tolerance=10):
@@ -100,10 +101,10 @@ def distortion_calibration_with_existing_camera(camera, checkerboard=(7, 7), sav
     while True:
         frame_cb = camera.get_frame()
         if frame_cb is not None:
-            frame_rgb = frame_cb[..., ::-1]
-            cv2.putText(frame_rgb, "Move checkerboard. Press 'c' to capture, 'q' to finish.",
+            #frame_bgr = frame_cb[..., ::-1]
+            cv2.putText(frame_cb, "Move checkerboard. Press 'c' to capture, 'q' to finish.",
                         (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-            cv2.imshow("Checkerboard Capture", frame_rgb)
+            cv2.imshow("Checkerboard Capture", frame_cb)
 
             key_cb = cv2.waitKey(1) & 0xFF
             if key_cb == ord('c'):
@@ -181,5 +182,42 @@ def calibrate_camera(image_dir='calib_images', checkerboard=(6, 9), square_size=
 def undistort_frame(frame, K, D):
     h, w = frame.shape[:2]
     new_K, _ = cv2.getOptimalNewCameraMatrix(K, D, (w, h), 1, (w, h))
-    undistorted = cv2.undistort(frame, K, D, None, new_K)
-    return undistorted
+    return cv2.undistort(frame, K, D, None, new_K)
+
+def set_controls(picam2,
+                awb_enable=False,
+                awb_mode=0,
+                colour_gains=(1.5, 1.2),
+                ae_enable=False,
+                exposure_time=10000,
+                analogue_gain=1.0,
+                sharpness=8.0,
+                contrast=1.0,
+                saturation=1.0,
+                brightness=0.0):
+    """
+    Apply manual camera settings to a Picamera2 instance.
+    """
+    controls = {
+        "AwbEnable": awb_enable,
+        "AwbMode": awb_mode,
+        "ColourGains": colour_gains,
+        "AeEnable": ae_enable,
+        "ExposureTime": exposure_time,
+        "AnalogueGain": analogue_gain,
+        "Sharpness": sharpness,
+        "Contrast": contrast,
+        "Saturation": saturation,
+        "Brightness": brightness
+    }
+    # Only set controls that are actually supported by this camera
+    available = picam2.camera_controls
+    filtered = {k: v for k, v in controls.items() if k in available}
+    picam2.set_controls(filtered)
+    print("Camera controls set:", filtered)
+
+def load_calibration_data(path='calibration_data.npz'):
+    data = np.load(path)
+    K = data['K']
+    D = data['D']
+    return K, D

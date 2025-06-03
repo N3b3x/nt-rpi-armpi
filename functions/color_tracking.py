@@ -238,10 +238,10 @@ def run(img):
                     servo_data = target[0]                  
                     # Only move if the change is significant
                     if abs(dx) > 2 or abs(dy) > 0.1:
-                        board.pwm_servo_set_position(0.02, [[3, servo_data['servo3']],
-                                                            [4, servo_data['servo4']],
-                                                            [5, servo_data['servo5']],
-                                                            [6, int(x_dis)]])
+                    board.pwm_servo_set_position(0.02, [[3, servo_data['servo3']],
+                                                        [4, servo_data['servo4']],
+                                                        [5, servo_data['servo5']],
+                                                        [6, int(x_dis)]])
                         time.sleep(0.05)
     return img
 

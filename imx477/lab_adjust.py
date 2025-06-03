@@ -12,7 +12,7 @@ import cv2
 import time
 import numpy as np
 import common.yaml_handle as yaml_handle
-from Camera import Camera
+from picamera2 import Picamera2
 import lab_auto_calibration  # ⬅️ Modular calibration
 
 range_rgb = {
@@ -72,40 +72,125 @@ def run(img):
     mask_display[combined_mask == 2] = [0, 255, 0]
     mask_display[combined_mask == 3] = [255, 0, 0]
     
-    # Show key instructions
+    # Show key instructions (brighter text, split into two lines for better readability)
     instructions = [
-        "KEYS: [1]-Red, [2]-Green, [3]-Blue, [p]-PhotoRef, [c]-ColorCalib, [d]-DistCalib, [q]-Quit",
+        "KEYS: [1]-Red, [2]-Green, [3]-Blue, [p]-PhotoRef, [c]-ColorCalib,",
+        "[d]-DistCalib, [m]-ManualMode, [q]-Quit"
     ]
     for idx, text in enumerate(instructions):
-        cv2.putText(img_copy, text, (10, h - 20 - 30 * idx),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1, cv2.LINE_AA)
+        cv2.putText(img_copy, text, (10, 70 + 30 * idx),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2, cv2.LINE_AA)
 
     # Show center LAB and target color
     cv2.putText(img_copy, f"Center LAB: {center_lab}", (10, 30), 
-                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
+                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
     if __target_color and __target_color[0] in lab_data:
-        cv2.putText(img_copy, f"Target: {__target_color[0]}", (10, 60), 
-                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
+        cv2.putText(img_copy, f"Target: {__target_color[0]}", (10, 45), 
+                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
 
     return mask_display, img_copy
+
+def manual_camera_controls(picam2):
+    exposure = 30000  # or higher
+    gain = 4.0
+    brightness = 0.2
+    while True:
+        frame = picam2.capture_array()
+        if frame is not None:
+            frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            h, w = frame_bgr.shape[:2]
+
+            # Display settings
+            instructions = [
+                "Manual Camera Controls - Keys:",
+                "[e] Exposure-  [r] Exposure+",
+                "[g] Gain-  [h] Gain+",
+                "[b] Brightness-  [n] Brightness+",
+                "[m] Apply  |  [q] Quit Controls"
+            ]
+            for idx, text in enumerate(instructions):
+                cv2.putText(frame_bgr, text, (10, 30 + 25 * idx),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
+
+            # Always show the current values just below the instructions
+            cv2.putText(
+                frame_bgr,
+                f"Exposure: {exposure} | Gain: {gain:.2f} | Brightness: {brightness:.2f}",
+                (10, 30 + 25 * len(instructions)),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2
+            )
+
+            cv2.imshow("Camera Controls", frame_bgr)
+
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('q'):
+                print("Exiting camera controls...")
+                cv2.destroyWindow("Camera Controls")
+                break
+            elif key == ord('e'):
+                exposure = max(1000, exposure - 1000)
+            elif key == ord('r'):
+                exposure += 1000
+            elif key == ord('g'):
+                gain = max(1.0, gain - 0.1)
+            elif key == ord('h'):
+                gain += 0.1
+            elif key == ord('b'):
+                brightness = max(-1.0, brightness - 0.1)
+            elif key == ord('n'):
+                brightness = min(1.0, brightness + 0.1)
+            elif key == ord('m'):
+                lab_auto_calibration.set_controls(
+                    picam2,
+                    awb_enable=False,
+                    awb_mode=0,
+                    colour_gains=(1.2, 2.2),
+                    ae_enable=False,
+                    exposure_time=exposure,
+                    analogue_gain=gain,
+                    sharpness=8.0,
+                    contrast=1.0,
+                    saturation=1.0,
+                    brightness=brightness
+                )
+                print("? Camera settings applied!")
+
+def load_calibration_data(path='calibration_data.npz'):
+    data = np.load(path)
+    K = data['K']
+    D = data['D']
+    return K, D
 
 if __name__ == '__main__':
     init()
     start()
-    camera = Camera(resolution=(640, 480))
+    picam2 = Picamera2()
+    config = picam2.create_preview_configuration()
+    picam2.configure(config)
+    picam2.start()
+    time.sleep(1)
 
     calib_image_counter = 1
+    undistort_enabled = False
+    K, D = None, None
+    if os.path.exists('calibration_data.npz'):
+        K, D = load_calibration_data('calibration_data.npz')
 
     while True:
-        frame = camera.get_frame()
+        frame = picam2.capture_array()
         if frame is not None:
-            frame = frame[..., ::-1]
-            mask, original = run(frame)
+            frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            if undistort_enabled and K is not None and D is not None:
+                frame_bgr = lab_auto_calibration.undistort_frame(frame_bgr, K, D)
+            mask, original = run(frame_bgr)
             cv2.imshow('Original', original)
             cv2.imshow('Mask', mask)
 
             key = cv2.waitKey(1) & 0xFF
-            if key == ord('q'):
+            if key == ord('u'):
+                undistort_enabled = not undistort_enabled
+                print(f"Undistortion {'enabled' if undistort_enabled else 'disabled'}")
+            elif key == ord('q'):
                 print("Quitting...")
                 break
             elif key == ord('1'):
@@ -121,10 +206,10 @@ if __name__ == '__main__':
                 print("\n📸 Please hold up the ColorChecker chart clearly in front of the camera.")
                 print("Press 'c' to capture the reference image or 'q' to cancel.")
                 while True:
-                    frame_ref = camera.get_frame()
+                    frame_ref = picam2.capture_array()
                     if frame_ref is not None:
-                        frame_rgb = frame_ref[..., ::-1]
-                        cv2.imshow("Reference Capture - Press 'c' to capture", frame_rgb)
+                        frame_bgr = cv2.cvtColor(frame_ref, cv2.COLOR_RGB2BGR)
+                        cv2.imshow("Reference Capture - Press 'c' to capture", frame_bgr)
                         capture_key = cv2.waitKey(1) & 0xFF
                         if capture_key == ord('c'):
                             lab_auto_calibration.capture_reference_image(frame_ref, save_path='reference_image.jpg')
@@ -156,9 +241,9 @@ if __name__ == '__main__':
                 img_counter = 0
 
                 while True:
-                    frame_cb = camera.get_frame()
+                    frame_cb = picam2.capture_array()
                     if frame_cb is not None:
-                        frame_bgr = frame_cb  # Keep as BGR for OpenCV functions
+                        frame_bgr = cv2.cvtColor(frame_cb, cv2.COLOR_RGB2BGR)
                         instructions = "Move checkerboard. Press 'c' to capture, 'q' to finish."
                         cv2.putText(frame_bgr, instructions, (10, 30),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
@@ -184,6 +269,11 @@ if __name__ == '__main__':
                     save_path='calibration_data.npz'
                 )
                 print("✅ Distortion calibration complete.")
+                # Reload calibration data after calibration
+                if os.path.exists('calibration_data.npz'):
+                    K, D = load_calibration_data('calibration_data.npz')
+            elif key == ord('m'):
+                manual_camera_controls(picam2)
         else:
             time.sleep(0.01)
     cv2.destroyAllWindows()
