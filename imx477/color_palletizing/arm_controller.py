@@ -17,7 +17,7 @@ class ArmController:
         
         # Define scan positions (side-to-side sweep along X axis at fixed Y, Z)
         self.scan_positions = [
-            (x, 0, 10) for x in np.linspace(5, 19, num=6)
+            (x, 0, 10) for x in np.linspace(2, 22, num=8)
         ]
         
         # Define coordinates
@@ -25,11 +25,13 @@ class ArmController:
             'capture': (0, 0, 0),  # Will be set from yaml
             'place': (12, 0, 0.5),  # Placing coordinate
         }
+
+        self.current_base_pos = 1500  # 💡 Add this line!
     
     def init_move(self):
-        """Initialize arm to starting position."""
-        self.board.pwm_servo_set_position(0.8, [[1, 1500]])
-        self.AK.setPitchRangeMoving((0, 6, 18), 0, -90, 90, 1500)
+        """Initialize arm to starting position (match Hiwonder sample)."""
+        self.board.pwm_servo_set_position(0.3, [[1, 1500]])
+        self.AK.setPitchRangeMoving((0, 8, 10), -90, -90, 90, 1500)
     
     def set_rgb(self, color):
         """Set RGB LED color."""
@@ -48,75 +50,37 @@ class ArmController:
     
     def pick_up_block(self, x, y, z):
         """
-        Execute the block pickup sequence.
-        
+        Execute the block pickup sequence (match Hiwonder sample).
         Args:
             x, y, z: Coordinates for pickup
         """
-        # Open gripper
         self.board.pwm_servo_set_position(0.5, [[1, 1900]])
         time.sleep(0.8)
-        
-        # Move to pickup position
-        pick_z = z - 2.75  # Go 2.75cm lower for pickup
+        pick_z = z - 2.75
         self.AK.setPitchRangeMoving((x, y, pick_z), -90, -90, 90, 1000)
         time.sleep(1)
-        
-        # Close gripper
         self.board.pwm_servo_set_position(0.5, [[1, 1500]])
         time.sleep(0.8)
-        
-        # Lift block
         self.AK.setPitchRangeMoving((0, 6, 18), -90, -90, 90, 1500)
-        time.sleep(1.5)
-        
-        # Adjust gripper
-        self.board.pwm_servo_set_position(0.5, [[6, 1500]])
         time.sleep(1.5)
     
     def place_block(self):
-        """Execute the block placement sequence."""
-        # Move to placement position
-        self.AK.setPitchRangeMoving((self.coordinates['place'][0], 
-                                    self.coordinates['place'][1], 12), 
-                                   -90, -90, 90, 800)
+        """Execute the block placement sequence (match Hiwonder sample)."""
+        stacking_x, stacking_y, stacking_z = self.coordinates['place']
+        block_height = 3
+        self.AK.setPitchRangeMoving((stacking_x, stacking_y, 12), -90, -90, 90, 800)
         time.sleep(0.8)
-        
-        # Calculate placement height based on stack position
-        if self.number == 0:
-            place_z = self.coordinates['place'][2] - 0.5
-        elif self.number == 1:
-            place_z = self.coordinates['place'][2] + 2
-        else:
-            place_z = self.coordinates['place'][2] + 2.5
-            
-        # Move to final placement height
-        self.AK.setPitchRangeMoving((self.coordinates['place'][0], 
-                                    self.coordinates['place'][1], 
-                                    place_z), 
-                                   -90, -90, 90, 800)
+        place_z = stacking_z + self.number * block_height - 2
+        self.AK.setPitchRangeMoving((stacking_x, stacking_y, place_z), -90, -90, 90, 800)
         time.sleep(0.8)
-        
-        # Open gripper
         self.board.pwm_servo_set_position(0.5, [[1, 1900]])
         time.sleep(0.8)
-        
-        # Return to home position
         self.AK.setPitchRangeMoving((6, 0, 18), -90, -90, 90, 1500)
         time.sleep(1.5)
-        
-        # Adjust gripper
-        self.board.pwm_servo_set_position(0.5, [[6, 1500]])
-        time.sleep(1.5)
-        
-        # Move to scan position
         self.AK.setPitchRangeMoving((0, 8, 10), -90, -90, 90, 800)
         time.sleep(0.8)
-        
-        # Update stack counter
-        self.number += 1
-        if self.number == 3:
-            self.number = 0
+        self.number = (self.number + 1) % 3
+        if self.number == 0:
             self.board.set_buzzer(1900, 0.1, 0.9, 1)
             self.set_rgb('white')
             time.sleep(0.5)
@@ -128,5 +92,15 @@ class ArmController:
         Args:
             position: (x, y, z) tuple for scan position
         """
+        print(f"[Arm] Moving to scan position: {position}")
         self.AK.setPitchRangeMoving(position, -90, -90, 90, 800)
         time.sleep(0.7)  # Wait for arm to stabilize 
+    
+    def rotate_base(self, angle):
+        """Rotate the base by a given angle (degrees). Positive for CW, negative for CCW."""
+        units_per_degree = 1000 / 180
+        self.current_base_pos += int(angle * units_per_degree)
+        self.current_base_pos = max(500, min(2500, self.current_base_pos))
+        print(f"[Arm] Rotating base to servo pos {self.current_base_pos} for angle {angle}")
+        self.board.pwm_servo_set_position(0.5, [[0, self.current_base_pos]])
+        time.sleep(1)

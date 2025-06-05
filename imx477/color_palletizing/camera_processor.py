@@ -48,113 +48,71 @@ class CameraProcessor:
         return areaMaxContour, contour_area_max
     
     def process_frame(self, frame, lab_data, target_colors):
-        """
-        Process the frame for display and detection.
-        
-        Args:
-            frame: Input frame from camera
-            lab_data: LAB color range data
-            target_colors: List of target colors to detect
-            
-        Returns:
-            tuple: (display_img, block_data)
-        """
         if frame is None:
             return None, None
-            
-        # Prepare display image
         display_img = cv2.resize(frame, self.size)
-        
-        # Prepare frame for processing
-        frame_resize = cv2.resize(frame, self.size, interpolation=cv2.INTER_NEAREST)
-        frame_gb = cv2.GaussianBlur(frame_resize, (3, 3), 3)
-        frame_rgb = cv2.cvtColor(frame_gb, cv2.COLOR_BGR2RGB)
-        frame_lab = cv2.cvtColor(frame_gb, cv2.COLOR_BGR2LAB)
-        
-        img_h, img_w = frame.shape[:2]
+        current_color = 'None'
+        draw_color = self.range_rgb['black']
+        block_data = {'color': 'None', 'detected_color': self.detect_color}
+
+        # Even during pickup, always detect live color
+        frame_resize = cv2.resize(frame.copy(), self.size, interpolation=cv2.INTER_NEAREST)
+        frame_lab = cv2.cvtColor(cv2.GaussianBlur(frame_resize, (3, 3), 3), cv2.COLOR_BGR2LAB)
         color_area_max = None
         max_area = 0
         areaMaxContour_max = 0
-        draw_color = self.range_rgb["black"]
-        
-        # Reset color detection if we've confirmed a color
-        if self.start_pick_up:
-            self.start_pick_up = False
-            self.detect_color = 'None'
-            self.color_list = []
-        
-        print("\nChecking colors:", target_colors)
         for i in lab_data:
             if i in target_colors:
-                frame_mask = cv2.inRange(frame_lab,
-                                       tuple(lab_data[i]['min']),
-                                       tuple(lab_data[i]['max']))
-                cv2.imshow(f"Mask - {i}", frame_mask)  # Show live masks!
-                opened = cv2.morphologyEx(frame_mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
-                closed = cv2.morphologyEx(opened, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
+                mask = cv2.inRange(frame_lab, tuple(lab_data[i]['min']), tuple(lab_data[i]['max']))
+                cv2.imshow(f"Mask - {i}", mask)
+                closed = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+                closed = cv2.morphologyEx(closed, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
                 contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-                contours, _ = cv2.findContours(frame_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-
-                areaMaxContour, area_max = self.getAreaMaxContour(contours)
-                
-                if areaMaxContour is not None:
-                    print(f"Detected {i} with area {area_max}")
-                    if area_max > max_area:
-                        max_area = area_max
-                        color_area_max = i
-                        areaMaxContour_max = areaMaxContour
-                else:
-                    print(f"No {i} detected")
-
+                areaMaxContour, area = self.getAreaMaxContour(contours)
+                if areaMaxContour is not None and area > max_area:
+                    max_area = area
+                    color_area_max = i
+                    areaMaxContour_max = areaMaxContour
         if max_area > 500:
-            print(f"Max area: {max_area}, Color: {color_area_max}")
             (center_x, center_y), radius = cv2.minEnclosingCircle(areaMaxContour_max)
-            center_x = int(Misc.map(center_x, 0, self.size[0], 0, img_w))
-            center_y = int(Misc.map(center_y, 0, self.size[1], 0, img_h))
-            radius = int(Misc.map(radius, 0, self.size[0], 0, img_w))
             cv2.circle(display_img, (int(center_x), int(center_y)), int(radius), self.range_rgb[color_area_max], 2)
-            
+            current_color = color_area_max
+            draw_color = self.range_rgb.get(current_color, (0, 0, 0))
             if not self.start_pick_up:
-                if color_area_max == 'red':
-                    color = 1
-                elif color_area_max == 'green':
-                    color = 2
-                elif color_area_max == 'blue':
-                    color = 3
-                else:
-                    color = 0
-                self.color_list.append(color)
-                print(f"Color list: {self.color_list}")
+                self.color_list.append({'red': 1, 'green': 2, 'blue': 3}.get(color_area_max, 0))
                 if len(self.color_list) == 3:
-                    color = int(round(np.mean(np.array(self.color_list))))
-                    self.color_list = []
+                    color = int(round(np.mean(self.color_list)))
+                    self.color_list.clear()
                     if color == 1:
                         self.detect_color = 'red'
-                        draw_color = self.range_rgb["red"]
                         self.start_pick_up = True
                     elif color == 2:
                         self.detect_color = 'green'
-                        draw_color = self.range_rgb["green"]
                         self.start_pick_up = True
                     elif color == 3:
                         self.detect_color = 'blue'
-                        draw_color = self.range_rgb["blue"]
                         self.start_pick_up = True
                     else:
                         self.detect_color = 'None'
-                        self.start_pick_up = False
-            
-            block_data = {
-                'position': (center_x, center_y),
-                'area': max_area,
-                'radius': radius,
-                'color': color_area_max,
-                'detected_color': self.detect_color
-            }
-            return display_img, block_data
+        else:
+            current_color = 'None'
+            draw_color = self.range_rgb['black']
+
+        # Always show live detected color in overlay
+        cv2.putText(display_img, f"Detected Color (live): {current_color}",
+                    (10, display_img.shape[0] - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.65, draw_color, 2)
+        cv2.putText(display_img, f"Confirmed Color (pickup): {self.detect_color}",
+                    (10, display_img.shape[0] - 40),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.65, self.range_rgb.get(self.detect_color, (0, 0, 0)), 2)
+        cv2.putText(display_img, "c-recalibrate | q-quit",
+                    (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
         
-        return display_img, None
-    
+        block_data['color'] = current_color
+        block_data['detected_color'] = self.detect_color
+
+        return display_img, block_data
+
     def reset(self):
         """Reset the camera processor state."""
         self.color_list = []
@@ -361,3 +319,13 @@ class CameraProcessor:
                 detected_blocks[0]['detected_color'] = 'None'
         
         return detected_blocks 
+
+    def calibrate(self):
+        """Placeholder for calibration logic (to be called from main on 'c' key)."""
+        print("Calibration triggered (implement as needed)") 
+
+    def reset_scan(self):
+        """Reset scan state for rescanning."""
+        self.color_list = []
+        self.detect_color = 'None'
+        self.start_pick_up = False 

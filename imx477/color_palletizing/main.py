@@ -99,76 +99,95 @@ class ColorPalletizing:
         """
         if not self.__isRunning:
             return img
-            
-        # Process frame
+        # Process frame (let process_frame handle all overlays)
         display_img, block_data = self.camera_processor.process_frame(img, self.lab_data, self.__target_color)
+        #print(f"Block data: {block_data}")
         
-        # Draw detection if block found
+        # Only handle pickup state here
         if block_data is not None:
-            display_img = self.camera_processor.draw_detection(display_img, block_data, 0)
-            # Use black color for 'None' text
-            draw_color = self.camera_processor.range_rgb.get(block_data['detected_color'], (0, 0, 0))
-            display_img = self.camera_processor.draw_color_text(
-                display_img, 
-                block_data['detected_color'],
-                draw_color
-            )
-            
-            # Start pick up if color confirmed
-            if block_data['detected_color'] != 'None':
+            if block_data.get('detected_color', 'None') != 'None':
                 self.start_pick_up = True
                 self.detect_color = block_data['detected_color']
                 print(f"Detected color: {block_data['detected_color']}")
-            else:
-                print(f"Raw color: {block_data['color']}, Waiting for confirmation...")
-        else:
-            # Always show color text, even when no block is detected
-            display_img = self.camera_processor.draw_color_text(
-                display_img,
-                'None',
-                self.camera_processor.range_rgb['black']
-            )
-        
+            #else:
+            #    print(f"Raw color: {block_data.get('color', 'None')}, Waiting for confirmation...")
         return display_img
     
     def move(self):
         """Main movement control loop."""
+        sweep_direction = 1  # 1 = forward, -1 = backward
+        oscillations = 0     # Count how many oscillations (back-and-forth sweeps)
+        max_oscillations = 3
+        last_rotation_ccw = True  # Start with CCW
+        total_base_rotation = 0
+        max_total_rotation = 240  # Stop after total rotation of 240 degrees
+
         while True:
             if self.__isRunning:
-                # Workspace sweep logic
                 if self.detect_color == 'None' and not self.start_pick_up:
-                    for pos in self.arm_controller.scan_positions:
-                        # Move arm to scan position
+                    # Perform a single oscillation sweep
+                    scan_range = list(range(len(self.arm_controller.scan_positions)))
+                    if sweep_direction == -1:
+                        scan_range = list(reversed(scan_range))
+
+                    for idx in scan_range:
+                        pos = self.arm_controller.scan_positions[idx]
+                        print(f"[Scan] Visiting position {idx+1}/{len(self.arm_controller.scan_positions)}: {pos}")
                         self.arm_controller.scan_position(pos)
-                        # Let the camera process a few frames at this position
                         for _ in range(3):
                             time.sleep(0.1)
-                            # If a block is detected, break out of sweep
                             if self.detect_color != 'None' or self.start_pick_up:
+                                print(f"[Scan] Detected color: {self.detect_color} at position {pos}")
                                 break
                         if self.detect_color != 'None' or self.start_pick_up:
                             break
+                    else:
+                        # One oscillation done
+                        sweep_direction *= -1
+                        oscillations += 1
+                        print(f"[Scan] Completed {oscillations}/{max_oscillations} oscillations at this base rotation.")
+
+                    # After 3 oscillations, rotate base and reset oscillation count
+                    if oscillations >= max_oscillations:
+                        if total_base_rotation < max_total_rotation:
+                            if last_rotation_ccw:
+                                print("[Scan] No detection. Rotating base anti-clockwise by 30 degrees.")
+                                self.arm_controller.rotate_base(-30)
+                                total_base_rotation += 30
+                            else:
+                                print("[Scan] No detection. Rotating base clockwise by 30 degrees.")
+                                self.arm_controller.rotate_base(30)
+                                total_base_rotation += 30
+                            last_rotation_ccw = not last_rotation_ccw
+                            oscillations = 0
+                            #sweep_direction = 1  # Always start new sweep forward
+                            print(f"[Scan] Total base rotation: {total_base_rotation} degrees.")
+                        else:
+                            print("[Scan] Max total rotation (240 degrees) reached. Stopping scan.")
+                            self.__isRunning = False
+                            break
+
                     # If still nothing detected, idle briefly
                     if self.detect_color == 'None' and not self.start_pick_up:
                         time.sleep(0.1)
                     continue
-                
+
                 if self.detect_color != 'None' and self.start_pick_up:
-                    # Set RGB color
-                    self.arm_controller.set_rgb(self.detect_color)
-                    self.arm_controller.board.set_buzzer(1900, 0.1, 0.9, 1)
-                    
-                    # Pick up block
-                    x, y, z = self.arm_controller.coordinates['capture']
-                    self.arm_controller.pick_up_block(x, y, z)
-                    
-                    # Place block
-                    self.arm_controller.place_block()
-                    
-                    # Reset state variables
-                    self.detect_color = 'None'
-                    self.start_pick_up = False
-                    self.arm_controller.set_rgb(self.detect_color)
+                    # --- Pick and place logic  ---
+                    # self.arm_controller.set_rgb(self.detect_color)
+                    # self.arm_controller.board.set_buzzer(1900, 0.1, 0.9, 1)
+                    # x, y, z = self.arm_controller.coordinates['capture']
+                    # self.arm_controller.pick_up_block(x, y, z)
+                    # self.arm_controller.place_block()
+                    # self.detect_color = 'None'
+                    # self.start_pick_up = False
+                    # self.arm_controller.set_rgb(self.detect_color)
+                    # --- End pick and place logic ---
+
+                    # Instead, just stop here for now
+                    print(f"Block detected: {self.detect_color}. Stopping scan.")
+                    while self.detect_color != 'None' and self.start_pick_up:
+                        time.sleep(0.1)
                 else:
                     time.sleep(0.01)
             else:
@@ -185,9 +204,9 @@ def main():
     color_palletizing.start()
     
     # Start movement control in a separate thread
-    # move_thread = threading.Thread(target=color_palletizing.move)
-    # move_thread.daemon = True
-    # move_thread.start()
+    move_thread = threading.Thread(target=color_palletizing.move)
+    move_thread.daemon = True
+    move_thread.start()
     
     try:
         while True:
@@ -196,12 +215,17 @@ def main():
                 frame_rgb = frame[..., ::-1]
                 processed_frame = color_palletizing.run(frame_rgb)
                 cv2.imshow('Color Palletizing', processed_frame)
-                
-                # Check for key press
-                key = cv2.waitKey(1) & 0xFF  # Get the key code
-                if key == 27 or key == ord('q'):  # ESC or 'q' to quit
+                key = cv2.waitKey(1) & 0xFF
+                if key == 27 or key == ord('q'):
                     print("Exiting program...")
                     break
+                elif key == ord('c'):
+                    color_palletizing.camera_processor.calibrate()
+                elif key == ord('r'):
+                    color_palletizing.detect_color = 'None'
+                    color_palletizing.start_pick_up = False
+                    color_palletizing.camera_processor.reset_scan()
+                    print("[Scan] Rescan triggered by user.")
             else:
                 time.sleep(0.01)
     finally:
