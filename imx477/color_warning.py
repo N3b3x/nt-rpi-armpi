@@ -40,22 +40,7 @@ color_list = []
 
 def load_config():
     global lab_data
-    #lab_data = yaml_handle.get_yaml_data(yaml_handle.lab_file_path_imx477)
-    lab_data = {
-        'red': {
-            'min': [130, 200, 180],
-            'max': [140, 215, 210]
-        },
-        'green': {
-            'min': [190, 60, 150],
-            'max': [200, 70, 160]
-        },
-        'blue': {
-            'min': [175, 95, 90],
-            'max': [185, 110, 105]
-        }
-    }
-
+    lab_data = yaml_handle.get_yaml_data(yaml_handle.lab_file_path_imx477)
     print("Loaded LAB data:", lab_data)
 
 def init():
@@ -85,7 +70,7 @@ def run(img):
     # Show center LAB value
     h, w = frame_lab.shape[:2]
     center_lab = frame_lab[h//2, w//2]
-    print(f"Center LAB: {center_lab}")
+    #print(f"Center LAB: {center_lab}")
 
     color_area_max = None
     max_area = 0

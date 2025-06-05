@@ -6,6 +6,8 @@ import math
 import threading
 import cv2
 import numpy as np
+import yaml
+import os
 
 # Module paths
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/common_sdk')
@@ -33,11 +35,7 @@ range_rgb = {
 lab_data = None
 def load_config():
     global lab_data
-    lab_data = {
-        'red': {'min': [130, 200, 180], 'max': [140, 215, 210]},
-        'green': {'min': [190, 60, 150], 'max': [200, 70, 160]},
-        'blue': {'min': [175, 95, 90], 'max': [185, 110, 105]}
-    }
+    lab_data = yaml_handle.get_yaml_data(yaml_handle.lab_file_path_imx477)
     print("✅ Loaded LAB data:", lab_data)
 
 def getAreaMaxContour(contours):
@@ -59,6 +57,23 @@ start_pick_up = False
 number = 0
 size = (640, 480)
 draw_color = range_rgb["black"]
+table_calib_file = 'table_height.yaml'  # Path to save table height
+block_height = 3  # cm, as specified
+
+table_z = None  # Will be set by calibration or loaded
+
+# Add stacking location variables
+stacking_X = 12  # Default stacking X (can be changed)
+stacking_Y = 0   # Default stacking Y (can be changed)
+stacking_Z = 0.5 # Default stacking Z (table height at stacking location)
+
+stacking_calib_file = 'stacking_height.yaml'  # Path to save stacking Z
+
+manual_mode = False
+manual_x = None
+manual_y = None
+manual_z = None
+manual_step = 1.0  # cm per keypress
 
 def set_rgb(color):
     if color == "red":
@@ -157,12 +172,12 @@ def run(img):
                 detect_color = "None"
                 draw_color = (0, 0, 0)
 
-       # Finally, display in BGR for correct color visualization
+        # Always overlay detected color text, even during pickup
         cv2.putText(display_img, f"Detected Color: {detect_color}",
                     (10, display_img.shape[0] - 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.65, draw_color, 2)
-        cv2.putText(display_img, "Press 'c' to recalibrate | Press 'q' to quit",
-                    (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 255, 255), 2)
+        cv2.putText(display_img, "c-recalibrate | q-quit",
+                    (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
 
         return display_img
     else:
@@ -174,7 +189,11 @@ def initMove():
 
 def move():
     global _stop, number, __isRunning, detect_color, start_pick_up
-    x, y, z = Coordinates_data['X'], Coordinates_data['Y'], Coordinates_data['Z']
+    x = Coordinates_data['X']
+    y = Coordinates_data['Y']
+    z = Coordinates_data['Z']
+    block_height = 3  # cm
+    stacking_x, stacking_y, stacking_z = 12, 0, 0.5  # HiWonder stacking location
     while True:
         if __isRunning and detect_color != 'None' and start_pick_up:
             set_rgb(detect_color)
@@ -183,6 +202,7 @@ def move():
             time.sleep(0.8)
             if not __isRunning: continue
 
+            # Pickup
             AK.setPitchRangeMoving((x, y, z - 2.75), -90, -90, 90, 1000)
             time.sleep(1)
             if not __isRunning: continue
@@ -194,9 +214,15 @@ def move():
             time.sleep(1.5)
             if not __isRunning: continue
 
-            # Here’s the fix: no missing variable!
-            place_z = (z + (2 if number > 0 else -0.5))
-            AK.setPitchRangeMoving((12, 0, place_z), -90, -90, 90, 800)
+            # Move above stacking location
+            AK.setPitchRangeMoving((stacking_x, stacking_y, 12), -90, -90, 90, 800)
+            time.sleep(0.8)
+            if not __isRunning: continue
+
+            # Place at stacking location, increment Z for each block, all 1 cm lower
+            place_z = stacking_z + number * block_height - 2  # Drop all blocks 1 cm lower
+            print(f"Placing block number {number} at X: {stacking_x}, Y: {stacking_y}, Z: {place_z}")
+            AK.setPitchRangeMoving((stacking_x, stacking_y, place_z), -90, -90, 90, 800)
             time.sleep(0.8)
             board.pwm_servo_set_position(0.5, [[1, 1900]])
             time.sleep(0.8)
@@ -232,11 +258,15 @@ if __name__ == '__main__':
     camera = Camera(resolution=(640, 480))
     threading.Thread(target=move, daemon=True).start()
 
+    print("\n=== Color Palletizing Controls ===")
+    print("Press 'q' or ESC to quit\n")
+
     while True:
         frame = camera.get_frame()
         if frame is not None:
             frame_rgb = frame[..., ::-1]
             Frame = run(frame_rgb)
+
             cv2.imshow('IMX477 Color Palletizing', Frame)
 
             key = cv2.waitKey(1) & 0xFF

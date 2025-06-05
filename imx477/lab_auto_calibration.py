@@ -40,17 +40,22 @@ def calibrate_lab_ranges(reference_image_path='reference_image.jpg', yaml_output
             points.append(avg_lab)
             print(f"Clicked at ({x}, {y}), Average LAB: {avg_lab}")
 
-    cv2.namedWindow("Reference Image - Click Red, Green, Blue")
-    cv2.setMouseCallback("Reference Image - Click Red, Green, Blue", click_event)
+    cv2.namedWindow("Reference Image - Click Colors")
+    cv2.setMouseCallback("Reference Image - Click Colors", click_event)
 
-    print("🟦 Click on RED patch, then GREEN, then BLUE. Press 'q' to abort.")
+    color_order = ['red', 'green', 'blue', 'black', 'white']
+    print("🟦 Click on the following patches in order: RED, GREEN, BLUE, BLACK, WHITE. Press 'q' to abort.")
     while True:
         display_image = image.copy()
-        cv2.putText(display_image, "Click: RED, GREEN, BLUE", (10, 30),
+        cv2.putText(display_image, "Click: RED, GREEN, BLUE, BLACK, WHITE", (10, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-        cv2.imshow("Reference Image - Click Red, Green, Blue", display_image)
+        for idx, color in enumerate(color_order):
+            if len(points) > idx:
+                cv2.putText(display_image, f"{color.upper()} set", (10, 60 + idx*30),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        cv2.imshow("Reference Image - Click Colors", display_image)
 
-        if len(points) == 3:
+        if len(points) == 5:
             break
         if cv2.waitKey(1) & 0xFF == ord('q'):
             print("Calibration aborted.")
@@ -60,8 +65,7 @@ def calibrate_lab_ranges(reference_image_path='reference_image.jpg', yaml_output
     cv2.destroyAllWindows()
 
     lab_ranges = {}
-    colors = ['red', 'green', 'blue']
-    for i, color in enumerate(colors):
+    for i, color in enumerate(color_order):
         mean_lab = points[i]
         if isinstance(mean_lab, np.ndarray):
             mean_lab = mean_lab.tolist()
