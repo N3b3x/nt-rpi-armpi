@@ -26,7 +26,8 @@ class ArmController:
             'place': (12, 0, 0.5),  # Placing coordinate
         }
 
-        self.current_base_pos = 1500  # 💡 Add this line!
+        self.current_base_angle = 0  # degrees, 0 = forward
+        self.current_base_pos = 1500
     
     def init_move(self):
         """Initialize arm to starting position (match Hiwonder sample)."""
@@ -92,15 +93,21 @@ class ArmController:
         Args:
             position: (x, y, z) tuple for scan position
         """
-        print(f"[Arm] Moving to scan position: {position}")
-        self.AK.setPitchRangeMoving(position, -90, -90, 90, 800)
-        time.sleep(0.7)  # Wait for arm to stabilize 
+        print(f"[Arm] Moving to scan position: {position} (base angle {self.current_base_angle})")
+        # Move base to current_base_pos
+        self.board.pwm_servo_set_position(0.5, [[6, self.current_base_pos]])
+        # Move the rest of the arm, passing the current base angle
+        self.AK.setPitchRangeMoving(position, self.current_base_angle, -90, 90, 800)
+        time.sleep(0.7)
     
     def rotate_base(self, angle):
         """Rotate the base by a given angle (degrees). Positive for CW, negative for CCW."""
+        self.current_base_angle += angle
+        # Clamp angle to -120 to +120 (or whatever your hardware allows)
+        self.current_base_angle = max(-120, min(120, self.current_base_angle))
         units_per_degree = 1000 / 180
-        self.current_base_pos += int(angle * units_per_degree)
+        self.current_base_pos = 1500 + int(self.current_base_angle * units_per_degree)
         self.current_base_pos = max(500, min(2500, self.current_base_pos))
-        print(f"[Arm] Rotating base to servo pos {self.current_base_pos} for angle {angle}")
-        self.board.pwm_servo_set_position(0.5, [[0, self.current_base_pos]])
+        print(f"[Arm] Rotating base to servo pos {self.current_base_pos} for angle {self.current_base_angle}")
+        self.board.pwm_servo_set_position(0.5, [[6, self.current_base_pos]])
         time.sleep(1)
