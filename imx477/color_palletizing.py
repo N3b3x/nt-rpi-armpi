@@ -118,20 +118,19 @@ def run(img):
     if not __isRunning:
         return img
 
-    img_copy = img.copy()
-    frame_resize = cv2.resize(img_copy, size, interpolation=cv2.INTER_NEAREST)
-    frame_lab = cv2.cvtColor(cv2.GaussianBlur(frame_resize, (3, 3), 3), cv2.COLOR_BGR2LAB)
-
-    color_area_max = None
-    max_area = 0
-    areaMaxContour_max = 0
-
+    display_img = cv2.resize(img, size)
     if not start_pick_up:
+        frame_resize = cv2.resize(img.copy(), size, interpolation=cv2.INTER_NEAREST)
+        frame_lab = cv2.cvtColor(cv2.GaussianBlur(frame_resize, (3, 3), 3), cv2.COLOR_BGR2LAB)
+
+        color_area_max = None
+        max_area = 0
+        areaMaxContour_max = 0
+
         for i in lab_data:
             if i in __target_color:
                 mask = cv2.inRange(frame_lab, tuple(lab_data[i]['min']), tuple(lab_data[i]['max']))
-                cv2.imshow(f"Mask - {i}", mask)  # Show live masks!
-
+                cv2.imshow(f"Mask - {i}", mask)
                 closed = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
                 closed = cv2.morphologyEx(closed, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
                 contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
@@ -141,8 +140,6 @@ def run(img):
                     max_area = area
                     color_area_max = i
                     areaMaxContour_max = areaMaxContour
-
-        display_img = cv2.resize(img, size)
 
         if max_area > 500:
             (center_x, center_y), radius = cv2.minEnclosingCircle(areaMaxContour_max)
@@ -172,16 +169,13 @@ def run(img):
                 detect_color = "None"
                 draw_color = (0, 0, 0)
 
-        # Always overlay detected color text, even during pickup
-        cv2.putText(display_img, f"Detected Color: {detect_color}",
-                    (10, display_img.shape[0] - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.65, draw_color, 2)
-        cv2.putText(display_img, "c-recalibrate | q-quit",
-                    (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
-
-        return display_img
-    else:
-        return cv2.resize(img, size)
+    # Always overlay detected color text, even during pickup
+    cv2.putText(display_img, f"Detected Color: {detect_color}",
+                (10, display_img.shape[0] - 10),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.65, draw_color, 2)
+    cv2.putText(display_img, "c-recalibrate | q-quit",
+                (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
+    return display_img
 
 def initMove():
     board.pwm_servo_set_position(0.3, [[1, 1500]])
