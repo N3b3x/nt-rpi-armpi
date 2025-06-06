@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 # coding=utf8
+# main.py
+
 import sys
 import time
 import threading
@@ -108,22 +110,39 @@ class ColorPalletizing:
             if block_data.get('detected_color', 'None') != 'None':
                 self.start_pick_up = True
                 self.detect_color = block_data['detected_color']
-                print(f"Detected color: {block_data['detected_color']}")
+                #print(f"Detected color: {block_data['detected_color']}")
             #else:
             #    print(f"Raw color: {block_data.get('color', 'None')}, Waiting for confirmation...")
         return display_img
     
+    def handle_pickup_and_place(self):
+        """
+        Execute the pickup and placement sequence.
+        """
+        print(f"Block detected: {self.detect_color}. Initiating pickup sequence.")
+        self.arm_controller.set_rgb(self.detect_color)
+        self.arm_controller.board.set_buzzer(1900, 0.1, 0.9, 1)
+
+        # Use the last detected scan position (x, y) and a safe pickup Z
+        x, y, _ = self.arm_controller.coordinates['capture']
+        pickup_z = 5  # 🟢 Lower Z to actually pick block!
+
+        print(f"[Pickup] Moving to pickup coordinates: ({x}, {y}, {pickup_z})")
+        self.arm_controller.pick_up_block(x, y, pickup_z)
+        self.arm_controller.place_block()
+
+        self.detect_color = 'None'
+        self.start_pick_up = False
+        self.arm_controller.set_rgb(self.detect_color)
+
+        print("[Pickup] Pickup & place complete. Resuming scan.")
+
     def move(self):
         """
-        Enhanced polar scan pattern with expanded range and 160° camera FOV:
-        - Rotate base from -180° to +180° in 75° increments
-        - Fixed pitch angle to maintain camera alignment
-        - Halved dwell times for faster operation
+        Enhanced polar scan with ±180° range, with immediate pickup after detection.
         """
-        # Updated range: -180° to +180° in 75° increments
-        angles = list(range(-180, 181, 75))
+        angles = list(range(-180, 181, 75))  # Rotation angles to cover ±180°
         angle_idx = 0
-
         fixed_pitch = -10  # Slight downward pitch angle
 
         while self.__isRunning:
@@ -134,25 +153,33 @@ class ColorPalletizing:
                 # Rotate to base angle
                 rotation_needed = base_angle - self.arm_controller.current_base_angle
                 self.arm_controller.rotate_base(rotation_needed)
-                time.sleep(0.15)  # Halved stabilization time
+                time.sleep(0.15)  # Stabilization time
 
                 # Get scan positions for this base angle
                 scan_positions = self.arm_controller.get_scan_positions(base_angle)
 
                 for idx, pos in enumerate(scan_positions):
-                    if not self.__isRunning or self.detect_color != 'None' or self.start_pick_up:
-                        break
+                    if not self.__isRunning:
+                        break  # If stopped, exit immediately
+
                     print(f"[Scan] Visiting position {idx+1}/{len(scan_positions)}: {pos} (fixed pitch {fixed_pitch}°)")
                     self.arm_controller.scan_position(pos, pitch_angle=fixed_pitch)
-                    for _ in range(2):
-                        time.sleep(0.025)  # Halved short pause
-                        if self.detect_color != 'None' or self.start_pick_up:
-                            print(f"[Scan] Detected color: {self.detect_color} at position {pos}")
-                            break
-                    if self.detect_color != 'None' or self.start_pick_up:
-                        break
 
-                # Next angle
+                    # Check for color detection (quick short pauses)
+                    for _ in range(2):
+                        time.sleep(0.025)
+                        if self.detect_color != 'None':
+                            print(f"[Scan] Detected color: {self.detect_color} at position {pos}")
+                            self.arm_controller.set_coordinates(*pos)
+                            self.start_pick_up = True  # Trigger pickup logic
+                            break
+
+                    if self.start_pick_up:
+                        # 💡 Directly call pickup after detection
+                        self.handle_pickup_and_place()
+                        break  # Exit scan positions loop after pickup
+
+                # Move to next angle if no detection
                 if self.detect_color == 'None' and not self.start_pick_up:
                     angle_idx += 1
                     if angle_idx >= len(angles):
@@ -160,8 +187,6 @@ class ColorPalletizing:
                         print("[Scan] Completed full sweep. Restarting.")
                     else:
                         print(f"[Scan] Moving to next angle: {angles[angle_idx]}°")
-                else:
-                    break
             else:
                 time.sleep(0.01)
 

@@ -108,15 +108,20 @@ class ArmController:
         self.coordinates['capture'] = (x, y, z)
     
     def pick_up_block(self, x, y, z):
-        """Execute the block pickup sequence."""
-        self.board.pwm_servo_set_position(0.5, [[SERVO_GRIPPER, 1900]])
+        """
+        Pick up block at (x, y, z).
+        """
+        self.board.pwm_servo_set_position(0.5, [[SERVO_GRIPPER, 1900]])  # Open
         time.sleep(0.8)
-        pick_z = z - 2.75
-        self.AK.setPitchRangeMoving((x, y, pick_z), -90, -90, 90, 1000)
+
+        print(f"[Arm] Lowering to pickup at ({x}, {y}, {z - 2.75})")
+        self.AK.setPitchRangeMoving((x, y, z - 2.75), -90, -90, 90, 1000)
         time.sleep(1)
-        self.board.pwm_servo_set_position(0.5, [[SERVO_GRIPPER, 1500]])
+
+        self.board.pwm_servo_set_position(0.5, [[SERVO_GRIPPER, 1500]])  # Close
         time.sleep(0.8)
-        self.AK.setPitchRangeMoving((0, 6, 18), -90, -90, 90, 1500)
+
+        self.AK.setPitchRangeMoving((0, 6, 18), -90, -90, 90, 1500)  # Move up
         time.sleep(1.5)
     
     def place_block(self):
