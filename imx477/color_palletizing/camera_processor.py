@@ -112,7 +112,7 @@ class CameraProcessor:
         block_data['detected_color'] = self.detect_color
 
         return display_img, block_data
-
+    
     def reset(self):
         """Reset the camera processor state."""
         self.color_list = []

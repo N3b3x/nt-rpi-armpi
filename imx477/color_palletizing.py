@@ -121,11 +121,11 @@ def run(img):
     display_img = cv2.resize(img, size)
     if not start_pick_up:
         frame_resize = cv2.resize(img.copy(), size, interpolation=cv2.INTER_NEAREST)
-        frame_lab = cv2.cvtColor(cv2.GaussianBlur(frame_resize, (3, 3), 3), cv2.COLOR_BGR2LAB)
+    frame_lab = cv2.cvtColor(cv2.GaussianBlur(frame_resize, (3, 3), 3), cv2.COLOR_BGR2LAB)
 
-        color_area_max = None
-        max_area = 0
-        areaMaxContour_max = 0
+    color_area_max = None
+    max_area = 0
+    areaMaxContour_max = 0
 
         for i in lab_data:
             if i in __target_color:
@@ -170,12 +170,12 @@ def run(img):
                 draw_color = (0, 0, 0)
 
     # Always overlay detected color text, even during pickup
-    cv2.putText(display_img, f"Detected Color: {detect_color}",
-                (10, display_img.shape[0] - 10),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.65, draw_color, 2)
+        cv2.putText(display_img, f"Detected Color: {detect_color}",
+                    (10, display_img.shape[0] - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.65, draw_color, 2)
     cv2.putText(display_img, "c-recalibrate | q-quit",
                 (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
-    return display_img
+        return display_img
 
 def initMove():
     board.pwm_servo_set_position(0.3, [[1, 1500]])

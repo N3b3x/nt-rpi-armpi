@@ -114,58 +114,56 @@ class ColorPalletizing:
         return display_img
     
     def move(self):
-        """Continuous scanning at each rotation position, alternating rotation direction when limit reached."""
-        scan_positions = self.arm_controller.scan_positions
-        num_positions = len(scan_positions)
+        """
+        Enhanced polar scan pattern with expanded range and 160° camera FOV:
+        - Rotate base from -180° to +180° in 75° increments
+        - Fixed pitch angle to maintain camera alignment
+        - Halved dwell times for faster operation
+        """
+        # Updated range: -180° to +180° in 75° increments
+        angles = list(range(-180, 181, 75))
+        angle_idx = 0
 
-        # Tracking variables
-        total_base_rotation = 0
-        max_total_rotation = 240
-        rotation_step = 30
-        rotation_direction = -1  # -1 for CCW, 1 for CW (start CCW)
-        current_base_rotation = 0
+        fixed_pitch = -10  # Slight downward pitch angle
 
         while self.__isRunning:
             if self.detect_color == 'None' and not self.start_pick_up:
-                # Perform a full oscillating scan at current base rotation
-                for oscillation in range(3):  # 3 oscillations per base rotation
-                    for sweep_direction in [1, -1]:
+                base_angle = angles[angle_idx]
+                print(f"[Scan] Starting scan at base angle: {base_angle}° (fixed pitch {fixed_pitch}°)")
+
+                # Rotate to base angle
+                rotation_needed = base_angle - self.arm_controller.current_base_angle
+                self.arm_controller.rotate_base(rotation_needed)
+                time.sleep(0.15)  # Halved stabilization time
+
+                # Get scan positions for this base angle
+                scan_positions = self.arm_controller.get_scan_positions(base_angle)
+
+                for idx, pos in enumerate(scan_positions):
+                    if not self.__isRunning or self.detect_color != 'None' or self.start_pick_up:
+                        break
+                    print(f"[Scan] Visiting position {idx+1}/{len(scan_positions)}: {pos} (fixed pitch {fixed_pitch}°)")
+                    self.arm_controller.scan_position(pos, pitch_angle=fixed_pitch)
+                    for _ in range(2):
+                        time.sleep(0.025)  # Halved short pause
                         if self.detect_color != 'None' or self.start_pick_up:
-                            break  # Stop if detected
-                        scan_range = list(range(num_positions))
-                        if sweep_direction == -1:
-                            scan_range = list(reversed(scan_range))
-                        for idx in scan_range:
-                            pos = scan_positions[idx]
-                            print(f"[Scan] Visiting position {idx+1}/{num_positions}: {pos}")
-                            self.arm_controller.scan_position(pos)
-                            for _ in range(3):
-                                time.sleep(0.1)
-                                if self.detect_color != 'None' or self.start_pick_up:
-                                    print(f"[Scan] Detected color: {self.detect_color} at position {pos}")
-                                    break
-                            if self.detect_color != 'None' or self.start_pick_up:
-                                break
+                            print(f"[Scan] Detected color: {self.detect_color} at position {pos}")
+                            break
                     if self.detect_color != 'None' or self.start_pick_up:
-                        break  # Stop if detected
+                        break
 
-                # After 3 oscillations, rotate base in the current direction
+                # Next angle
                 if self.detect_color == 'None' and not self.start_pick_up:
-                    if abs(current_base_rotation + rotation_direction * rotation_step) > max_total_rotation:
-                        # Reached rotation limit, reverse rotation direction
-                        rotation_direction *= -1
-                        print(f"[Scan] Reached max rotation. Reversing rotation direction to {rotation_direction}.")
+                    angle_idx += 1
+                    if angle_idx >= len(angles):
+                        angle_idx = 0
+                        print("[Scan] Completed full sweep. Restarting.")
                     else:
-                        # Rotate base further in the current direction
-                        self.arm_controller.rotate_base(rotation_direction * rotation_step)
-                        current_base_rotation += rotation_direction * rotation_step
-                        print(f"[Scan] Rotated base to {current_base_rotation} degrees in direction {rotation_direction}.")
+                        print(f"[Scan] Moving to next angle: {angles[angle_idx]}°")
                 else:
-                    # Detected during scan, stop further rotation
                     break
-
-            # Small delay to reduce CPU load
-            time.sleep(0.05)
+            else:
+                time.sleep(0.01)
 
 def main():
     """Main entry point."""
@@ -198,11 +196,18 @@ def main():
                     break
                 elif key == ord('c'):
                     color_palletizing.camera_processor.calibrate()
-                elif key == ord('r'):
-                    color_palletizing.detect_color = 'None'
-                    color_palletizing.start_pick_up = False
-                    color_palletizing.camera_processor.reset_scan()
-                    print("[Scan] Rescan triggered by user.")
+            elif key == ord('r'):
+                color_palletizing.detect_color = 'None'
+                color_palletizing.start_pick_up = False
+                color_palletizing.camera_processor.reset_scan()
+                print("[Scan] Rescan triggered by user.")
+                
+                # If the scan thread has exited, restart it
+                if not move_thread.is_alive():
+                    print("[Scan] Restarting scanning thread.")
+                    move_thread = threading.Thread(target=color_palletizing.move)
+                    move_thread.daemon = True
+                    move_thread.start()
             else:
                 time.sleep(0.01)
     finally:

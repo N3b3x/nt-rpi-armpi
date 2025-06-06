@@ -40,7 +40,7 @@ def Stop(signum, frame):
     try:
         # Reset servo 2 to middle position
         print("Attempting to reset servo position...")
-        board.pwm_servo_set_position(0.5, [[2, 1500]])
+        board.pwm_servo_set_position(0.5, [[6, 1500]])
         time.sleep(0.5)
         print("Reset complete")
     except Exception as e:
@@ -54,7 +54,7 @@ if __name__ == '__main__':
     try:
         # First move to middle position
         print("Moving to initial position...")
-        board.pwm_servo_set_position(0.5, [[2, 1500]])
+        board.pwm_servo_set_position(0.5, [[6, 1500]])
         time.sleep(1)
         print("Initial position set")
         
@@ -62,11 +62,11 @@ if __name__ == '__main__':
             try:
                 # Test just two positions with longer delays
                 print("\nMoving to position 1000")
-                board.pwm_servo_set_position(1.0, [[2, 1000]])
+                board.pwm_servo_set_position(1.0, [[6, 1000]])
                 time.sleep(2)
                 
                 print("Moving to position 2000")
-                board.pwm_servo_set_position(1.0, [[2, 2000]])
+                board.pwm_servo_set_position(1.0, [[6, 2000]])
                 time.sleep(2)
                 
             except Exception as e:
