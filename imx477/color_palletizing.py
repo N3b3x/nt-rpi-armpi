@@ -127,55 +127,55 @@ def run(img):
     max_area = 0
     areaMaxContour_max = 0
 
-        for i in lab_data:
-            if i in __target_color:
-                mask = cv2.inRange(frame_lab, tuple(lab_data[i]['min']), tuple(lab_data[i]['max']))
-                cv2.imshow(f"Mask - {i}", mask)
-                closed = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
-                closed = cv2.morphologyEx(closed, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
-                contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-                contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-                areaMaxContour, area = getAreaMaxContour(contours)
-                if areaMaxContour is not None and area > max_area:
-                    max_area = area
-                    color_area_max = i
-                    areaMaxContour_max = areaMaxContour
+    for i in lab_data:
+        if i in __target_color:
+            mask = cv2.inRange(frame_lab, tuple(lab_data[i]['min']), tuple(lab_data[i]['max']))
+            cv2.imshow(f"Mask - {i}", mask)
+            closed = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+            closed = cv2.morphologyEx(closed, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
+            contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+            areaMaxContour, area = getAreaMaxContour(contours)
+            if areaMaxContour is not None and area > max_area:
+                max_area = area
+                color_area_max = i
+                areaMaxContour_max = areaMaxContour
 
-        if max_area > 500:
-            (center_x, center_y), radius = cv2.minEnclosingCircle(areaMaxContour_max)
-            cv2.circle(display_img, (int(center_x), int(center_y)), int(radius), range_rgb[color_area_max], 2)
-            color_list.append({'red':1, 'green':2, 'blue':3}.get(color_area_max, 0))
+    if max_area > 500:
+        (center_x, center_y), radius = cv2.minEnclosingCircle(areaMaxContour_max)
+        cv2.circle(display_img, (int(center_x), int(center_y)), int(radius), range_rgb[color_area_max], 2)
+        color_list.append({'red':1, 'green':2, 'blue':3}.get(color_area_max, 0))
 
-            if len(color_list) == 3:
-                color = int(round(np.mean(color_list)))
-                color_list.clear()
-                if color == 1:
-                    detect_color = 'red'
-                    draw_color = range_rgb["red"]
-                    start_pick_up = True
-                elif color == 2:
-                    detect_color = 'green'
-                    draw_color = range_rgb["green"]
-                    start_pick_up = True
-                elif color == 3:
-                    detect_color = 'blue'
-                    draw_color = range_rgb["blue"]
-                    start_pick_up = True
-                else:
-                    detect_color = 'None'
-                    draw_color = range_rgb["black"]
-        else:
-            if not start_pick_up:
-                detect_color = "None"
-                draw_color = (0, 0, 0)
+        if len(color_list) == 3:
+            color = int(round(np.mean(color_list)))
+            color_list.clear()
+            if color == 1:
+                detect_color = 'red'
+                draw_color = range_rgb["red"]
+                start_pick_up = True
+            elif color == 2:
+                detect_color = 'green'
+                draw_color = range_rgb["green"]
+                start_pick_up = True
+            elif color == 3:
+                detect_color = 'blue'
+                draw_color = range_rgb["blue"]
+                start_pick_up = True
+            else:
+                detect_color = 'None'
+                draw_color = range_rgb["black"]
+    else:
+        if not start_pick_up:
+            detect_color = "None"
+            draw_color = (0, 0, 0)
 
     # Always overlay detected color text, even during pickup
-        cv2.putText(display_img, f"Detected Color: {detect_color}",
-                    (10, display_img.shape[0] - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.65, draw_color, 2)
+    cv2.putText(display_img, f"Detected Color: {detect_color}",
+                (10, display_img.shape[0] - 10),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.65, draw_color, 2)
     cv2.putText(display_img, "c-recalibrate | q-quit",
                 (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
-        return display_img
+    return display_img
 
 def initMove():
     board.pwm_servo_set_position(0.3, [[1, 1500]])
