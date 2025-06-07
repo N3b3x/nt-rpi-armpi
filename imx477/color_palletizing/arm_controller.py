@@ -107,43 +107,97 @@ class ArmController:
         """Set the capture coordinates."""
         self.coordinates['capture'] = (x, y, z)
     
+    def open_gripper(self):
+        """Open the gripper."""
+        print("[Arm] Opening gripper")
+        self.board.pwm_servo_set_position(0.5, [[SERVO_GRIPPER, 1900]])
+        time.sleep(0.5)
+
+    def close_gripper(self):
+        """Close the gripper."""
+        print("[Arm] Closing gripper")
+        self.board.pwm_servo_set_position(0.5, [[SERVO_GRIPPER, 1500]])
+        time.sleep(0.5)
+
+    def move_to_position(self, pos, pitch=-90, movetime=1000):
+        """
+        Move arm to position with specified pitch angle.
+        Returns True if movement successful, False otherwise.
+        """
+        print(f"[Arm] Moving to position {pos} with pitch {pitch}°")
+        result = self.AK.setPitchRangeMoving(pos, pitch, pitch, pitch, movetime)
+        if not result:
+            print(f"[WARNING] Could not reach position: {pos} with pitch {pitch}")
+            return False
+        else:
+            time.sleep(result[2] / 1000)  # Wait for movement to complete
+            return True
+
     def pick_up_block(self, x, y, z):
         """
         Pick up block at (x, y, z).
+        Uses a sequence of coordinated movements with error checking.
         """
-        self.board.pwm_servo_set_position(0.5, [[SERVO_GRIPPER, 1900]])  # Open
-        time.sleep(0.8)
+        # Open gripper before approaching
+        self.open_gripper()
 
-        print(f"[Arm] Lowering to pickup at ({x}, {y}, {z - 2.75})")
-        self.AK.setPitchRangeMoving((x, y, z - 2.75), -90, -90, 90, 1000)
-        time.sleep(1)
+        # Move to pickup position
+        pickup_z = z - 2.75  # Offset for pickup
+        print(f"[Arm] Lowering to pickup at ({x}, {y}, {pickup_z})")
+        if not self.move_to_position((x, y, pickup_z), pitch=-60):
+            print("[Arm] Failed to reach pickup position")
+            return False
 
-        self.board.pwm_servo_set_position(0.5, [[SERVO_GRIPPER, 1500]])  # Close
-        time.sleep(0.8)
+        # Close gripper on block
+        self.close_gripper()
 
-        self.AK.setPitchRangeMoving((0, 6, 18), -90, -90, 90, 1500)  # Move up
-        time.sleep(1.5)
-    
+        # Lift block up to safe height
+        if not self.move_to_position((0, 6, 18), pitch=-45):
+            print("[Arm] Failed to lift block")
+            return False
+
+        return True
+
     def place_block(self):
-        """Execute the block placement sequence."""
-        stacking_x, stacking_y, stacking_z = self.coordinates['place']
-        block_height = 3
-        self.AK.setPitchRangeMoving((stacking_x, stacking_y, 12), -90, -90, 90, 800)
-        time.sleep(0.8)
-        place_z = stacking_z + self.number * block_height - 2
-        self.AK.setPitchRangeMoving((stacking_x, stacking_y, place_z), -90, -90, 90, 800)
-        time.sleep(0.8)
-        self.board.pwm_servo_set_position(0.5, [[SERVO_GRIPPER, 1900]])
-        time.sleep(0.8)
-        self.AK.setPitchRangeMoving((6, 0, 18), -90, -90, 90, 1500)
-        time.sleep(1.5)
-        self.AK.setPitchRangeMoving((0, 8, 10), -90, -90, 90, 800)
-        time.sleep(0.8)
+        """
+        Place block at stacking location.
+        Uses a sequence of coordinated movements with error checking.
+        """
+        stacking_x, stacking_y, stacking_z = 12, 0, 0.5  # Default stacking location
+        place_z = stacking_z + self.number * self.block_height - 2  # Drop height
+
+        # Move above stacking location
+        if not self.move_to_position((stacking_x, stacking_y, 12), pitch=-45):
+            print("[Arm] Failed to move above stacking location")
+            return False
+
+        # Lower to place position
+        print(f"[Arm] Placing block {self.number} at ({stacking_x}, {stacking_y}, {place_z})")
+        if not self.move_to_position((stacking_x, stacking_y, place_z), pitch=-60):
+            print("[Arm] Failed to reach place position")
+            return False
+
+        # Release block
+        self.open_gripper()
+
+        # Lift up after placing
+        if not self.move_to_position((6, 0, 18), pitch=-45):
+            print("[Arm] Failed to lift after placing")
+            return False
+
+        # Return to ready position
+        if not self.move_to_position((0, 8, 10), pitch=-45):
+            print("[Arm] Failed to return to ready position")
+            return False
+
+        # Update block count and signal completion
         self.number = (self.number + 1) % 3
         if self.number == 0:
             self.board.set_buzzer(1900, 0.1, 0.9, 1)
             self.set_rgb('white')
             time.sleep(0.5)
+
+        return True
     
     def scan_position(self, position, pitch_angle=-10):
         """

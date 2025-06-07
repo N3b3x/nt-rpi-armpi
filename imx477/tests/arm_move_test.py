@@ -36,17 +36,18 @@ class PickupTest:
         self.board.pwm_servo_set_position(0.5, [[SERVO_GRIPPER, 1500]])
         time.sleep(0.5)
 
-    def rotate_base(self, pulse):
-        print(f"[Test] Rotating base servo6 to pulse {pulse}")
-        self.board.pwm_servo_set_position(0.5, [[SERVO_BASE, pulse]])
-        time.sleep(0.8)
-
     def move_to_position(self, pos, pitch=-90, movetime=1000):
         result = self.AK.setPitchRangeMoving(pos, pitch, pitch, 0, movetime)
         if not result:
             print(f"[WARNING] Could not reach position: {pos} with pitch {pitch}")
         else:
             time.sleep(result[2] / 1000)
+
+    def rotate_base(self, pulse):
+        print(f"[Test] Rotating base servo6 to pulse {pulse}")
+        self.board.pwm_servo_set_position(0.5, [[SERVO_BASE, pulse]])
+        time.sleep(0.8)
+
 
     def test_varying_pitch_angles(self):
         print("\n==== TEST: Varying Pitch Angles in Pickup Sequence ====")

@@ -7,10 +7,18 @@ import time
 import threading
 import os
 import cv2
+import logging
+
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Add SDK paths
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/common_sdk')
-sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/kinematics')
+sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/kinematics_sdk')  # Updated path
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/yaml')
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/CameraCalibration')
 
@@ -18,9 +26,10 @@ import common.yaml_handle as yaml_handle
 from block_tracker import BlockTracker
 from arm_controller import ArmController
 from camera_processor import CameraProcessor
+from my_kinematics.arm_move_ik import ArmIK  # Updated import
 
 if sys.version_info.major == 2:
-    print('Please run this program with python3!')
+    logger.error('Please run this program with python3!')
     sys.exit(0)
 
 class ColorPalletizing:
@@ -50,10 +59,11 @@ class ColorPalletizing:
         """Load configuration from yaml files."""
         # Load lab configuration
         self.lab_data = yaml_handle.get_yaml_data(yaml_handle.lab_file_path_imx477)
-        print("Loaded lab_data:", self.lab_data)  # Print lab_data contents
+        logger.info("Loaded lab_data: %s", self.lab_data)
         
         # Load coordinates
         coordinates_data = yaml_handle.get_yaml_data(yaml_handle.PickingCoordinates_file_path)
+        logger.info("Loaded coordinates: %s", coordinates_data)
 
         self.arm_controller.set_coordinates(
             coordinates_data['X'],
@@ -63,29 +73,29 @@ class ColorPalletizing:
     
     def init(self):
         """Initialize the system."""
-        print("Color Palletizing Init")
+        logger.info("Color Palletizing Init")
         self.arm_controller.init_move()
     
     def start(self):
         """Start the palletizing operation."""
         self.__isRunning = True
-        print("Color Palletizing Start")
+        logger.info("Color Palletizing Start")
     
     def stop(self):
         """Stop the palletizing operation."""
         self._stop = True
         self.__isRunning = False
-        print("Color Palletizing Stop")
+        logger.info("Color Palletizing Stop")
     
     def exit(self):
         """Exit the program."""
         self._stop = True
         self.__isRunning = False
-        print("Color Palletizing Exit")
+        logger.info("Color Palletizing Exit")
     
     def set_target_color(self, target_color):
         """Set the target colors for detection."""
-        print("COLOR", target_color)
+        logger.info("Setting target color: %s", target_color)
         self.__target_color = target_color
         return (True, ())
     
@@ -119,23 +129,25 @@ class ColorPalletizing:
         """
         Execute the pickup and placement sequence.
         """
-        print(f"Block detected: {self.detect_color}. Initiating pickup sequence.")
+        logger.info("Block detected: %s. Initiating pickup sequence.", self.detect_color)
         self.arm_controller.set_rgb(self.detect_color)
         self.arm_controller.board.set_buzzer(1900, 0.1, 0.9, 1)
 
         # Use the last detected scan position (x, y) and a safe pickup Z
         x, y, _ = self.arm_controller.coordinates['capture']
-        pickup_z = 5  # 🟢 Lower Z to actually pick block!
+        pickup_z = 5  # Safe pickup height
 
-        print(f"[Pickup] Moving to pickup coordinates: ({x}, {y}, {pickup_z})")
-        self.arm_controller.pick_up_block(x, y, pickup_z)
-        self.arm_controller.place_block()
+        logger.info("[Pickup] Moving to pickup coordinates: (%f, %f, %f)", x, y, pickup_z)
+        if self.arm_controller.pick_up_block(x, y, pickup_z):
+            self.arm_controller.place_block()
+        else:
+            logger.error("[Pickup] Failed to pick up block")
 
         self.detect_color = 'None'
         self.start_pick_up = False
         self.arm_controller.set_rgb(self.detect_color)
 
-        print("[Pickup] Pickup & place complete. Resuming scan.")
+        logger.info("[Pickup] Pickup & place sequence complete. Resuming scan.")
 
     def move(self):
         """
@@ -148,7 +160,8 @@ class ColorPalletizing:
         while self.__isRunning:
             if self.detect_color == 'None' and not self.start_pick_up:
                 base_angle = angles[angle_idx]
-                print(f"[Scan] Starting scan at base angle: {base_angle}° (fixed pitch {fixed_pitch}°)")
+                logger.info("[Scan] Starting scan at base angle: %d° (fixed pitch %d°)", 
+                          base_angle, fixed_pitch)
 
                 # Rotate to base angle
                 rotation_needed = base_angle - self.arm_controller.current_base_angle
@@ -162,53 +175,49 @@ class ColorPalletizing:
                     if not self.__isRunning:
                         break  # If stopped, exit immediately
 
-                    print(f"[Scan] Visiting position {idx+1}/{len(scan_positions)}: {pos} (fixed pitch {fixed_pitch}°)")
+                    logger.debug("[Scan] Visiting position %d/%d: %s (fixed pitch %d°)",
+                              idx+1, len(scan_positions), pos, fixed_pitch)
                     self.arm_controller.scan_position(pos, pitch_angle=fixed_pitch)
 
-                    # Check for color detection (quick short pauses)
+                    # Check for color detection
                     for _ in range(2):
                         time.sleep(0.025)
                         if self.detect_color != 'None':
-                            print(f"[Scan] Detected color: {self.detect_color} at position {pos}")
+                            logger.info("[Scan] Detected color: %s at position %s",
+                                      self.detect_color, pos)
                             self.arm_controller.set_coordinates(*pos)
-                            self.start_pick_up = True  # Trigger pickup logic
+                            self.start_pick_up = True
                             break
 
                     if self.start_pick_up:
-                        # 💡 Directly call pickup after detection
                         self.handle_pickup_and_place()
-                        break  # Exit scan positions loop after pickup
+                        break
 
                 # Move to next angle if no detection
                 if self.detect_color == 'None' and not self.start_pick_up:
                     angle_idx += 1
                     if angle_idx >= len(angles):
                         angle_idx = 0
-                        print("[Scan] Completed full sweep. Restarting.")
+                        logger.info("[Scan] Completed full sweep. Restarting.")
                     else:
-                        print(f"[Scan] Moving to next angle: {angles[angle_idx]}°")
+                        logger.info("[Scan] Moving to next angle: %d°", angles[angle_idx])
             else:
                 time.sleep(0.01)
 
 def main():
     """Main entry point."""
-
-        
-    color_palletizing = ColorPalletizing()
-    color_palletizing.init()
-    color_palletizing.start()
-
-    # for pos in [1500, 1200, 1800, 1500]:
-    #     color_palletizing.arm_controller.board.pwm_servo_set_position(0.5, [[6, pos]])
-    #     print(f"Set base servo to {pos}")
-    #     time.sleep(2)
-
-    # Start movement control in a separate thread
-    move_thread = threading.Thread(target=color_palletizing.move)
-    move_thread.daemon = True
-    move_thread.start()
+    logger.info("Starting Color Palletizing System")
     
     try:
+        color_palletizing = ColorPalletizing()
+        color_palletizing.init()
+        color_palletizing.start()
+
+        # Start movement control in a separate thread
+        move_thread = threading.Thread(target=color_palletizing.move)
+        move_thread.daemon = True
+        move_thread.start()
+        
         while True:
             frame = color_palletizing.camera_processor.get_frame()
             if frame is not None:
@@ -217,28 +226,31 @@ def main():
                 cv2.imshow('Color Palletizing', processed_frame)
                 key = cv2.waitKey(1) & 0xFF
                 if key == 27 or key == ord('q'):
-                    print("Exiting program...")
+                    logger.info("Exiting program...")
                     break
                 elif key == ord('c'):
                     color_palletizing.camera_processor.calibrate()
-            elif key == ord('r'):
-                color_palletizing.detect_color = 'None'
-                color_palletizing.start_pick_up = False
-                color_palletizing.camera_processor.reset_scan()
-                print("[Scan] Rescan triggered by user.")
-                
-                # If the scan thread has exited, restart it
-                if not move_thread.is_alive():
-                    print("[Scan] Restarting scanning thread.")
-                    move_thread = threading.Thread(target=color_palletizing.move)
-                    move_thread.daemon = True
-                    move_thread.start()
+                elif key == ord('r'):
+                    logger.info("[Scan] Rescan triggered by user.")
+                    color_palletizing.detect_color = 'None'
+                    color_palletizing.start_pick_up = False
+                    color_palletizing.camera_processor.reset_scan()
+                    
+                    # If the scan thread has exited, restart it
+                    if not move_thread.is_alive():
+                        logger.info("[Scan] Restarting scanning thread.")
+                        move_thread = threading.Thread(target=color_palletizing.move)
+                        move_thread.daemon = True
+                        move_thread.start()
             else:
                 time.sleep(0.01)
+    except Exception as e:
+        logger.exception("Unexpected error occurred: %s", str(e))
     finally:
+        logger.info("Shutting down...")
         color_palletizing.stop()
         cv2.destroyAllWindows()
-        cv2.waitKey(1)  # Wait for window to close
+        cv2.waitKey(1)
 
 if __name__ == '__main__':
     main() 
