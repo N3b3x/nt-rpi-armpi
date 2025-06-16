@@ -226,7 +226,7 @@ def load_calibration_data(path='calibration_data.npz'):
     D = data['D']
     return K, D
 
-def calibrate_coordinates(get_frame, checkerboard=(6, 9), square_size=20.0, save_path='coordinate_calibration.npz'):
+def calibrate_coordinates(get_frame, checkerboard=(6, 9), square_size=20.0, save_path='coordinate_calibration.npz', arm_controller=None):
     """
     Calibrate camera coordinates using a checkerboard pattern.
     This establishes the mapping between pixel coordinates and real-world coordinates.
@@ -235,16 +235,33 @@ def calibrate_coordinates(get_frame, checkerboard=(6, 9), square_size=20.0, save
         checkerboard: Tuple of (rows, cols) in the checkerboard
         square_size: Size of each square in mm
         save_path: Where to save the calibration data
+        arm_controller: ArmController instance for jogging axes (optional)
     """
     print("\n🔍 Please place the checkerboard flat on the table.")
     print("The checkerboard should be visible in the camera view.")
     print("Press 'c' to capture the calibration image, 'q' to cancel.")
+    print("Use jog keys to move the arm for better alignment.")
+
+    # Jog step in degrees
+    JOG_STEP = 2
+
+    # On-screen jog instructions
+    jog_instructions = [
+        "Jog Controls:",
+        "Base: z(+)/x(-)  Lift: w(+)/s(-)",
+        "Shoulder: e(+)/d(-)  Elbow: r(+)/f(-)",
+        "[c]=Capture  [q]=Quit"
+    ]
 
     while True:
         frame = get_frame()
         if frame is not None:
-            cv2.putText(frame, "Place checkerboard flat. Press 'c' to capture, 'q' to cancel.",
-                        (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            # Draw jog instructions
+            for idx, text in enumerate(jog_instructions):
+                cv2.putText(frame, text, (10, 30 + 25 * idx),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+            cv2.putText(frame, "Align checkerboard, then press 'c' to capture", (10, 140),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
             cv2.imshow("Coordinate Calibration", frame)
 
             key = cv2.waitKey(1) & 0xFF
@@ -284,6 +301,26 @@ def calibrate_coordinates(get_frame, checkerboard=(6, 9), square_size=20.0, save
             elif key == ord('q'):
                 print("Calibration cancelled.")
                 break
+            # Jog controls
+            elif arm_controller is not None:
+                if key == ord('z'):
+                    # Base +
+                    arm_controller.rotate_base(JOG_STEP)
+                elif key == ord('x'):
+                    # Base -
+                    arm_controller.rotate_base(-JOG_STEP)
+                elif key == ord('w') or key == ord('s'):
+                    # Lift
+                    direction = JOG_STEP if key == ord('w') else -JOG_STEP
+                    arm_controller.move_lift(direction)
+                elif key == ord('e') or key == ord('d'):
+                    # Shoulder
+                    direction = JOG_STEP if key == ord('e') else -JOG_STEP
+                    arm_controller.move_shoulder(direction)
+                elif key == ord('r') or key == ord('f'):
+                    # Elbow
+                    direction = JOG_STEP if key == ord('r') else -JOG_STEP
+                    arm_controller.move_elbow(direction)
         else:
             time.sleep(0.1)
     cv2.destroyAllWindows()

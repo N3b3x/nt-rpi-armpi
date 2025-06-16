@@ -15,6 +15,8 @@ import common.yaml_handle as yaml_handle
 from picamera2 import Picamera2
 import lab_auto_calibration  # ⬅️ Modular calibration
 from Camera import Camera  # Fixed import path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'color_palletizing'))
+from color_palletizing.arm_controller import ArmController
 
 range_rgb = {
     'red': (0, 0, 255),
@@ -171,6 +173,8 @@ if __name__ == '__main__':
     picam2.start()
     time.sleep(1)
 
+    arm_controller = ArmController()  # Create arm controller instance
+
     calib_image_counter = 1
     undistort_enabled = False
     K, D = None, None
@@ -279,7 +283,8 @@ if __name__ == '__main__':
                     get_frame=lambda: cv2.cvtColor(picam2.capture_array(), cv2.COLOR_RGB2BGR),
                     checkerboard=(6, 9),
                     square_size=20.0,  # Adjust this to match your checkerboard square size
-                    save_path='coordinate_calibration.npz'
+                    save_path='coordinate_calibration.npz',
+                    arm_controller=arm_controller
                 )
             elif key == ord('m'):
                 manual_camera_controls(picam2)

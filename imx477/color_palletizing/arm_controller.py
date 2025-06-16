@@ -47,6 +47,10 @@ class ArmController:
         self.current_base_angle = 0   # degrees, 0 = forward
         self.current_base_pos = 1500  # PWM signal for base servo
         self.base_rotation_angle = 0  # Track absolute base rotation
+        # Add current joint angles for jogging
+        self.current_lift_angle = 0
+        self.current_shoulder_angle = 0
+        self.current_elbow_angle = 0
 
     def get_max_radius(self, base_angle):
         """Calculate maximum safe radius based on base angle."""
@@ -222,3 +226,30 @@ class ArmController:
         self.board.pwm_servo_set_position(0.5, [[SERVO_BASE, self.current_base_pos]])
         self.base_rotation_angle = self.current_base_angle  # 💡 Always track absolute base rotation
         time.sleep(1)
+
+    def move_lift(self, delta_angle):
+        """Jog the lift axis by delta_angle degrees."""
+        self.current_lift_angle += delta_angle
+        self.current_lift_angle = max(-90, min(90, self.current_lift_angle))  # adjust limits as needed
+        pos = 1500 + int(self.current_lift_angle * (1000 / 180))
+        pos = max(500, min(2500, pos))
+        self.board.pwm_servo_set_position(0.3, [[SERVO_LIFT, pos]])
+        time.sleep(0.2)
+
+    def move_shoulder(self, delta_angle):
+        """Jog the shoulder axis by delta_angle degrees."""
+        self.current_shoulder_angle += delta_angle
+        self.current_shoulder_angle = max(-90, min(90, self.current_shoulder_angle))
+        pos = 1500 + int(self.current_shoulder_angle * (1000 / 180))
+        pos = max(500, min(2500, pos))
+        self.board.pwm_servo_set_position(0.3, [[SERVO_SHOULDER, pos]])
+        time.sleep(0.2)
+
+    def move_elbow(self, delta_angle):
+        """Jog the elbow axis by delta_angle degrees."""
+        self.current_elbow_angle += delta_angle
+        self.current_elbow_angle = max(-90, min(90, self.current_elbow_angle))
+        pos = 1500 + int(self.current_elbow_angle * (1000 / 180))
+        pos = max(500, min(2500, pos))
+        self.board.pwm_servo_set_position(0.3, [[SERVO_ELBOW, pos]])
+        time.sleep(0.2)
