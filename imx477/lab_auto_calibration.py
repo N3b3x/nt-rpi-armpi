@@ -225,3 +225,100 @@ def load_calibration_data(path='calibration_data.npz'):
     K = data['K']
     D = data['D']
     return K, D
+
+def calibrate_coordinates(get_frame, checkerboard=(6, 9), square_size=20.0, save_path='coordinate_calibration.npz'):
+    """
+    Calibrate camera coordinates using a checkerboard pattern.
+    This establishes the mapping between pixel coordinates and real-world coordinates.
+    Args:
+        get_frame: function that returns a BGR frame
+        checkerboard: Tuple of (rows, cols) in the checkerboard
+        square_size: Size of each square in mm
+        save_path: Where to save the calibration data
+    """
+    print("\n🔍 Please place the checkerboard flat on the table.")
+    print("The checkerboard should be visible in the camera view.")
+    print("Press 'c' to capture the calibration image, 'q' to cancel.")
+
+    while True:
+        frame = get_frame()
+        if frame is not None:
+            cv2.putText(frame, "Place checkerboard flat. Press 'c' to capture, 'q' to cancel.",
+                        (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            cv2.imshow("Coordinate Calibration", frame)
+
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('c'):
+                # Convert to grayscale
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                # Find checkerboard corners
+                ret, corners = cv2.findChessboardCorners(gray, checkerboard, None)
+                if ret:
+                    # Refine corner positions
+                    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+                    corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
+                    # Draw corners
+                    cv2.drawChessboardCorners(frame, checkerboard, corners2, ret)
+                    cv2.imshow("Calibration Image", frame)
+                    cv2.waitKey(1000)
+                    # Calculate real-world coordinates of corners
+                    objp = np.zeros((checkerboard[0] * checkerboard[1], 3), np.float32)
+                    objp[:, :2] = np.mgrid[0:checkerboard[1], 0:checkerboard[0]].T.reshape(-1, 2)
+                    objp *= square_size  # scale to actual size in mm
+                    # Get camera matrix and distortion coefficients
+                    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(
+                        [objp], [corners2], gray.shape[::-1], None, None
+                    )
+                    # Save calibration data
+                    np.savez(save_path,
+                            camera_matrix=mtx,
+                            dist_coeffs=dist,
+                            rvecs=rvecs,
+                            tvecs=tvecs,
+                            square_size=square_size)
+                    print(f"✅ Coordinate calibration complete. Data saved to {save_path}")
+                    print(f"🔍 Camera matrix:\n{mtx}")
+                    break
+                else:
+                    print("❌ Could not find checkerboard corners. Please try again.")
+            elif key == ord('q'):
+                print("Calibration cancelled.")
+                break
+        else:
+            time.sleep(0.1)
+    cv2.destroyAllWindows()
+
+def pixel_to_world(pixel_coords, camera_matrix, rvecs, tvecs):
+    """
+    Convert pixel coordinates to real-world coordinates using camera calibration.
+    
+    Args:
+        pixel_coords: (x, y) pixel coordinates
+        camera_matrix: Camera calibration matrix
+        rvecs: Rotation vectors from calibration
+        tvecs: Translation vectors from calibration
+    
+    Returns:
+        (x, y, z) real-world coordinates in mm
+    """
+    # Convert pixel coordinates to normalized image coordinates
+    fx = camera_matrix[0, 0]
+    fy = camera_matrix[1, 1]
+    cx = camera_matrix[0, 2]
+    cy = camera_matrix[1, 2]
+    
+    x = (pixel_coords[0] - cx) / fx
+    y = (pixel_coords[1] - cy) / fy
+    
+    # Convert to real-world coordinates using rotation and translation
+    R, _ = cv2.Rodrigues(rvecs[0])
+    t = tvecs[0]
+    
+    # Solve for Z (assuming Z is constant, e.g., table height)
+    Z = t[2]  # This should be the height of the checkerboard from the camera
+    
+    # Calculate real-world coordinates
+    X = (x * Z - t[0]) / R[0, 0]
+    Y = (y * Z - t[1]) / R[1, 1]
+    
+    return (X, Y, Z)

@@ -14,6 +14,7 @@ import numpy as np
 import common.yaml_handle as yaml_handle
 from picamera2 import Picamera2
 import lab_auto_calibration  # ⬅️ Modular calibration
+from Camera import Camera  # Fixed import path
 
 range_rgb = {
     'red': (0, 0, 255),
@@ -75,7 +76,7 @@ def run(img):
     # Show key instructions (brighter text, split into two lines for better readability)
     instructions = [
         "KEYS: [1]-Red, [2]-Green, [3]-Blue, [p]-PhotoRef, [c]-ColorCalib,",
-        "[d]-DistCalib, [m]-ManualMode, [q]-Quit"
+        "[d]-DistCalib, [x]-CoordCalib, [m]-ManualMode, [q]-Quit"
     ]
     for idx, text in enumerate(instructions):
         cv2.putText(img_copy, text, (10, 70 + 30 * idx),
@@ -272,6 +273,14 @@ if __name__ == '__main__':
                 # Reload calibration data after calibration
                 if os.path.exists('calibration_data.npz'):
                     K, D = load_calibration_data('calibration_data.npz')
+            elif key == ord('x'):  # New option for coordinate calibration
+                print("\n🔍 Starting coordinate calibration...")
+                lab_auto_calibration.calibrate_coordinates(
+                    get_frame=lambda: cv2.cvtColor(picam2.capture_array(), cv2.COLOR_RGB2BGR),
+                    checkerboard=(6, 9),
+                    square_size=20.0,  # Adjust this to match your checkerboard square size
+                    save_path='coordinate_calibration.npz'
+                )
             elif key == ord('m'):
                 manual_camera_controls(picam2)
         else:
