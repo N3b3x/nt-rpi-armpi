@@ -16,7 +16,7 @@ from picamera2 import Picamera2
 import lab_auto_calibration  # ⬅️ Modular calibration
 from Camera import Camera  # Fixed import path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'color_palletizing'))
-from color_palletizing.arm_controller import ArmController
+from color_palletizing.arm_controller import ArmController, SERVO_GRIPPER, SERVO_ELBOW, SERVO_SHOULDER, SERVO_LIFT, SERVO_BASE
 
 range_rgb = {
     'red': (0, 0, 255),
@@ -78,7 +78,7 @@ def run(img):
     # Show key instructions (brighter text, split into two lines for better readability)
     instructions = [
         "KEYS: [1]-Red, [2]-Green, [3]-Blue, [p]-PhotoRef, [c]-ColorCalib,",
-        "[d]-DistCalib, [x]-CoordCalib, [m]-ManualMode, [q]-Quit"
+        "[d]-DistCalib, [x]-CoordCalib+Jog, [m]-ManualMode, [q]-Quit"
     ]
     for idx, text in enumerate(instructions):
         cv2.putText(img_copy, text, (10, 70 + 30 * idx),
@@ -278,14 +278,117 @@ if __name__ == '__main__':
                 if os.path.exists('calibration_data.npz'):
                     K, D = load_calibration_data('calibration_data.npz')
             elif key == ord('x'):  # New option for coordinate calibration
-                print("\n🔍 Starting coordinate calibration...")
-                lab_auto_calibration.calibrate_coordinates(
-                    get_frame=lambda: cv2.cvtColor(picam2.capture_array(), cv2.COLOR_RGB2BGR),
-                    checkerboard=(6, 9),
-                    square_size=20.0,  # Adjust this to match your checkerboard square size
-                    save_path='coordinate_calibration.npz',
-                    arm_controller=arm_controller
-                )
+                print("\n🔍 Starting coordinate calibration with jogging controls...")
+                print("Place a colored block (red/green/blue) in the camera view.")
+                print("Use keyboard controls to position the arm for calibration:")
+                print("  [f/g] - Gripper open/close")
+                print("  [q/e] - Elbow up/down") 
+                print("  [a/d] - Shoulder forward/back")
+                print("  [w/s] - Lift up/down")
+                print("  [z/c] - Base rotate left/right")
+                print("  [r] - Reset to center position")
+                print("  [x] - Exit calibration mode")
+                
+                # Initialize arm to vertical position (like WonderPi)
+                arm_controller.current_lift_angle = 0
+                arm_controller.current_shoulder_angle = 0
+                arm_controller.current_elbow_angle = 0
+                arm_controller.current_base_angle = 0
+                arm_controller.current_gripper_pos = 1500
+                
+                # Move to vertical position (like WonderPi - all servos to 1500 with deviation)
+                deviation_data = yaml_handle.get_yaml_data(yaml_handle.Deviation_file_path)
+                data = [
+                    [SERVO_GRIPPER, 1500 + deviation_data['1']],  # Gripper
+                    [SERVO_ELBOW,   1500 + deviation_data['3']],  # Elbow
+                    [SERVO_SHOULDER,1500 + deviation_data['4']],  # Shoulder
+                    [SERVO_LIFT,    1500 + deviation_data['5']],  # Lift
+                    [SERVO_BASE,    1500 + deviation_data['6']]   # Base
+                ]
+                arm_controller.board.pwm_servo_set_position(1.5, data)
+                time.sleep(1.5)  # Wait for movement to complete
+                
+                jog_mode = True
+                while jog_mode:
+                    frame_jog = picam2.capture_array()
+                    if frame_jog is not None:
+                        frame_bgr = cv2.cvtColor(frame_jog, cv2.COLOR_RGB2BGR)
+                        
+                        # Draw jogging instructions on frame
+                        instructions = [
+                            "COORDINATE CALIBRATION - Jog Controls:",
+                            "[f/g] Gripper open/close",
+                            "[q/e] Elbow up/down",
+                            "[a/d] Shoulder forward/back",
+                            "[w/s] Lift up/down",
+                            "[z/c] Base rotate left/right",
+                            "[r] Reset to center",
+                            "[x] Exit calibration"
+                        ]
+                        for idx, text in enumerate(instructions):
+                            cv2.putText(frame_bgr, text, (10, 30 + 25 * idx),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
+                        
+                        # Show current joint angles
+                        angle_info = [
+                            f"Gripper: {arm_controller.current_gripper_pos}",
+                            f"Elbow: {arm_controller.current_elbow_angle:.1f} deg",
+                            f"Shoulder: {arm_controller.current_shoulder_angle:.1f} deg",
+                            f"Lift: {arm_controller.current_lift_angle:.1f} deg",
+                            f"Base: {arm_controller.current_base_angle:.1f} deg"
+                        ]
+                        for idx, text in enumerate(angle_info):
+                            cv2.putText(frame_bgr, text, (10, frame_bgr.shape[0] - 100 + 20 * idx),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+                        
+                        cv2.imshow("Coordinate Calibration - Jog Mode", frame_bgr)
+                        
+                        jog_key = cv2.waitKey(1) & 0xFF
+                        if jog_key == ord('x'):
+                            print("Exiting coordinate calibration...")
+                            jog_mode = False
+                        elif jog_key == ord('f'):
+                            arm_controller.move_gripper(1)
+                        elif jog_key == ord('g'):
+                            arm_controller.move_gripper(-1)
+                        elif jog_key == ord('q'):
+                            arm_controller.move_elbow(2)
+                        elif jog_key == ord('e'):
+                            arm_controller.move_elbow(-2)
+                        elif jog_key == ord('a'):
+                            arm_controller.move_shoulder(-2)
+                        elif jog_key == ord('d'):
+                            arm_controller.move_shoulder(2)
+                        elif jog_key == ord('w'):
+                            arm_controller.move_lift(2)
+                        elif jog_key == ord('s'):
+                            arm_controller.move_lift(-2)
+                        elif jog_key == ord('z'):
+                            arm_controller.move_base(-2)
+                        elif jog_key == ord('c'):
+                            arm_controller.move_base(2)
+                        elif jog_key == ord('r'):
+                            # Reset to vertical position (like WonderPi)
+                            arm_controller.current_lift_angle = 0
+                            arm_controller.current_shoulder_angle = 0
+                            arm_controller.current_elbow_angle = 0
+                            arm_controller.current_base_angle = 0
+                            arm_controller.current_gripper_pos = 1500
+                            deviation_data = yaml_handle.get_yaml_data(yaml_handle.Deviation_file_path)
+                            data = [
+                                [SERVO_GRIPPER, 1500 + deviation_data['1']],  # Gripper
+                                [SERVO_ELBOW,   1500 + deviation_data['3']],  # Elbow
+                                [SERVO_SHOULDER,1500 + deviation_data['4']],  # Shoulder
+                                [SERVO_LIFT,    1500 + deviation_data['5']],  # Lift
+                                [SERVO_BASE,    1500 + deviation_data['6']]   # Base
+                            ]
+                            arm_controller.board.pwm_servo_set_position(1.5, data)
+                            time.sleep(1.5)  # Wait for movement to complete
+                    else:
+                        time.sleep(0.01)
+                
+                cv2.destroyWindow("Coordinate Calibration - Jog Mode")
+                print("Coordinate calibration jogging mode finished.")
             elif key == ord('m'):
                 manual_camera_controls(picam2)
         else:

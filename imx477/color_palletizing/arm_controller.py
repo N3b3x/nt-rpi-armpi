@@ -24,6 +24,13 @@ class ArmController:
         self.AK.board = self.board
         self.number = 0  # Counter for stacking
         
+        # Load deviation data for smooth motion
+        try:
+            import common.yaml_handle as yaml_handle
+            self.deviation_data = yaml_handle.get_yaml_data(yaml_handle.deviation_file_path)
+        except:
+            self.deviation_data = {'1': 0, '3': 0, '4': 0, '5': 0, '6': 0}
+        
         # Define scan positions in polar coordinates (r, theta, z)
         # r: distance from base (cm)
         # theta: angle relative to forward direction (degrees)
@@ -51,6 +58,7 @@ class ArmController:
         self.current_lift_angle = 0
         self.current_shoulder_angle = 0
         self.current_elbow_angle = 0
+        self.current_gripper_pos = 1500  # Track gripper position
 
     def get_max_radius(self, base_angle):
         """Calculate maximum safe radius based on base angle."""
@@ -94,6 +102,7 @@ class ArmController:
     def init_move(self):
         """Initialize arm to starting position (match Hiwonder sample)."""
         self.board.pwm_servo_set_position(0.3, [[SERVO_GRIPPER, 1500]])
+        self.current_gripper_pos = 1500  # Track gripper position
         self.AK.setPitchRangeMoving((0, 8, 10), -90, -90, 90, 1500)
     
     def set_rgb(self, color):
@@ -233,8 +242,8 @@ class ArmController:
         self.current_lift_angle = max(-90, min(90, self.current_lift_angle))  # adjust limits as needed
         pos = 1500 + int(self.current_lift_angle * (1000 / 180))
         pos = max(500, min(2500, pos))
-        self.board.pwm_servo_set_position(0.3, [[SERVO_LIFT, pos]])
-        time.sleep(0.2)
+        # Use WonderPi smooth motion: 20ms movement time + deviation compensation
+        self.board.pwm_servo_set_position(0.02, [[SERVO_LIFT, pos + self.deviation_data[str(SERVO_LIFT)]]])
 
     def move_shoulder(self, delta_angle):
         """Jog the shoulder axis by delta_angle degrees."""
@@ -242,8 +251,8 @@ class ArmController:
         self.current_shoulder_angle = max(-90, min(90, self.current_shoulder_angle))
         pos = 1500 + int(self.current_shoulder_angle * (1000 / 180))
         pos = max(500, min(2500, pos))
-        self.board.pwm_servo_set_position(0.3, [[SERVO_SHOULDER, pos]])
-        time.sleep(0.2)
+        # Use WonderPi smooth motion: 20ms movement time + deviation compensation
+        self.board.pwm_servo_set_position(0.02, [[SERVO_SHOULDER, pos + self.deviation_data[str(SERVO_SHOULDER)]]])
 
     def move_elbow(self, delta_angle):
         """Jog the elbow axis by delta_angle degrees."""
@@ -251,5 +260,22 @@ class ArmController:
         self.current_elbow_angle = max(-90, min(90, self.current_elbow_angle))
         pos = 1500 + int(self.current_elbow_angle * (1000 / 180))
         pos = max(500, min(2500, pos))
-        self.board.pwm_servo_set_position(0.3, [[SERVO_ELBOW, pos]])
-        time.sleep(0.2)
+        # Use WonderPi smooth motion: 20ms movement time + deviation compensation
+        self.board.pwm_servo_set_position(0.02, [[SERVO_ELBOW, pos + self.deviation_data[str(SERVO_ELBOW)]]])
+
+    def move_base(self, delta_angle):
+        """Jog the base axis by delta_angle degrees."""
+        self.current_base_angle += delta_angle
+        self.current_base_angle = max(-180, min(180, self.current_base_angle))
+        pos = 1500 + int(self.current_base_angle * (1000 / 180))
+        pos = max(500, min(2500, pos))
+        # Use WonderPi smooth motion: 20ms movement time + deviation compensation
+        self.board.pwm_servo_set_position(0.02, [[SERVO_BASE, pos + self.deviation_data[str(SERVO_BASE)]]])
+        self.current_base_pos = pos
+
+    def move_gripper(self, delta_pos):
+        """Jog the gripper by delta_pos PWM units."""
+        self.current_gripper_pos += delta_pos
+        self.current_gripper_pos = max(500, min(2500, self.current_gripper_pos))  # PWM limits
+        # Use WonderPi smooth motion: 20ms movement time + deviation compensation
+        self.board.pwm_servo_set_position(0.02, [[SERVO_GRIPPER, self.current_gripper_pos + self.deviation_data[str(SERVO_GRIPPER)]]])
