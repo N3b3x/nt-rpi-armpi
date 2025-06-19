@@ -279,3 +279,31 @@ class ArmController:
         self.current_gripper_pos = max(500, min(2500, self.current_gripper_pos))  # PWM limits
         # Use WonderPi smooth motion: 20ms movement time + deviation compensation
         self.board.pwm_servo_set_position(0.02, [[SERVO_GRIPPER, self.current_gripper_pos + self.deviation_data[str(SERVO_GRIPPER)]]])
+
+    def get_arm_position(self):
+        """Get current arm position using forward kinematics."""
+        # Convert joint angles to radians
+        lift_rad = math.radians(self.current_lift_angle)
+        shoulder_rad = math.radians(self.current_shoulder_angle)
+        elbow_rad = math.radians(self.current_elbow_angle)
+        base_rad = math.radians(self.current_base_angle)
+        
+        # Simplified forward kinematics (you may need to adjust these parameters)
+        # This is a basic approximation - replace with your actual FK
+        L1 = 10.5  # Base to shoulder length (cm)
+        L2 = 10.5  # Shoulder to elbow length (cm)
+        L3 = 10.5  # Elbow to gripper length (cm)
+        
+        # Calculate end effector position
+        x = L1 * math.cos(base_rad) * math.cos(shoulder_rad) + \
+            L2 * math.cos(base_rad) * math.cos(shoulder_rad + elbow_rad) + \
+            L3 * math.cos(base_rad) * math.cos(shoulder_rad + elbow_rad)
+        
+        y = L1 * math.sin(base_rad) * math.cos(shoulder_rad) + \
+            L2 * math.sin(base_rad) * math.cos(shoulder_rad + elbow_rad) + \
+            L3 * math.sin(base_rad) * math.cos(shoulder_rad + elbow_rad)
+        
+        z = L1 * math.sin(shoulder_rad) + L2 * math.sin(shoulder_rad + elbow_rad) + \
+            L3 * math.sin(shoulder_rad + elbow_rad) + self.current_lift_angle * 0.1
+        
+        return (x, y, z)

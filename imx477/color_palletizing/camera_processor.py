@@ -21,6 +21,7 @@ class CameraProcessor:
         self.color_list = []
         self.detect_color = 'None'
         self.start_pick_up = False
+        self.clicked_pixel = None  # For 3D calibration
         
         # Color mapping for display
         self.range_rgb = {
@@ -329,3 +330,129 @@ class CameraProcessor:
         self.color_list = []
         self.detect_color = 'None'
         self.start_pick_up = False 
+
+    # 3D Camera Calibration Methods
+    def mouse_callback(self, event, x, y, flags, param):
+        """Mouse callback for pixel coordinate selection during 3D calibration."""
+        if event == cv2.EVENT_LBUTTONDOWN:
+            self.clicked_pixel = (x, y)
+            print(f"✅ Clicked pixel coordinates: ({x}, {y})")
+
+    def calibrate_3d_camera_pose(self, object_points, image_points, camera_matrix, dist_coeffs):
+        """Calibrate camera pose using solvePnP."""
+        if len(object_points) < 4:
+            print("❌ Need at least 4 points for calibration")
+            return None, None
+        
+        object_points = np.array(object_points, dtype=np.float32)
+        image_points = np.array(image_points, dtype=np.float32)
+        
+        # Use RANSAC for robust pose estimation
+        ret, rvec, tvec, inliers = cv2.solvePnPRansac(
+            object_points, image_points, camera_matrix, dist_coeffs,
+            flags=cv2.SOLVEPNP_ITERATIVE
+        )
+        
+        if ret:
+            print(f"✅ Camera pose calibration successful with {len(inliers)} inliers")
+            return rvec, tvec
+        else:
+            print("❌ Camera pose calibration failed")
+            return None, None
+
+    def pixel_to_world(self, u, v, Z_known, camera_matrix, dist_coeffs, rvec, tvec):
+        """Convert pixel coordinates to world coordinates given known Z."""
+        # Undistort the pixel
+        undistorted = cv2.undistortPoints(
+            np.array([[[u, v]]], dtype=np.float32), 
+            camera_matrix, dist_coeffs, P=camera_matrix
+        )
+        
+        uv_point = np.append(undistorted[0][0], 1.0).reshape(3, 1)
+        
+        # Convert rvec to rotation matrix
+        R, _ = cv2.Rodrigues(rvec)
+        RT = np.hstack((R, tvec))
+        
+        # Project back: s * uv = K * [R|T] * XYZ
+        cam_matrix_inv = np.linalg.inv(camera_matrix)
+        world_cam = np.linalg.inv(RT)
+        
+        scale = (Z_known - tvec[2]) / (R[2] @ cam_matrix_inv @ uv_point)
+        cam_coords = scale * cam_matrix_inv @ uv_point
+        world_coords = R.T @ (cam_coords - tvec)
+        return world_coords.ravel()
+
+    def load_3d_calibration_data(self, path='3d_camera_pose.npz'):
+        """Load 3D camera pose calibration data."""
+        if not os.path.exists(path):
+            print(f"❌ 3D calibration file not found: {path}")
+            return None
+        
+        data = np.load(path, allow_pickle=True)
+        return {
+            'rvec': data['rvec'],
+            'tvec': data['tvec'],
+            'camera_matrix': data['camera_matrix'],
+            'dist_coeffs': data['dist_coeffs'],
+            'calibration_points': data['calibration_points'],
+            'resolution': tuple(data['resolution'])
+        }
+
+    def load_calibration_data(self, path='calibration_data.npz'):
+        """Load camera calibration data (intrinsic parameters)."""
+        if not os.path.exists(path):
+            print(f"❌ Camera calibration file not found: {path}")
+            return None, None
+        
+        data = np.load(path)
+        K = data['K']
+        D = data['D']
+        return K, D
+
+    def save_3d_calibration_data(self, rvec, tvec, camera_matrix, dist_coeffs, calibration_points, resolution, path='3d_camera_pose.npz'):
+        """Save 3D camera pose calibration data."""
+        calib_results = {
+            'rvec': rvec,
+            'tvec': tvec,
+            'camera_matrix': camera_matrix,
+            'dist_coeffs': dist_coeffs,
+            'calibration_points': calibration_points,
+            'resolution': resolution
+        }
+        
+        np.savez(path, **calib_results)
+        print(f"✅ 3D camera pose saved to '{path}'")
+
+    def test_3d_calibration(self):
+        """Test the 3D calibration by converting a pixel to world coordinates."""
+        calib_data = self.load_3d_calibration_data()
+        if calib_data is None:
+            return
+        
+        print("\n🧪 Testing 3D calibration...")
+        print(f"Resolution: {calib_data['resolution']}")
+        print(f"Calibration points: {len(calib_data['calibration_points'])}")
+        
+        # Test with the first calibration point
+        test_point = calib_data['calibration_points'][0]
+        test_world = test_point[0]
+        test_pixel = test_point[1]
+        Z_known = test_world[2]
+        
+        calculated_world = self.pixel_to_world(
+            test_pixel[0], test_pixel[1], Z_known,
+            calib_data['camera_matrix'], calib_data['dist_coeffs'],
+            calib_data['rvec'], calib_data['tvec']
+        )
+        
+        error = np.linalg.norm(np.array(test_world) - calculated_world)
+        print(f"Test point: World({test_world[0]:.1f}, {test_world[1]:.1f}, {test_world[2]:.1f})")
+        print(f"Test pixel: ({test_pixel[0]}, {test_pixel[1]})")
+        print(f"Calculated: ({calculated_world[0]:.1f}, {calculated_world[1]:.1f}, {calculated_world[2]:.1f})")
+        print(f"Error: {error:.3f} cm")
+        
+        if error < 1.0:
+            print("✅ Calibration test passed!")
+        else:
+            print("⚠️  Calibration test shows high error - may need recalibration") 
