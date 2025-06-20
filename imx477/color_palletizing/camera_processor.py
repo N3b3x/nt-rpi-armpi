@@ -15,8 +15,8 @@ class CameraProcessor:
     """
     Handles camera operations and image processing.
     """
-    def __init__(self, resolution=(640, 480)):
-        self.camera = Camera(resolution=resolution)
+    def __init__(self, resolution=(640, 480), picam2=None):
+        self.camera = Camera(resolution=resolution, picam2=picam2)
         self.size = (640, 480)
         self.color_list = []
         self.detect_color = 'None'

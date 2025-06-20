@@ -132,7 +132,6 @@ def calibrate_camera(image_dir='calib_images', checkerboard=(6, 9), square_size=
     import glob
     import numpy as np
 
-    # Setup object points in real world space
     objp = np.zeros((checkerboard[0] * checkerboard[1], 3), np.float32)
     objp[:, :2] = np.mgrid[0:checkerboard[1], 0:checkerboard[0]].T.reshape(-1, 2)
     objp *= square_size  # scale to actual size in mm
@@ -141,47 +140,61 @@ def calibrate_camera(image_dir='calib_images', checkerboard=(6, 9), square_size=
     imgpoints = []  # 2d image points
 
     images = glob.glob(os.path.join(image_dir, '*.jpg'))
-    print(f"Found {len(images)} images to process for calibration.")
+    print(f"🔍 Found {len(images)} images for calibration.")
+
+    if len(images) < 5:
+        print("❌ Not enough images for reliable calibration. Please capture at least 5.")
+        return
 
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+    good_images = 0
 
     for fname in images:
         img = cv2.imread(fname)
+        if img is None:
+            print(f"⚠️ Could not load {fname}")
+            continue
+
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-        # Apply CLAHE for contrast enhancement
+        # Try CLAHE enhanced image
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
         gray_clahe = clahe.apply(gray)
 
-        # Try using findChessboardCornersSB
-        ret, corners = cv2.findChessboardCornersSB(gray_clahe, checkerboard, None)
-
-        if not ret:
-            # fallback to standard checkerboard detection
-            flags = cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_NORMALIZE_IMAGE
-            ret, corners = cv2.findChessboardCorners(gray_clahe, checkerboard, flags)
-
-        if ret:
-            objpoints.append(objp)
-            corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
-            imgpoints.append(corners2)
-            cv2.drawChessboardCorners(img, checkerboard, corners2, ret)
-            cv2.imshow('Corners', img)
-            cv2.waitKey(300)
-        else:
-            print(f"⚠️ Checkerboard not detected in {fname}")
+        found = False
+        for attempt, g in [('CLAHE', gray_clahe), ('Raw', gray)]:
+            ret, corners = cv2.findChessboardCornersSB(g, checkerboard, None)
+            if not ret:
+                flags = cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_NORMALIZE_IMAGE
+                ret, corners = cv2.findChessboardCorners(g, checkerboard, flags)
+            if ret:
+                print(f"✅ {attempt}: Found corners in {fname}")
+                objpoints.append(objp)
+                corners2 = cv2.cornerSubPix(g, corners, (11, 11), (-1, -1), criteria)
+                imgpoints.append(corners2)
+                cv2.drawChessboardCorners(img, checkerboard, corners2, ret)
+                cv2.imshow('Corners', img)
+                cv2.waitKey(300)
+                good_images += 1
+                found = True
+                break
+        if not found:
+            print(f"❌ No corners found in {fname}")
 
     cv2.destroyAllWindows()
 
-    if len(objpoints) == 0:
-        print("❌ No checkerboard corners were detected in any images. Calibration aborted.")
+    if good_images < 5:
+        print("❌ Too few valid images. Calibration aborted.")
         return
 
-    # Calibrate the camera
-    ret, K, D, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
-    np.savez(save_path, K=K, D=D, rvecs=rvecs, tvecs=tvecs, square_size=square_size)
-    print(f"✅ Distortion calibration complete. Calibration data saved to {save_path}")
-    print(f"🔍 Camera matrix:\n{K}\n🔍 Distortion coefficients:\n{D}")
+    try:
+        ret, K, D, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+        np.savez(save_path, K=K, D=D, rvecs=rvecs, tvecs=tvecs, square_size=square_size)
+        print(f"✅ Calibration successful. Saved to {save_path}")
+        print(f"📐 Camera Matrix:\n{K}")
+        print(f"📏 Distortion Coefficients:\n{D}")
+    except cv2.error as e:
+        print(f"❌ OpenCV calibration error: {e}")
 
 def undistort_frame(frame, K, D):
     h, w = frame.shape[:2]

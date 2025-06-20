@@ -5,13 +5,16 @@ import time
 import numpy as np
 
 class Camera:
-    def __init__(self, resolution=(640, 480)):
+    def __init__(self, resolution=(640, 480), picam2=None):
         self.resolution = resolution
-        self.picam2 = Picamera2()
-        config = self.picam2.create_still_configuration(main={"size": resolution})
-        self.picam2.configure(config)
-        self.picam2.start()
-        time.sleep(1)  # give time to warm up
+        if picam2:
+            self.picam2 = picam2
+        else:
+            self.picam2 = Picamera2()
+            config = self.picam2.create_still_configuration(main={"size": resolution})
+            self.picam2.configure(config)
+            self.picam2.start()
+            time.sleep(1)  # give time to warm up
 
     def get_frame(self):
         frame = self.picam2.capture_array()

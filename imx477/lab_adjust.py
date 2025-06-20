@@ -182,7 +182,7 @@ if __name__ == '__main__':
     time.sleep(1)
 
     arm_controller = ArmController()  # Create arm controller instance
-    camera_processor = CameraProcessor()  # Create camera processor instance
+    camera_processor = CameraProcessor(picam2=picam2)  # Create camera processor instance
 
     calib_image_counter = 1
     undistort_enabled = False
@@ -267,7 +267,7 @@ if __name__ == '__main__':
                         if key_cb == ord('c'):
                             img_counter += 1
                             img_name = os.path.join(image_dir, f"calib_{img_counter:03d}.jpg")
-                            cv2.imwrite(img_name, frame_cb)
+                            cv2.imwrite(img_name, frame_bgr)
                             print(f"✅ Calibration image saved as {img_name}")
                         elif key_cb == ord('q'):
                             print("✅ Calibration image capture finished. Starting calibration...")
@@ -331,7 +331,7 @@ if __name__ == '__main__':
                             "[w/s] Lift up/down",
                             "[z/c] Base rotate left/right",
                             "[r] Reset to center",
-                            "[x] Exit Jog Mode"
+                            "[j] Exit Jog Mode"
                         ]
                         for idx, text in enumerate(instructions):
                             cv2.putText(frame_bgr, text, (10, 30 + 25 * idx),
@@ -352,7 +352,7 @@ if __name__ == '__main__':
                         cv2.imshow("Jog Mode", frame_bgr)
                         
                         jog_key = cv2.waitKey(1) & 0xFF
-                        if jog_key == ord('x'):
+                        if jog_key == ord('j'):
                             print("Exiting Jog Mode...")
                             jog_mode = False
                         elif jog_key == ord('f'):
