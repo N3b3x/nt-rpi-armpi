@@ -90,7 +90,7 @@ class ArmIK:
                 servos = self.transformAngelAdaptArm(result['theta3'], result['theta4'], result['theta5'], result['theta6'])
                 if servos:
                     logger.debug(f"Valid servo config for pitch {alpha}: {servos}")
-                    return servos, alpha
+                    return servos, alpha, result
         logger.warning(f"No IK solution for (x={x}, y={y}, z={z}) in pitch range")
         return False
 
@@ -99,20 +99,22 @@ class ArmIK:
         logger.debug(f"setPitchRangeMoving: coordinate_data={coordinate_data}, alpha={alpha}, range=({alpha1}, {alpha2})")
         result1 = self.setPitchRange((x, y, z), alpha, alpha1)
         result2 = self.setPitchRange((x, y, z), alpha, alpha2)
-        if result1:
+        
+        # Check if we have valid results
+        if result1 and result1 is not False:
             data = result1
-            if result2 and abs(result2[1] - alpha) < abs(result1[1] - alpha):
+            if result2 and result2 is not False and abs(result2[1] - alpha) < abs(result1[1] - alpha):
                 data = result2
+        elif result2 and result2 is not False:
+            data = result2
         else:
-            if result2:
-                data = result2
-            else:
-                logger.warning(f"No valid pitch found for (x={x}, y={y}, z={z})")
-                return False
-        servos, alpha = data[0], data[1]
+            logger.warning(f"No valid pitch found for (x={x}, y={y}, z={z})")
+            return False, False, False, False
+            
+        servos, alpha, result = data[0], data[1], data[2]
         logger.debug(f"Final servo commands: {servos}")
         movetime = self.servosMove((servos["servo3"], servos["servo4"], servos["servo5"], servos["servo6"]), movetime)
-        return servos, alpha, movetime
+        return servos, alpha, movetime, result
 
 if __name__ == "__main__":
 

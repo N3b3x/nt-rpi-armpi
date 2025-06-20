@@ -2,7 +2,7 @@
 # coding=utf8
 import time
 import numpy as np
-from kinematics.arm_move_ik import ArmIK
+from my_kinematics.arm_move_ik import ArmIK
 from common.ros_robot_controller_sdk import Board
 import math
 
@@ -103,7 +103,25 @@ class ArmController:
         """Initialize arm to starting position (match Hiwonder sample)."""
         self.board.pwm_servo_set_position(0.3, [[SERVO_GRIPPER, 1500]])
         self.current_gripper_pos = 1500  # Track gripper position
-        self.AK.setPitchRangeMoving((0, 8, 10), -90, -90, 90, 1500)
+        res = self.AK.setPitchRangeMoving((0, 8, 10), -90, -90, 90, 1500)
+        if res and res[0] is not False:  # Check if we got valid results
+            servos, alpha, movetime, angles = res
+            self.current_elbow_angle = angles['theta3']
+            self.current_shoulder_angle = angles['theta4']
+            # The IK angle for the lift joint (theta5) is relative to the horizontal plane,
+            # while the jogging angle is a direct servo angle. We adjust it by 90 degrees.
+            self.current_lift_angle = 90 - angles['theta5']
+            self.current_base_angle = angles['theta6']
+            # Also update base PWM position tracker
+            self.current_base_pos = servos['servo6']
+        else:
+            # Fallback values if IK calculation fails
+            print("[WARNING] IK calculation failed, using default angles")
+            self.current_elbow_angle = 0
+            self.current_shoulder_angle = 0
+            self.current_lift_angle = 0
+            self.current_base_angle = 0
+            self.current_base_pos = 1500
     
     def set_rgb(self, color):
         """Set RGB LED color."""
@@ -228,7 +246,7 @@ class ArmController:
         """
         self.current_base_angle += angle
         self.current_base_angle = max(-180, min(180, self.current_base_angle))  # Expand to ±180°
-        units_per_degree = 1000 / 180
+        units_per_degree = 2000 / 180  # Corrected scaling: 2000 pulse range / 180 degrees
         self.current_base_pos = 1500 + int(self.current_base_angle * units_per_degree)
         self.current_base_pos = max(500, min(2500, self.current_base_pos))
         print(f"[Arm] Rotating base to servo pos {self.current_base_pos} for angle {self.current_base_angle}")
@@ -239,8 +257,8 @@ class ArmController:
     def move_lift(self, delta_angle):
         """Jog the lift axis by delta_angle degrees."""
         self.current_lift_angle += delta_angle
-        self.current_lift_angle = max(-90, min(90, self.current_lift_angle))  # adjust limits as needed
-        pos = 1500 + int(self.current_lift_angle * (1000 / 180))
+        self.current_lift_angle = max(-120, min(120, self.current_lift_angle))  # adjust limits as needed
+        pos = 1500 + int(self.current_lift_angle * (2000 / 180)) # Corrected scaling
         pos = max(500, min(2500, pos))
         # Use WonderPi smooth motion: 20ms movement time + deviation compensation
         self.board.pwm_servo_set_position(0.02, [[SERVO_LIFT, pos + self.deviation_data[str(SERVO_LIFT)]]])
@@ -248,8 +266,8 @@ class ArmController:
     def move_shoulder(self, delta_angle):
         """Jog the shoulder axis by delta_angle degrees."""
         self.current_shoulder_angle += delta_angle
-        self.current_shoulder_angle = max(-90, min(90, self.current_shoulder_angle))
-        pos = 1500 + int(self.current_shoulder_angle * (1000 / 180))
+        self.current_shoulder_angle = max(-120, min(120, self.current_shoulder_angle))
+        pos = 1500 + int(self.current_shoulder_angle * (2000 / 180)) # Corrected scaling
         pos = max(500, min(2500, pos))
         # Use WonderPi smooth motion: 20ms movement time + deviation compensation
         self.board.pwm_servo_set_position(0.02, [[SERVO_SHOULDER, pos + self.deviation_data[str(SERVO_SHOULDER)]]])
@@ -257,17 +275,18 @@ class ArmController:
     def move_elbow(self, delta_angle):
         """Jog the elbow axis by delta_angle degrees."""
         self.current_elbow_angle += delta_angle
-        self.current_elbow_angle = max(-90, min(90, self.current_elbow_angle))
-        pos = 1500 + int(self.current_elbow_angle * (1000 / 180))
+        self.current_elbow_angle = max(-120, min(120, self.current_elbow_angle))
+        pos = 1500 + int(self.current_elbow_angle * (2000 / 180)) # Corrected scaling
         pos = max(500, min(2500, pos))
         # Use WonderPi smooth motion: 20ms movement time + deviation compensation
-        self.board.pwm_servo_set_position(0.02, [[SERVO_ELBOW, pos + self.deviation_data[str(SERVO_ELBOW)]]])
+        final_pos = pos + self.deviation_data[str(SERVO_ELBOW)]
+        self.board.pwm_servo_set_position(0.02, [[SERVO_ELBOW, final_pos]])
 
     def move_base(self, delta_angle):
         """Jog the base axis by delta_angle degrees."""
         self.current_base_angle += delta_angle
         self.current_base_angle = max(-180, min(180, self.current_base_angle))
-        pos = 1500 + int(self.current_base_angle * (1000 / 180))
+        pos = 1500 + int(self.current_base_angle * (2000 / 180)) # Corrected scaling
         pos = max(500, min(2500, pos))
         # Use WonderPi smooth motion: 20ms movement time + deviation compensation
         self.board.pwm_servo_set_position(0.02, [[SERVO_BASE, pos + self.deviation_data[str(SERVO_BASE)]]])
