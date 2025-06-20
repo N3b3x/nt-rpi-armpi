@@ -133,8 +133,8 @@ def calibrate_camera(image_dir='calib_images', checkerboard=(6, 9), square_size=
     import numpy as np
 
     objp = np.zeros((checkerboard[0] * checkerboard[1], 3), np.float32)
-    objp[:, :2] = np.mgrid[0:checkerboard[1], 0:checkerboard[0]].T.reshape(-1, 2)
-    objp *= square_size  # scale to actual size in mm
+    objp[:,:2] = np.mgrid[0:checkerboard[0], 0:checkerboard[1]].T.reshape(-1, 2)
+    objp = objp * square_size # Scale by square size
 
     objpoints = []  # 3d real world points
     imgpoints = []  # 2d image points
@@ -187,28 +187,39 @@ def calibrate_camera(image_dir='calib_images', checkerboard=(6, 9), square_size=
         print("❌ Too few valid images. Calibration aborted.")
         return
 
+    # Use a different check for fisheye calibration
+    if len(objpoints) == 0:
+        print("❌ No valid points found for calibration.")
+        return
+
+    # Perform fisheye calibration
     try:
-        print(f"ℹ️  Found {len(imgpoints)} images with valid checkerboards for calibration.")
+        # We need to reshape the arrays for the fisheye function
+        objpoints_arr = np.expand_dims(np.asarray(objpoints), -2).astype(np.float32)
+        imgpoints_arr = np.asarray(imgpoints).astype(np.float32)
         
-        # Add a flag to fix the aspect ratio
-        flags = cv2.CALIB_FIX_ASPECT_RATIO
+        # Flags for fisheye calibration
+        flags = cv2.fisheye.CALIB_RECOMPUTE_EXTRINSIC | cv2.fisheye.CALIB_CHECK_COND | cv2.fisheye.CALIB_FIX_SKEW
         
-        # Perform calibration
-        ret, K, D, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None, flags=flags)
+        ret, K, D, rvecs, tvecs = cv2.fisheye.calibrate(
+            objpoints_arr, imgpoints_arr, gray.shape[::-1], None, None, flags=flags
+        )
         
         # Save calibration data
         np.savez(save_path, K=K, D=D, rvecs=rvecs, tvecs=tvecs, square_size=square_size)
-        print(f"✅ Calibration successful. Saved to {save_path}")
-        print(f"✅ Camera Matrix:\n{K}")
-        print(f"✅ Distortion Coefficients:\n{D}")
-    except cv2.error as e:
-        print(f"❌ OpenCV calibration error: {e}")
+        
+        print(f"✅ Fisheye calibration successful. Saved to {save_path}")
+        print(f"✅ Camera Matrix (K):\n{K}")
+        print(f"✅ Distortion Coefficients (D):\n{D}")
+
+    except Exception as e:
+        print(f"❌ An error occurred during fisheye calibration: {e}")
 
 def undistort_frame(frame, K, D):
-    """Apply undistortion to a frame."""
-    # Perform a direct undistortion using the original camera matrix.
-    # This avoids potential issues with getOptimalNewCameraMatrix and the subsequent cropping.
-    return cv2.undistort(frame, K, D, None, K)
+    """Apply fisheye undistortion to a frame."""
+    # Use the fisheye undistortion function
+    # We pass K as the new camera matrix to keep the same scaling
+    return cv2.fisheye.undistortImage(frame, K, D, Knew=K)
 
 def set_controls(picam2,
                 awb_enable=False,
