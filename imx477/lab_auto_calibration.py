@@ -188,18 +188,27 @@ def calibrate_camera(image_dir='calib_images', checkerboard=(6, 9), square_size=
         return
 
     try:
-        ret, K, D, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+        print(f"ℹ️  Found {len(imgpoints)} images with valid checkerboards for calibration.")
+        
+        # Add a flag to fix the aspect ratio
+        flags = cv2.CALIB_FIX_ASPECT_RATIO
+        
+        # Perform calibration
+        ret, K, D, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None, flags=flags)
+        
+        # Save calibration data
         np.savez(save_path, K=K, D=D, rvecs=rvecs, tvecs=tvecs, square_size=square_size)
         print(f"✅ Calibration successful. Saved to {save_path}")
-        print(f"📐 Camera Matrix:\n{K}")
-        print(f"📏 Distortion Coefficients:\n{D}")
+        print(f"✅ Camera Matrix:\n{K}")
+        print(f"✅ Distortion Coefficients:\n{D}")
     except cv2.error as e:
         print(f"❌ OpenCV calibration error: {e}")
 
 def undistort_frame(frame, K, D):
-    h, w = frame.shape[:2]
-    new_K, _ = cv2.getOptimalNewCameraMatrix(K, D, (w, h), 1, (w, h))
-    return cv2.undistort(frame, K, D, None, new_K)
+    """Apply undistortion to a frame."""
+    # Perform a direct undistortion using the original camera matrix.
+    # This avoids potential issues with getOptimalNewCameraMatrix and the subsequent cropping.
+    return cv2.undistort(frame, K, D, None, K)
 
 def set_controls(picam2,
                 awb_enable=False,

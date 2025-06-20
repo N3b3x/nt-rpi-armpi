@@ -269,7 +269,7 @@ if __name__ == '__main__':
     init()
     start()
     picam2 = Picamera2()
-    config = picam2.create_preview_configuration()
+    config = picam2.create_preview_configuration(main={"size": (1920, 1080)})
     picam2.configure(config)
     picam2.start()
     time.sleep(1)
@@ -337,39 +337,90 @@ if __name__ == '__main__':
                 load_config()
                 print("✅ Calibration complete. LAB ranges updated!")
             elif key == ord('d'):
-                print("\n🔍 Please hold up the checkerboard for distortion calibration.")
-                print("Move the checkerboard around slightly and take at least 10 images from different angles.")
-                print("Press 'c' to capture calibration images, 'q' to finish capture.")
-
                 image_dir = 'calib_images'
-                if os.path.exists(image_dir):
-                    shutil.rmtree(image_dir)
-                os.makedirs(image_dir, exist_ok=True)
+                recapture = True  # Default to recapturing
 
-                img_counter = 0
+                # Check if images already exist and ask the user what to do
+                if os.path.exists(image_dir) and os.listdir(image_dir):
+                    print("\n📸 Found existing calibration images.")
+                    print("❓ Press 'y' to REUSE them, or 'n' to RECAPTURE new ones.")
+                    
+                    # Display prompt on the main window and wait for user input
+                    prompt_loop = True
+                    while prompt_loop:
+                        frame_prompt = picam2.capture_array()
+                        if frame_prompt is not None:
+                            frame_bgr = cv2.cvtColor(frame_prompt, cv2.COLOR_RGB2BGR)
+                            if undistort_enabled and K is not None and D is not None:
+                                frame_bgr = lab_auto_calibration.undistort_frame(frame_bgr, K, D)
+                            
+                            cv2.putText(frame_bgr, "Reuse images? (y/n)", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 255), 3)
+                            cv2.imshow('Original', frame_bgr)
 
-                while True:
-                    frame_cb = picam2.capture_array()
-                    if frame_cb is not None:
-                        frame_bgr = cv2.cvtColor(frame_cb, cv2.COLOR_RGB2BGR)
-                        instructions = "Move checkerboard. Press 'c' to capture, 'q' to finish."
-                        cv2.putText(frame_bgr, instructions, (10, 30),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                        cv2.imshow("Checkerboard Capture", frame_bgr)
+                        key_choice = cv2.waitKey(1) & 0xFF
+                        if key_choice == ord('y'):
+                            recapture = False
+                            prompt_loop = False
+                            print("👍 Reusing existing images.")
+                        elif key_choice == ord('n'):
+                            recapture = True
+                            prompt_loop = False
+                            print("🗑️  Will capture new images.")
+                
+                if recapture:
+                    print("\n🔍 Starting Distortion Calibration in High Resolution...")
+                    print("Please hold up the checkerboard for distortion calibration.")
+                    print("Move the checkerboard around and take at least 10-15 images from different angles.")
+                    print("Press 'c' to capture calibration images, 'q' to finish capture.")
 
-                        key_cb = cv2.waitKey(1) & 0xFF
-                        if key_cb == ord('c'):
-                            img_counter += 1
-                            img_name = os.path.join(image_dir, f"calib_{img_counter:03d}.jpg")
-                            cv2.imwrite(img_name, frame_bgr)
-                            print(f"✅ Calibration image saved as {img_name}")
-                        elif key_cb == ord('q'):
-                            print("✅ Calibration image capture finished. Starting calibration...")
-                            break
-                    else:
-                        time.sleep(0.1)
+                    # Switch to higher resolution for better accuracy
+                    print("Switching to 1920x1080 resolution...")
+                    picam2.stop()
+                    time.sleep(0.5)
+                    config_calib = picam2.create_preview_configuration(
+                        main={"size": (1920, 1080)},
+                        controls={"FrameDurationLimits": (33333, 33333)} # ~30fps
+                    )
+                    picam2.configure(config_calib)
+                    picam2.start()
+                    time.sleep(2) # Allow camera to settle
 
-                cv2.destroyWindow("Checkerboard Capture")
+                    if os.path.exists(image_dir):
+                        shutil.rmtree(image_dir)
+                    os.makedirs(image_dir, exist_ok=True)
+
+                    img_counter = 0
+
+                    while True:
+                        frame_cb = picam2.capture_array()
+                        if frame_cb is not None:
+                            frame_bgr = cv2.cvtColor(frame_cb, cv2.COLOR_RGB2BGR)
+                            instructions = "Move checkerboard. Press 'c' to capture, 'q' to finish."
+                            cv2.putText(frame_bgr, instructions, (10, 30),
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                            cv2.imshow("Checkerboard Capture", frame_bgr)
+
+                            key_cb = cv2.waitKey(1) & 0xFF
+                            if key_cb == ord('c'):
+                                img_counter += 1
+                                img_name = os.path.join(image_dir, f"calib_{img_counter:03d}.jpg")
+                                cv2.imwrite(img_name, frame_bgr)
+                                print(f"✅ Calibration image saved as {img_name}")
+                            elif key_cb == ord('q'):
+                                print("✅ Calibration image capture finished. Starting calibration...")
+                                break
+                        else:
+                            time.sleep(0.1)
+
+                    cv2.destroyWindow("Checkerboard Capture")
+
+                    # Switch back to original resolution before heavy processing
+                    print("Switching back to original preview resolution...")
+                    picam2.stop()
+                    time.sleep(0.5)
+                    picam2.configure(config) # Revert to the original config
+                    picam2.start()
+                    time.sleep(1)
 
                 lab_auto_calibration.calibrate_camera(
                     image_dir=image_dir,
@@ -480,7 +531,7 @@ if __name__ == '__main__':
                 print("Switching back to original preview resolution...")
                 picam2.stop()
                 time.sleep(1)
-                config = picam2.create_preview_configuration()
+                config = picam2.create_preview_configuration(main={"size": (1920, 1080)})
                 picam2.configure(config)
                 picam2.start()
                 time.sleep(1)
@@ -648,7 +699,7 @@ if __name__ == '__main__':
                 print("Switching back to original resolution...")
                 picam2.stop()
                 time.sleep(1)
-                config = picam2.create_preview_configuration()
+                config = picam2.create_preview_configuration(main={"size": (1920, 1080)})
                 picam2.configure(config)
                 picam2.start()
                 time.sleep(1)
