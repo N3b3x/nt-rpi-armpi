@@ -28,8 +28,16 @@ class ArmController:
         try:
             import common.yaml_handle as yaml_handle
             self.deviation_data = yaml_handle.get_yaml_data(yaml_handle.deviation_file_path)
-        except:
+            print(f"[DEBUG] Loaded deviation data: {self.deviation_data}")
+        except Exception as e:
+            print(f"[WARNING] Failed to load deviation data: {e}")
             self.deviation_data = {'1': 0, '3': 0, '4': 0, '5': 0, '6': 0}
+        
+        # Ensure all servos have deviation values
+        for servo_num in [1, 3, 4, 5, 6]:
+            if str(servo_num) not in self.deviation_data:
+                print(f"[WARNING] Missing deviation for servo {servo_num}, setting to 0")
+                self.deviation_data[str(servo_num)] = 0
         
         # Define scan positions in polar coordinates (r, theta, z)
         # r: distance from base (cm)
@@ -114,6 +122,10 @@ class ArmController:
             self.current_base_angle = angles['theta6']
             # Also update base PWM position tracker
             self.current_base_pos = servos['servo6']
+            
+            # Debug output to understand IK angle conventions
+            print(f"[DEBUG] IK angles: theta3(elbow)={angles['theta3']:.1f}°, theta4(shoulder)={angles['theta4']:.1f}°, theta5(lift)={angles['theta5']:.1f}°, theta6(base)={angles['theta6']:.1f}°")
+            print(f"[DEBUG] Jog angles: elbow={self.current_elbow_angle:.1f}°, shoulder={self.current_shoulder_angle:.1f}°, lift={self.current_lift_angle:.1f}°, base={self.current_base_angle:.1f}°")
         else:
             # Fallback values if IK calculation fails
             print("[WARNING] IK calculation failed, using default angles")
@@ -256,48 +268,135 @@ class ArmController:
 
     def move_lift(self, delta_angle):
         """Jog the lift axis by delta_angle degrees."""
-        self.current_lift_angle += delta_angle
-        self.current_lift_angle = max(-120, min(120, self.current_lift_angle))  # adjust limits as needed
-        pos = 1500 + int(self.current_lift_angle * (2000 / 180)) # Corrected scaling
-        pos = max(500, min(2500, pos))
+        # Convert angle delta to PWM delta (approximately 11 PWM units per degree)
+        pwm_delta = int(delta_angle * 11)
+        
+        # Always start from center position (1500) for jog mode
+        # This bypasses the IK system's problematic angle values
+        if not hasattr(self, 'current_lift_pwm'):
+            # Initialize to center position
+            self.current_lift_pwm = 1500
+            # Move to center position first
+            self.board.pwm_servo_set_position(0.5, [[SERVO_LIFT, 1500]])
+            time.sleep(0.5)
+        
+        self.current_lift_pwm += pwm_delta
+        
+        # Limit to servo range (500-2500)
+        self.current_lift_pwm = max(500, min(2500, self.current_lift_pwm))
+        
         # Use WonderPi smooth motion: 20ms movement time + deviation compensation
-        self.board.pwm_servo_set_position(0.02, [[SERVO_LIFT, pos + self.deviation_data[str(SERVO_LIFT)]]])
+        deviation = self.deviation_data.get(str(SERVO_LIFT), 0)
+        final_pos = self.current_lift_pwm + deviation
+        
+        print(f"[DEBUG] Lift: PWM={self.current_lift_pwm}, delta_pwm={pwm_delta}, final={final_pos}")
+        self.board.pwm_servo_set_position(0.02, [[SERVO_LIFT, final_pos]])
+        
+        # Update the angle tracker for display purposes
+        self.current_lift_angle += delta_angle
+        self.current_lift_angle = max(-120, min(120, self.current_lift_angle))
 
     def move_shoulder(self, delta_angle):
         """Jog the shoulder axis by delta_angle degrees."""
+        # Convert angle delta to PWM delta (approximately 11 PWM units per degree)
+        pwm_delta = int(delta_angle * 11)
+        
+        # Always start from horizontal position (2019) for jog mode
+        # This bypasses the IK system's problematic angle values
+        if not hasattr(self, 'current_shoulder_pwm'):
+            # Initialize to horizontal position
+            self.current_shoulder_pwm = 2019
+            # Move to horizontal position first
+            self.board.pwm_servo_set_position(0.5, [[SERVO_SHOULDER, 2019]])
+            time.sleep(0.5)
+            print(f"[DEBUG] Shoulder initialized to horizontal position (2019)")
+        
+        self.current_shoulder_pwm += pwm_delta
+        
+        # Limit to servo range (500-2500)
+        self.current_shoulder_pwm = max(500, min(2500, self.current_shoulder_pwm))
+        
+        # Use WonderPi smooth motion: 20ms movement time + deviation compensation
+        deviation = self.deviation_data.get(str(SERVO_SHOULDER), 0)
+        final_pos = self.current_shoulder_pwm + deviation
+        
+        print(f"[DEBUG] Shoulder: PWM={self.current_shoulder_pwm}, delta_pwm={pwm_delta}, final={final_pos}")
+        self.board.pwm_servo_set_position(0.02, [[SERVO_SHOULDER, final_pos]])
+        
+        # Update the angle tracker for display purposes
         self.current_shoulder_angle += delta_angle
         self.current_shoulder_angle = max(-120, min(120, self.current_shoulder_angle))
-        pos = 1500 + int(self.current_shoulder_angle * (2000 / 180)) # Corrected scaling
-        pos = max(500, min(2500, pos))
-        # Use WonderPi smooth motion: 20ms movement time + deviation compensation
-        self.board.pwm_servo_set_position(0.02, [[SERVO_SHOULDER, pos + self.deviation_data[str(SERVO_SHOULDER)]]])
 
     def move_elbow(self, delta_angle):
         """Jog the elbow axis by delta_angle degrees."""
+        # Convert angle delta to PWM delta (approximately 11 PWM units per degree)
+        pwm_delta = int(delta_angle * 11)
+        
+        # Always start from horizontal position (1401) for jog mode
+        # This bypasses the IK system's problematic angle values
+        if not hasattr(self, 'current_elbow_pwm'):
+            # Initialize to horizontal position
+            self.current_elbow_pwm = 1401
+            # Move to horizontal position first
+            self.board.pwm_servo_set_position(0.5, [[SERVO_ELBOW, 1401]])
+            time.sleep(0.5)
+            print(f"[DEBUG] Elbow initialized to horizontal position (1401)")
+        
+        self.current_elbow_pwm += pwm_delta
+        
+        # Limit to servo range (500-2500)
+        self.current_elbow_pwm = max(500, min(2500, self.current_elbow_pwm))
+        
+        # Use WonderPi smooth motion: 20ms movement time + deviation compensation
+        deviation = self.deviation_data.get(str(SERVO_ELBOW), 0)
+        final_pos = self.current_elbow_pwm + deviation
+        
+        print(f"[DEBUG] Elbow: PWM={self.current_elbow_pwm}, delta_pwm={pwm_delta}, final={final_pos}")
+        self.board.pwm_servo_set_position(0.02, [[SERVO_ELBOW, final_pos]])
+        
+        # Update the angle tracker for display purposes
         self.current_elbow_angle += delta_angle
         self.current_elbow_angle = max(-120, min(120, self.current_elbow_angle))
-        pos = 1500 + int(self.current_elbow_angle * (2000 / 180)) # Corrected scaling
-        pos = max(500, min(2500, pos))
-        # Use WonderPi smooth motion: 20ms movement time + deviation compensation
-        final_pos = pos + self.deviation_data[str(SERVO_ELBOW)]
-        self.board.pwm_servo_set_position(0.02, [[SERVO_ELBOW, final_pos]])
 
     def move_base(self, delta_angle):
         """Jog the base axis by delta_angle degrees."""
+        # Convert angle delta to PWM delta (approximately 11 PWM units per degree)
+        pwm_delta = int(delta_angle * 11)
+        
+        # Always start from center position (1500) for jog mode
+        # This bypasses the IK system's problematic angle values
+        if not hasattr(self, 'current_base_pwm'):
+            # Initialize to center position
+            self.current_base_pwm = 1500
+            # Move to center position first
+            self.board.pwm_servo_set_position(0.5, [[SERVO_BASE, 1500]])
+            time.sleep(0.5)
+        
+        self.current_base_pwm += pwm_delta
+        
+        # Limit to servo range (500-2500)
+        self.current_base_pwm = max(500, min(2500, self.current_base_pwm))
+        
+        # Use WonderPi smooth motion: 20ms movement time + deviation compensation
+        deviation = self.deviation_data.get(str(SERVO_BASE), 0)
+        final_pos = self.current_base_pwm + deviation
+        
+        print(f"[DEBUG] Base: PWM={self.current_base_pwm}, delta_pwm={pwm_delta}, final={final_pos}")
+        self.board.pwm_servo_set_position(0.02, [[SERVO_BASE, final_pos]])
+        
+        # Update the angle tracker for display purposes
         self.current_base_angle += delta_angle
         self.current_base_angle = max(-180, min(180, self.current_base_angle))
-        pos = 1500 + int(self.current_base_angle * (2000 / 180)) # Corrected scaling
-        pos = max(500, min(2500, pos))
-        # Use WonderPi smooth motion: 20ms movement time + deviation compensation
-        self.board.pwm_servo_set_position(0.02, [[SERVO_BASE, pos + self.deviation_data[str(SERVO_BASE)]]])
-        self.current_base_pos = pos
+        self.current_base_pos = self.current_base_pwm
 
     def move_gripper(self, delta_pos):
         """Jog the gripper by delta_pos PWM units."""
         self.current_gripper_pos += delta_pos
         self.current_gripper_pos = max(500, min(2500, self.current_gripper_pos))  # PWM limits
         # Use WonderPi smooth motion: 20ms movement time + deviation compensation
-        self.board.pwm_servo_set_position(0.02, [[SERVO_GRIPPER, self.current_gripper_pos + self.deviation_data[str(SERVO_GRIPPER)]]])
+        deviation = self.deviation_data.get(str(SERVO_GRIPPER), 0)
+        final_pos = self.current_gripper_pos + deviation
+        self.board.pwm_servo_set_position(0.02, [[SERVO_GRIPPER, final_pos]])
 
     def get_arm_position(self):
         """Get current arm position using forward kinematics."""
@@ -326,3 +425,45 @@ class ArmController:
             L3 * math.sin(shoulder_rad + elbow_rad) + self.current_lift_angle * 0.1
         
         return (x, y, z)
+
+    def find_shoulder_center(self):
+        """Test different shoulder positions to find the horizontal center."""
+        print("[DEBUG] Testing shoulder positions to find horizontal center...")
+        test_positions = [1200, 1300, 1400, 1500, 1600, 1700, 1800]
+        
+        for pos in test_positions:
+            print(f"[DEBUG] Testing shoulder position: {pos}")
+            self.board.pwm_servo_set_position(0.5, [[SERVO_SHOULDER, pos]])
+            time.sleep(2)
+            input(f"Press Enter if shoulder is horizontal at position {pos}, or any key to continue...")
+
+    def reset_to_center(self):
+        """Reset all servos to center position (1500 PWM) for jog mode."""
+        print("[DEBUG] Resetting all servos to center position...")
+        
+        # Move all servos to center position
+        # For shoulder, use a position that should be more horizontal (around 2000-2100)
+        self.board.pwm_servo_set_position(0.5, [
+            [SERVO_GRIPPER, 1500],
+            [SERVO_ELBOW, 1401],  # Adjusted to be more horizontal/downward (1423 - 2*11)
+            [SERVO_SHOULDER, 2019],  # Adjusted to be more horizontal/downward (1700 + 29*11)
+            [SERVO_LIFT, 1500],
+            [SERVO_BASE, 1500]
+        ])
+        time.sleep(1)
+        
+        # Reset all PWM trackers to center
+        self.current_gripper_pos = 1500
+        self.current_elbow_pwm = 1401  # Adjusted to match the position we set
+        self.current_shoulder_pwm = 2019  # Adjusted to match the position we set
+        self.current_lift_pwm = 1500
+        self.current_base_pwm = 1500
+        
+        # Reset angle trackers to 0 for display
+        self.current_elbow_angle = 0
+        self.current_shoulder_angle = 0
+        self.current_lift_angle = 0
+        self.current_base_angle = 0
+        self.current_base_pos = 1500
+        
+        print("[DEBUG] Reset complete - all servos at center position")

@@ -362,7 +362,7 @@ if __name__ == '__main__':
     choice = input("Enter test number (1-2): ")
     
     if choice == '1':
-        tester.test_varying_pitch_angles()
+    tester.test_varying_pitch_angles()
     elif choice == '2':
         tester.test_block_pickup_sequence()
     else:

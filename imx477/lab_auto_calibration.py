@@ -164,20 +164,20 @@ def calibrate_camera(image_dir='calib_images', checkerboard=(6, 9), square_size=
         found = False
         for attempt, g in [('CLAHE', gray_clahe), ('Raw', gray)]:
             ret, corners = cv2.findChessboardCornersSB(g, checkerboard, None)
-            if not ret:
-                flags = cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_NORMALIZE_IMAGE
-                ret, corners = cv2.findChessboardCorners(g, checkerboard, flags)
-            if ret:
-                print(f"✅ {attempt}: Found corners in {fname}")
-                objpoints.append(objp)
-                corners2 = cv2.cornerSubPix(g, corners, (11, 11), (-1, -1), criteria)
-                imgpoints.append(corners2)
-                cv2.drawChessboardCorners(img, checkerboard, corners2, ret)
-                cv2.imshow('Corners', img)
-                cv2.waitKey(300)
-                good_images += 1
-                found = True
-                break
+        if not ret:
+            flags = cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_NORMALIZE_IMAGE
+            ret, corners = cv2.findChessboardCorners(g, checkerboard, flags)
+        if ret:
+            print(f"✅ {attempt}: Found corners in {fname}")
+            objpoints.append(objp)
+            corners2 = cv2.cornerSubPix(g, corners, (11, 11), (-1, -1), criteria)
+            imgpoints.append(corners2)
+            cv2.drawChessboardCorners(img, checkerboard, corners2, ret)
+            cv2.imshow('Corners', img)
+            cv2.waitKey(300)
+            good_images += 1
+            found = True
+            break
         if not found:
             print(f"❌ No corners found in {fname}")
 
@@ -207,7 +207,7 @@ def calibrate_camera(image_dir='calib_images', checkerboard=(6, 9), square_size=
         
         # Save calibration data
         np.savez(save_path, K=K, D=D, rvecs=rvecs, tvecs=tvecs, square_size=square_size)
-        
+            
         print(f"✅ Fisheye calibration successful. Saved to {save_path}")
         print(f"✅ Camera Matrix (K):\n{K}")
         print(f"✅ Distortion Coefficients (D):\n{D}")

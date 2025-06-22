@@ -41,85 +41,27 @@ calibration_image = None
 # Pre-defined world coordinates for 3D calibration
 # The user will be prompted to move the arm to touch these physical points.
 CALIBRATION_GRID_POINTS = [
-    (15, 5, 0.5),
-    (20, 5, 0.5),
-    (15, -5, 0.5),
-    (20, -5, 0.5),
-    (18, 0, 5),   # A higher point
-    (15, 0, 10),  # An even higher point
+    (15, 5, 0.5),    # Ground level point
+    (20, 5, 0.5),    # Ground level point
+    (15, -5, 0.5),   # Ground level point
+    (20, -5, 0.5),   # Ground level point
+    (18, 0, 3),      # 3cm height (1 block)
+    (18, 0, 6),      # 6cm height (2 blocks stacked)
+    (18, 0, 9),      # 9cm height (3 blocks stacked)
+    (18, 0, 12),     # 12cm height (4 blocks stacked)
 ]
 
-CALIBRATION_INSTRUCTIONS = """
-# ArmPi Mini Calibration Guide
-
-## Objective
-To accurately calibrate the camera so the system can translate a pixel seen by the camera into a real-world (X, Y, Z) coordinate for the robotic arm.
-
-## Required Items
-*   A printed checkerboard pattern.
-*   A calibration grid: a piece of paper with the following points marked in centimeters, matching the `CALIBRATION_GRID_POINTS` in the code:
-    *   `(15, 5)`, `(20, 5)`, `(15, -5)`, `(20, -5)` on the table surface.
-*   You'll also need a way to touch points at a height of `5cm` and `10cm` (e.g., placing a block of a known height at a marked spot).
-*   (Optional but recommended) A color reference chart, like a ColorChecker, for color calibration.
-
----
-
-## Step 1: Start the Calibration Script
-First, run the script from your terminal:
-```bash
-python3 imx477/lab_adjust.py
-```
-Two windows will appear: 'Original' (the live camera feed) and 'Mask' (the color detection view). Make sure the 'Original' window is active to register your key presses.
-
----
-
-## Step 2: Camera Distortion Calibration (Key: `d`)
-This step corrects the "fisheye" effect of the lens.
-
-1.  Press the `d` key.
-2.  The script will prompt you to show a checkerboard to the camera.
-3.  Hold the checkerboard flat and in full view of the camera.
-4.  Move the checkerboard to different positions and angles (top, bottom, left, right, tilted). At each position, press the `c` key to capture an image.
-5.  Capture at least 10-15 good images.
-6.  Once you are done, press the `q` key to finish capturing.
-7.  The script will process the images and save the results to a file named `calibration_data.npz`. This file contains the essential camera matrix (`K`) and distortion coefficients (`D`).
-
----
-
-## Step 3: Guided 3D Pose Calibration (Key: `y`)
-This is the most important step. It tells the system exactly where the camera is located and how it's oriented in relation to the arm's base.
-
-1.  Press the `y` key.
-2.  The script will display **"STEP 1: JOG ARM"** and show the first target coordinate from the predefined list (e.g., `(15, 5, 0.5)`).
-3.  Using your marked paper grid as a reference, use the jog keys to manually move the arm until the very tip of the gripper is physically touching that exact point in the real world.
-    *   **Jog Keys:** `w/s` (Lift), `a/d` (Shoulder), `q/e` (Elbow), `z/c` (Base).
-4.  Once the arm is perfectly positioned, press the **spacebar**.
-5.  The display will change to **"STEP 2: CLICK PIXEL"**. Now, use your mouse to click on the live video feed at the exact pixel where the gripper's tip is. A green circle will appear to confirm your click.
-6.  If you are satisfied with the click location, press `y` to confirm and save this calibration point.
-7.  If you made a mistake (the arm wasn't positioned right or you clicked the wrong spot), press `n` to restart the process for this *same* point.
-8.  The script will automatically move to the next target coordinate in the list. Repeat the `jog -> spacebar -> click -> confirm (y)` process for all points.
-9.  After completing all points, the script will calculate the camera's 3D position and save the result to `3d_camera_pose.npz`.
-
----
-
-## Step 4: Test the Calibration (Key: `t`)
-This step verifies the accuracy of your calibration.
-
-1.  Press the `t` key.
-2.  The script will load the `3d_camera_pose.npz` file and run a test calculation.
-3.  It will print a "Test conversion error" value in the terminal. This number represents the average distance (in cm) between the real-world points you provided and the points the system calculated based on your pixel clicks.
-4.  **A good calibration should have an error well below 1.0 cm.** If the error is high, you should re-run the Guided 3D Pose Calibration (Step 3), being more precise with your jogging and clicking.
-
----
-After completing these steps, your system will be fully calibrated and ready to translate camera detections into arm movements.
-"""
-
 def show_instructions_in_browser():
-    """Saves instructions to a markdown file and opens it in a web browser."""
-    instructions_file = "calibration_instructions.md"
-    with open(instructions_file, "w") as f:
-        f.write(CALIBRATION_INSTRUCTIONS)
-    
+    """Opens the calibration_instructions.md file in a web browser."""
+    # This script is typically run from the project root (e.g., /home/pi/ArmPi_mini),
+    # so the path to the instructions file is relative to that root.
+    instructions_file = "imx477/calibration_instructions.md"
+
+    if not os.path.exists(instructions_file):
+        print(f"❌ Error: Could not find the instructions file at '{instructions_file}'.")
+        print("Please ensure you are running this script from the root of the ArmPi_mini project.")
+        return
+
     # Get the full path to the file
     file_path = os.path.abspath(instructions_file)
     
@@ -385,32 +327,32 @@ if __name__ == '__main__':
                     picam2.start()
                     time.sleep(2) # Allow camera to settle
 
-                    if os.path.exists(image_dir):
-                        shutil.rmtree(image_dir)
-                    os.makedirs(image_dir, exist_ok=True)
+                if os.path.exists(image_dir):
+                    shutil.rmtree(image_dir)
+                os.makedirs(image_dir, exist_ok=True)
 
-                    img_counter = 0
+                img_counter = 0
 
-                    while True:
-                        frame_cb = picam2.capture_array()
-                        if frame_cb is not None:
-                            frame_bgr = cv2.cvtColor(frame_cb, cv2.COLOR_RGB2BGR)
-                            instructions = "Move checkerboard. Press 'c' to capture, 'q' to finish."
-                            cv2.putText(frame_bgr, instructions, (10, 30),
-                                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                            cv2.imshow("Checkerboard Capture", frame_bgr)
+                while True:
+                    frame_cb = picam2.capture_array()
+                    if frame_cb is not None:
+                        frame_bgr = cv2.cvtColor(frame_cb, cv2.COLOR_RGB2BGR)
+                        instructions = "Move checkerboard. Press 'c' to capture, 'q' to finish."
+                        cv2.putText(frame_bgr, instructions, (10, 30),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                        cv2.imshow("Checkerboard Capture", frame_bgr)
 
-                            key_cb = cv2.waitKey(1) & 0xFF
-                            if key_cb == ord('c'):
-                                img_counter += 1
-                                img_name = os.path.join(image_dir, f"calib_{img_counter:03d}.jpg")
-                                cv2.imwrite(img_name, frame_bgr)
-                                print(f"✅ Calibration image saved as {img_name}")
-                            elif key_cb == ord('q'):
-                                print("✅ Calibration image capture finished. Starting calibration...")
-                                break
-                        else:
-                            time.sleep(0.1)
+                        key_cb = cv2.waitKey(1) & 0xFF
+                        if key_cb == ord('c'):
+                            img_counter += 1
+                            img_name = os.path.join(image_dir, f"calib_{img_counter:03d}.jpg")
+                            cv2.imwrite(img_name, frame_bgr)
+                            print(f"✅ Calibration image saved as {img_name}")
+                        elif key_cb == ord('q'):
+                            print("✅ Calibration image capture finished. Starting calibration...")
+                            break
+                    else:
+                        time.sleep(0.1)
 
                     cv2.destroyWindow("Checkerboard Capture")
 
@@ -453,8 +395,13 @@ if __name__ == '__main__':
                 picam2.start()
                 time.sleep(2)
 
-                # Initialize arm to ready position (like Hiwonder sample)
-                arm_controller.init_move()
+                # Initialize arm to ready position
+                # arm_controller.init_move()  # REMOVED - causes servo to go beyond physical limits
+                # time.sleep(2)
+
+                # Initialize all servos to center position for jog mode
+                print("[DEBUG] Initializing all servos to center position...")
+                arm_controller.reset_to_center()
 
                 # After init_move(), the jog commands will start from the ready position's
                 # joint angles, but the angle variables are not updated by init_move.
@@ -487,7 +434,8 @@ if __name__ == '__main__':
                             "[j] Exit Jog Mode"
                         ]
                         
-                        y0, dy = frame_bgr.shape[0] - (len(instructions_with_angles) * 25 + 20), 25
+                        # Position instructions higher to prevent clipping
+                        y0, dy = frame_bgr.shape[0] - (len(instructions_with_angles) * 30 + 70), 30
                         for i, text in enumerate(instructions_with_angles):
                             y = y0 + i * dy
                             cv2.putText(frame_bgr, text, (10, y),
@@ -504,24 +452,29 @@ if __name__ == '__main__':
                         elif jog_key == ord('g'):
                             arm_controller.move_gripper(-50) # Increased value for noticeable movement
                         elif jog_key == ord('q'):
+                            print(f"[DEBUG] Moving elbow: current={arm_controller.current_elbow_angle:.1f}, delta=+2")
                             arm_controller.move_elbow(2)
                         elif jog_key == ord('e'):
+                            print(f"[DEBUG] Moving elbow: current={arm_controller.current_elbow_angle:.1f}, delta=-2")
                             arm_controller.move_elbow(-2)
                         elif jog_key == ord('a'):
                             arm_controller.move_shoulder(-2)
                         elif jog_key == ord('d'):
                             arm_controller.move_shoulder(2)
-                        elif jog_key == ord('w'):
-                            arm_controller.move_lift(2)
                         elif jog_key == ord('s'):
+                            arm_controller.move_lift(2)
+                        elif jog_key == ord('w'):
                             arm_controller.move_lift(-2)
                         elif jog_key == ord('z'):
+                            print(f"[DEBUG] Moving base: current={arm_controller.current_base_angle:.1f}, delta=-2")
                             arm_controller.move_base(-2)
                         elif jog_key == ord('c'):
+                            print(f"[DEBUG] Moving base: current={arm_controller.current_base_angle:.1f}, delta=+2")
                             arm_controller.move_base(2)
                         elif jog_key == ord('r'):
                             # Reset to ready position
-                            arm_controller.init_move() # init_move now correctly sets angles
+                            print("[DEBUG] Resetting arm to ready position...")
+                            arm_controller.reset_to_center()
                     else:
                         time.sleep(0.01)
                 
@@ -541,7 +494,7 @@ if __name__ == '__main__':
                 print("\n🎯 Starting Guided 3D Gripper Calibration...")
                 print("This mode uses higher resolution for accuracy.")
                 print(f"We will guide you through touching {len(CALIBRATION_GRID_POINTS)} known physical points.")
-                print("Press [q] at any time to cancel.")
+                print("Press [y] at any time to cancel.")
 
                 # Switch to higher resolution for better accuracy
                 picam2.stop()
@@ -560,8 +513,8 @@ if __name__ == '__main__':
                 cv2.setMouseCallback("3D Calibration", camera_processor.mouse_callback)
 
                 # Initialize arm to ready position
-                arm_controller.init_move()
-                time.sleep(2)
+                # arm_controller.init_move()  # REMOVED - causes servo to go beyond physical limits
+                # time.sleep(2)
 
                 calib_mode = True
                 point_index = 0
@@ -575,23 +528,31 @@ if __name__ == '__main__':
                         frame_calib = picam2.capture_array()
                         if frame_calib is None: continue
                         frame_bgr = cv2.cvtColor(frame_calib, cv2.COLOR_RGB2BGR)
+                        
+                        # Apply undistortion if enabled
+                        if undistort_enabled and K is not None and D is not None:
+                            frame_bgr = lab_auto_calibration.undistort_frame(frame_bgr, K, D)
 
                         instructions = [
                             f"POINT {point_index + 1}/{len(CALIBRATION_GRID_POINTS)} - STEP 1: JOG ARM",
                             f"TARGET (X,Y,Z): {target_world_pos} cm",
                             "", "JOG: [q/e]Elbow [a/d]Shoulder [w/s]Lift [z/c]Base",
-                            "Once gripper touches the point, press [SPACE]."
+                            "Once gripper touches the point, press [SPACE].",
+                            "Press [u] to toggle undistortion, [y] to exit."
                         ]
                         for i, text in enumerate(instructions):
                             cv2.putText(frame_bgr, text, (10, 30 + 25 * i), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
                         
-                        cv2.putText(frame_bgr, "Press [i] for detailed instructions", (10, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+                        cv2.putText(frame_bgr, "Press [i] for detailed instructions", (10, 205), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
                         cv2.imshow("3D Calibration", frame_bgr)
                         calib_key = cv2.waitKey(1) & 0xFF
 
                         if calib_key == ord('i'):
                             help_manager.show_calibration_help()
-                        elif calib_key == ord('q'): calib_mode = False; prompt_user_to_move = False
+                        elif calib_key == ord('u'):
+                            undistort_enabled = not undistort_enabled
+                            print(f"Undistortion {'enabled' if undistort_enabled else 'disabled'}")
+                        elif calib_key == ord('y'): calib_mode = False; prompt_user_to_move = False
                         elif calib_key == ord(' '): prompt_user_to_move = False
                         elif calib_key in [ord(c) for c in "qweasdzc"]: # Jog keys
                             if calib_key == ord('q'): arm_controller.move_elbow(2)
@@ -611,13 +572,18 @@ if __name__ == '__main__':
                         frame_calib = picam2.capture_array()
                         if frame_calib is None: continue
                         frame_bgr = cv2.cvtColor(frame_calib, cv2.COLOR_RGB2BGR)
+                        
+                        # Apply undistortion if enabled
+                        if undistort_enabled and K is not None and D is not None:
+                            frame_bgr = lab_auto_calibration.undistort_frame(frame_bgr, K, D)
 
                         instructions = [
                             f"POINT {point_index + 1}/{len(CALIBRATION_GRID_POINTS)} - STEP 2: CLICK PIXEL",
                             "Click the exact pixel where the gripper tip is.",
                             "A green circle will appear.", "",
-                            "Press [y] to confirm point.",
-                            "Press [n] to re-jog this point."
+                            "Press [q] to confirm point.",
+                            "Press [n] to re-jog this point.",
+                            "Press [y] to exit."
                         ]
                         for i, text in enumerate(instructions):
                              cv2.putText(frame_bgr, text, (10, 30 + 25 * i), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
@@ -625,15 +591,15 @@ if __name__ == '__main__':
                         if camera_processor.clicked_pixel:
                             cv2.circle(frame_bgr, camera_processor.clicked_pixel, 10, (0, 255, 0), 2)
                         
-                        cv2.putText(frame_bgr, "Press [i] for detailed instructions", (10, 200), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+                        cv2.putText(frame_bgr, "Press [i] for detailed instructions", (10, 225), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
                         cv2.imshow("3D Calibration", frame_bgr)
                         click_key = cv2.waitKey(1) & 0xFF
 
                         if click_key == ord('i'):
                             help_manager.show_calibration_help()
-                        elif click_key == ord('q'): calib_mode = False; prompt_user_to_click = False
+                        elif click_key == ord('y'): calib_mode = False; prompt_user_to_click = False
                         elif click_key == ord('n'): prompt_user_to_click = False
-                        elif click_key == ord('y'):
+                        elif click_key == ord('q'):
                             if camera_processor.clicked_pixel:
                                 clicked_pixel = camera_processor.clicked_pixel
                                 calibration_points.append((target_world_pos, clicked_pixel))
