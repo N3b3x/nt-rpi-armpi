@@ -47,7 +47,7 @@ Here is a clearer, top-down view of the workspace layout.
 ```
 (View from Above)
 
-                                           < > Gripper @ Ready Position (6,0,10)
+                                           +X (forward)
                                                 |
       +-----------------------------------------|-----------------------------------------------------+
       |                                         |                                                     |
@@ -58,9 +58,8 @@ Here is a clearer, top-down view of the workspace layout.
       |                                         |                                                     |
       +-----------------------------------------|-----------------------------------------------------+
                                                 ^
-                                                |
-                                          +X (forward)
-                                                |
+                                                | 
+                                              < | > Gripper @ Ready Position (6,0,10)
                                                 v
                         <---- (-Y) Right ---- [ARM BASE @ 0,0,0] ---- (+Y) Left ---->
 
