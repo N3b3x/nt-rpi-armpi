@@ -332,15 +332,15 @@ class ArmController:
         # Convert angle delta to PWM delta (approximately 11 PWM units per degree)
         pwm_delta = int(delta_angle * 11)
         
-        # Always start from horizontal position (1401) for jog mode
+        # Always start from horizontal position (1379) for jog mode
         # This bypasses the IK system's problematic angle values
         if not hasattr(self, 'current_elbow_pwm'):
             # Initialize to horizontal position
-            self.current_elbow_pwm = 1401
+            self.current_elbow_pwm = 1379
             # Move to horizontal position first
-            self.board.pwm_servo_set_position(0.5, [[SERVO_ELBOW, 1401]])
+            self.board.pwm_servo_set_position(0.5, [[SERVO_ELBOW, 1379]])
             time.sleep(0.5)
-            print(f"[DEBUG] Elbow initialized to horizontal position (1401)")
+            print(f"[DEBUG] Elbow initialized to horizontal position (1379)")
         
         self.current_elbow_pwm += pwm_delta
         
@@ -445,7 +445,7 @@ class ArmController:
         # For shoulder, use a position that should be more horizontal (around 2000-2100)
         self.board.pwm_servo_set_position(0.5, [
             [SERVO_GRIPPER, 1500],
-            [SERVO_ELBOW, 1401],  # Adjusted to be more horizontal/downward (1423 - 2*11)
+            [SERVO_ELBOW, 1379],  # Adjusted to be more horizontal/downward (1401 - 2*11)
             [SERVO_SHOULDER, 2019],  # Adjusted to be more horizontal/downward (1700 + 29*11)
             [SERVO_LIFT, 1500],
             [SERVO_BASE, 1500]
@@ -454,7 +454,7 @@ class ArmController:
         
         # Reset all PWM trackers to center
         self.current_gripper_pos = 1500
-        self.current_elbow_pwm = 1401  # Adjusted to match the position we set
+        self.current_elbow_pwm = 1379  # Adjusted to match the position we set
         self.current_shoulder_pwm = 2019  # Adjusted to match the position we set
         self.current_lift_pwm = 1500
         self.current_base_pwm = 1500

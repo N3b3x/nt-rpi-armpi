@@ -419,6 +419,10 @@ if __name__ == '__main__':
                     if frame_jog is not None:
                         frame_bgr = cv2.cvtColor(frame_jog, cv2.COLOR_RGB2BGR)
                         
+                        # Apply undistortion if enabled
+                        if undistort_enabled and K is not None and D is not None:
+                            frame_bgr = lab_auto_calibration.undistort_frame(frame_bgr, K, D)
+                        
                         # Define text color
                         blue_color = (255, 128, 0) # Medium Blue (BGR)
 
@@ -431,6 +435,7 @@ if __name__ == '__main__':
                             f"[z/c] Base: {arm_controller.current_base_angle:.1f} deg",
                             "",
                             "[r] Reset to center",
+                            "[u] Toggle undistort",
                             "[j] Exit Jog Mode"
                         ]
                         
@@ -447,6 +452,9 @@ if __name__ == '__main__':
                         if jog_key == ord('j'):
                             print("Exiting Jog Mode...")
                             jog_mode = False
+                        elif jog_key == ord('u'):
+                            undistort_enabled = not undistort_enabled
+                            print(f"Undistortion {'enabled' if undistort_enabled else 'disabled'}")
                         elif jog_key == ord('f'):
                             arm_controller.move_gripper(50) # Increased value for noticeable movement
                         elif jog_key == ord('g'):
