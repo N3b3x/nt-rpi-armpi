@@ -19,7 +19,7 @@ This shows the arm's general posture.
 ![Angled View of Arm](/home/pi/ArmPi_mini/docs/images/arm_angled_view.png)
 
 ### Top-Down View
-This view shows the X and Y axes. The `+X` axis runs forward from the arm. The `+Y` axis runs to the left. The `(0,0,0)` origin is the center of the base.
+This view shows the X and Y axes. The `+X` axis runs forward from the arm. The `+Y` axis runs to the right. The `(0,0,0)` origin is the center of the base.
 ![Top-Down View of Arm](/home/pi/ArmPi_mini/docs/images/arm_top_view.png)
 
 ### Side View
@@ -29,7 +29,7 @@ This view shows the Z axis. The `+Z` axis points up from the table surface.
 **Key Setup Points:**
 - The arm's base is the **Origin (0,0,0)**.
 - **`+X`** is **forward** from the base.
-- **`+Y`** is **left** of the base.
+- **`+Y`** is **right** of the base.
 - **`+Z`** is **up** from the table.
 - The arm starts at its "ready position" of `(x=6, y=0, z=10)`.
 - The calibration grid is placed on the table in front of the arm.
@@ -61,7 +61,7 @@ Here is a clearer, top-down view of the workspace layout.
                                                 | 
                                               < | > Gripper @ Ready Position (6,0,10)
                                                 v
-                        <---- (-Y) Right ---- [ARM BASE @ 0,0,0] ---- (+Y) Left ---->
+                        <---- (-Y) Left ---- [ARM BASE @ 0,0,0] ---- (+Y) Right ---->
 
 ```
 
@@ -71,8 +71,8 @@ Here is a clearer, top-down view of the workspace layout.
 *   In this starting pose, the arm is reaching straight forward.
 
 **Simple Coordinate Examples:**
-- `(15, 5, 0.5)` = 15cm FORWARD, 5cm LEFT, 0.5cm UP
-- `(15, -5, 0.5)` = 15cm FORWARD, 5cm RIGHT, 0.5cm UP  
+- `(15, 5, 0.5)` = 15cm FORWARD, 5cm RIGHT, 0.5cm UP
+- `(15, -5, 0.5)` = 15cm FORWARD, 5cm LEFT, 0.5cm UP  
 - `(18, 0, 3)` = 18cm FORWARD, CENTERED, 3cm UP
 - `(6, 0, 10)` = 6cm FORWARD, CENTERED, 10cm UP (The Ready Position)
 
@@ -106,7 +106,7 @@ Two windows will appear: 'Original' (the live camera feed) and 'Mask' (the color
 ---
 
 ## Step 2: Camera Distortion Calibration (Key: `d`)
-This step corrects the "fisheye" effect of the lens.
+This step corrects the "fisheye" effect of the lens. This can be skipped if this has already been done separately.
 
 1.  Press the `d` key.
 2.  The script will prompt you to show a checkerboard to the camera.
@@ -122,16 +122,17 @@ This step corrects the "fisheye" effect of the lens.
 This step maps the camera's 2D view to the arm's 3D world.
 
 1.  Press `y`. The arm will move to its Ready Position.
-2.  The script will display **"STEP 1: JOG ARM"** and show the first target coordinate (e.g., `(15, 5, 0.5)`).
-3.  Using your marked paper grid, use the jog keys to move the arm until the gripper tip physically touches that exact point.
+2.  Make sure you have undistortion on with the `u` key.
+3.  The script will display **"STEP 1: JOG ARM"** and show the first target coordinate (e.g., `(15, 5, 0.5)`).
+4.  Using your marked paper grid, use the jog keys to move the arm until the gripper tip physically touches that exact point.
     *   **Jog Keys:** `w/s` (Lift), `a/d` (Shoulder), `q/e` (Elbow), `z/c` (Base).
     *   **Other Keys:** `u` (Toggle undistortion), `i` (Show help), `y` (Exit calibration).
-4.  Once positioned, press **spacebar**.
-5.  The display changes to **"STEP 2: CLICK PIXEL"**. Click on the live video where the gripper's tip is.
-6.  Press `q` to confirm and save this point.
-7.  If you made a mistake, press `n` to restart the process for the *same* point.
-8.  Repeat for all points.
-9.  After all points, the script calculates the camera's 3D pose and saves it to `3d_camera_pose.npz`.
+5.  Once positioned, press **spacebar**.
+6.  The display changes to **"STEP 2: CLICK PIXEL"**. Click on the live video where the gripper's tip is.
+7.  Press `q` to confirm and save this point.
+8.  If you made a mistake, press `n` to restart the process for the *same* point.
+9.  Repeat for all points.
+10.  After all points, the script calculates the camera's 3D pose and saves it to `3d_camera_pose.npz`.
 
 ---
 

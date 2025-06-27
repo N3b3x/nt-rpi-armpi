@@ -424,35 +424,4 @@ class CameraProcessor:
         np.savez(path, **calib_results)
         print(f"✅ 3D camera pose saved to '{path}'")
 
-    def test_3d_calibration(self):
-        """Test the 3D calibration by converting a pixel to world coordinates."""
-        calib_data = self.load_3d_calibration_data()
-        if calib_data is None:
-            return
-        
-        print("\n🧪 Testing 3D calibration...")
-        print(f"Resolution: {calib_data['resolution']}")
-        print(f"Calibration points: {len(calib_data['calibration_points'])}")
-        
-        # Test with the first calibration point
-        test_point = calib_data['calibration_points'][0]
-        test_world = test_point[0]
-        test_pixel = test_point[1]
-        Z_known = test_world[2]
-        
-        calculated_world = self.pixel_to_world(
-            test_pixel[0], test_pixel[1], Z_known,
-            calib_data['camera_matrix'], calib_data['dist_coeffs'],
-            calib_data['rvec'], calib_data['tvec']
-        )
-        
-        error = np.linalg.norm(np.array(test_world) - calculated_world)
-        print(f"Test point: World({test_world[0]:.1f}, {test_world[1]:.1f}, {test_world[2]:.1f})")
-        print(f"Test pixel: ({test_pixel[0]}, {test_pixel[1]})")
-        print(f"Calculated: ({calculated_world[0]:.1f}, {calculated_world[1]:.1f}, {calculated_world[2]:.1f})")
-        print(f"Error: {error:.3f} cm")
-        
-        if error < 1.0:
-            print("✅ Calibration test passed!")
-        else:
-            print("⚠️  Calibration test shows high error - may need recalibration") 
+    # Removed test_3d_calibration function as it is now in lab_auto_calibration.py 

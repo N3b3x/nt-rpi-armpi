@@ -392,3 +392,154 @@ def pixel_to_world(pixel_coords, camera_matrix, rvecs, tvecs):
     Y = (y * Z - t[1]) / R[1, 1]
     
     return (X, Y, Z)
+
+def test_3d_calibration_with_physical_validation(arm_controller=None):
+    """
+    Comprehensive test of 3D calibration including both mathematical validation
+    and physical movement testing.
+    
+    Args:
+        arm_controller: ArmController instance for physical movement testing (optional)
+    """
+    import os
+    import numpy as np
+    
+    # Load 3D calibration data
+    if not os.path.exists('3d_camera_pose.npz'):
+        print("❌ 3D calibration file not found: 3d_camera_pose.npz")
+        print("   Please run 3D calibration first (press 'y' in lab_adjust.py)")
+        return
+    
+    data = np.load('3d_camera_pose.npz', allow_pickle=True)
+    calib_data = {
+        'rvec': data['rvec'],
+        'tvec': data['tvec'],
+        'camera_matrix': data['camera_matrix'],
+        'dist_coeffs': data['dist_coeffs'],
+        'calibration_points': data['calibration_points'],
+        'resolution': tuple(data['resolution'])
+    }
+    
+    print("\n🧪 Testing 3D calibration...")
+    print(f"Resolution: {calib_data['resolution']}")
+    print(f"Calibration points: {len(calib_data['calibration_points'])}")
+    
+    # Test with the first calibration point
+    test_point = calib_data['calibration_points'][0]
+    test_world = test_point[0]
+    test_pixel = test_point[1]
+    Z_known = test_world[2]
+    
+    # Import the pixel_to_world function from camera_processor
+    try:
+        from color_palletizing.camera_processor import CameraProcessor
+        camera_processor = CameraProcessor()
+        calculated_world = camera_processor.pixel_to_world(
+            test_pixel[0], test_pixel[1], Z_known,
+            calib_data['camera_matrix'], calib_data['dist_coeffs'],
+            calib_data['rvec'], calib_data['tvec']
+        )
+    except ImportError:
+        print("❌ Could not import CameraProcessor for mathematical test")
+        return
+    
+    error = np.linalg.norm(np.array(test_world) - calculated_world)
+    print(f"\n📊 Mathematical Validation:")
+    print(f"Test point: World({test_world[0]:.1f}, {test_world[1]:.1f}, {test_world[2]:.1f})")
+    print(f"Test pixel: ({test_pixel[0]}, {test_pixel[1]})")
+    print(f"Calculated: ({calculated_world[0]:.1f}, {calculated_world[1]:.1f}, {calculated_world[2]:.1f})")
+    print(f"Error: {error:.3f} cm")
+    
+    if error < 1.0:
+        print("✅ Mathematical calibration test passed!")
+    else:
+        print("⚠️  Mathematical calibration test shows high error - may need recalibration")
+    
+    # Physical movement test (if arm controller is provided)
+    if arm_controller is not None:
+        print(f"\n🤖 Physical Movement Test:")
+        print(f"Moving arm to calculated position: ({calculated_world[0]:.1f}, {calculated_world[1]:.1f}, {calculated_world[2]:.1f})")
+        
+        # Move to a safe height first
+        safe_height = max(calculated_world[2] + 5, 10)  # 5cm above target or minimum 10cm
+        print(f"Moving to safe height: {safe_height:.1f} cm")
+        
+        try:
+            # Move to safe position above target
+            success = arm_controller.move_to_position(
+                (calculated_world[0], calculated_world[1], safe_height), 
+                pitch=-45, 
+                movetime=2000
+            )
+            
+            if success:
+                print("✅ Successfully moved to safe position above target")
+                
+                # Ask user if they want to lower to the actual target
+                print("\nDo you want to lower the arm to the actual target position?")
+                print("This will move the gripper to the calculated coordinates.")
+                print("Press 'y' to continue, any other key to skip...")
+                
+                import sys
+                import tty
+                import termios
+                
+                # Get a single character input
+                fd = sys.stdin.fileno()
+                old_settings = termios.tcgetattr(fd)
+                try:
+                    tty.setraw(sys.stdin.fileno())
+                    ch = sys.stdin.read(1)
+                finally:
+                    termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+                
+                if ch.lower() == 'y':
+                    print(f"Lowering to target position: ({calculated_world[0]:.1f}, {calculated_world[1]:.1f}, {calculated_world[2]:.1f})")
+                    
+                    # Move to actual target position
+                    success = arm_controller.move_to_position(
+                        (calculated_world[0], calculated_world[1], calculated_world[2]), 
+                        pitch=-60, 
+                        movetime=1500
+                    )
+                    
+                    if success:
+                        print("✅ Successfully moved to target position!")
+                        print("\n🔍 Physical Validation:")
+                        print("1. Check if the gripper tip is close to the original calibration point")
+                        print("2. If the gripper is far from the expected position, the calibration needs adjustment")
+                        print("3. Press any key to return to safe position...")
+                        
+                        # Wait for user input
+                        input()
+                        
+                        # Return to safe position
+                        print("Returning to safe position...")
+                        arm_controller.move_to_position(
+                            (calculated_world[0], calculated_world[1], safe_height), 
+                            pitch=-45, 
+                            movetime=1500
+                        )
+                    else:
+                        print("❌ Failed to move to target position - position may be unreachable")
+                else:
+                    print("Physical movement test skipped")
+            else:
+                print("❌ Failed to move to safe position - check arm limits")
+                
+        except Exception as e:
+            print(f"❌ Error during physical movement test: {e}")
+    else:
+        print("\n💡 To test physical movement, run this function with an ArmController instance")
+        print("   Example: test_3d_calibration_with_physical_validation(arm_controller)")
+    
+    print("\n📋 Test Summary:")
+    print(f"Mathematical error: {error:.3f} cm")
+    if error < 0.5:
+        print("🎯 Excellent calibration!")
+    elif error < 1.0:
+        print("✅ Good calibration")
+    elif error < 2.0:
+        print("⚠️  Acceptable calibration, but could be improved")
+    else:
+        print("❌ Poor calibration - recommend recalibration")

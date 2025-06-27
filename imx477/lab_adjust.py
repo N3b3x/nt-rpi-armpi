@@ -681,7 +681,8 @@ if __name__ == '__main__':
                 print("3D Gripper Real World Calibration finished.")
             elif key == ord('t'):  # Test 3D calibration
                 print("\n🧪 Testing 3D calibration...")
-                camera_processor.test_3d_calibration()
+                # Use the enhanced test function with physical validation
+                lab_auto_calibration.test_3d_calibration_with_physical_validation(arm_controller)
             elif key == ord('m'):
                 manual_camera_controls(picam2)
         else:
