@@ -10,11 +10,11 @@ class Camera:
         if picam2:
             self.picam2 = picam2
         else:
-        self.picam2 = Picamera2()
-        config = self.picam2.create_still_configuration(main={"size": resolution})
-        self.picam2.configure(config)
-        self.picam2.start()
-        time.sleep(1)  # give time to warm up
+            self.picam2 = Picamera2()
+            config = self.picam2.create_still_configuration(main={"size": resolution})
+            self.picam2.configure(config)
+            self.picam2.start()
+            time.sleep(1)  # give time to warm up
 
     def get_frame(self):
         frame = self.picam2.capture_array()
