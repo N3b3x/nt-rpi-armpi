@@ -7,7 +7,7 @@ import numpy as np
 import threading
 import mediapipe as mp
 from common import yaml_handle
-from color_palletizing.arm_controller import ArmController
+from arm_controller import ArmController
 from Camera import Camera
 
 # Face Recognition for IMX477 Camera

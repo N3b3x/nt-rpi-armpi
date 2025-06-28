@@ -8,6 +8,10 @@ import threading
 import os
 import cv2
 import logging
+import numpy as np
+import common.yaml_handle as yaml_handle
+from arm_controller import ArmController
+from camera_processor import CameraProcessor
 
 # Configure logging
 logging.basicConfig(
@@ -22,10 +26,7 @@ sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/kinematics_sdk')  # Updat
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/yaml')
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/CameraCalibration')
 
-import common.yaml_handle as yaml_handle
 from block_tracker import BlockTracker
-from arm_controller import ArmController
-from camera_processor import CameraProcessor
 from my_kinematics.arm_move_ik import ArmIK  # Updated import
 
 if sys.version_info.major == 2:

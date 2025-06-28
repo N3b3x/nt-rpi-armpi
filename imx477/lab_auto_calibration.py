@@ -432,7 +432,7 @@ def test_3d_calibration_with_physical_validation(arm_controller=None):
     
     # Import the pixel_to_world function from camera_processor
     try:
-        from color_palletizing.camera_processor import CameraProcessor
+        from camera_processor import CameraProcessor
         camera_processor = CameraProcessor()
         calculated_world = camera_processor.pixel_to_world(
             test_pixel[0], test_pixel[1], Z_known,

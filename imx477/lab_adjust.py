@@ -18,8 +18,8 @@ from picamera2 import Picamera2
 import lab_auto_calibration  # ⬅️ Modular calibration
 from Camera import Camera  # Fixed import path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'color_palletizing'))
-from color_palletizing.arm_controller import ArmController, SERVO_GRIPPER, SERVO_ELBOW, SERVO_SHOULDER, SERVO_LIFT, SERVO_BASE
-from color_palletizing.camera_processor import CameraProcessor
+from arm_controller import ArmController, SERVO_GRIPPER, SERVO_ELBOW, SERVO_SHOULDER, SERVO_LIFT, SERVO_BASE
+from camera_processor import CameraProcessor
 import math
 import webbrowser
 from help_manager import HelpManager
