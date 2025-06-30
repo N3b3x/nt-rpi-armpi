@@ -117,21 +117,18 @@ def run(img):
     mask_display[combined_mask == 2] = [0, 255, 0]
     mask_display[combined_mask == 3] = [255, 0, 0]
     
-    # Show key instructions (brighter text, split into two lines for better readability)
+    # Show key instructions (brighter text, improved spacing and grouping)
     instructions = [
-        "KEYS: [1]-Red, [2]-Green, [3]-Blue, [p]-PhotoRef, [c]-ColorCalib,",
-        "[d]-DistCalib, [j]-Jog, [y]-3DGripperCalib, [t]-Test3D, [m]-CamManualMode, [q]-Quit"
+        f"Center LAB: {center_lab}",
+        f"Target: {__target_color[0] if __target_color and __target_color[0] in lab_data else ''}",
+        "[1]-Red   [2]-Green   [3]-Blue",
+        "[c]-ColorCalib  [d]-DistortCalib  [j]-Jog  [y]-3DPoseCalib  [t]-Test3DPoseCalib  [m]-CamManualMode",
+        "(Press the same key again to exit each sub-function)",
+        "[q]-Quit"
     ]
     for idx, text in enumerate(instructions):
-        cv2.putText(img_copy, text, (10, 70 + 30 * idx),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2, cv2.LINE_AA)
-
-    # Show center LAB and target color
-    cv2.putText(img_copy, f"Center LAB: {center_lab}", (10, 30), 
-                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-    if __target_color and __target_color[0] in lab_data:
-        cv2.putText(img_copy, f"Target: {__target_color[0]}", (10, 45), 
-                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+        cv2.putText(img_copy, text, (10, 40 + 40 * idx),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2, cv2.LINE_AA)
 
     return mask_display, img_copy
 
@@ -151,24 +148,24 @@ def manual_camera_controls(picam2):
                 "[e] Exposure-  [r] Exposure+",
                 "[g] Gain-  [h] Gain+",
                 "[b] Brightness-  [n] Brightness+",
-                "[m] Apply  |  [q] Quit Controls"
+                "[m] Apply  |  [m]/[q] Quit Controls"
             ]
             for idx, text in enumerate(instructions):
                 cv2.putText(frame_bgr, text, (10, 30 + 25 * idx),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
 
             # Always show the current values just below the instructions
             cv2.putText(
                 frame_bgr,
                 f"Exposure: {exposure} | Gain: {gain:.2f} | Brightness: {brightness:.2f}",
                 (10, 30 + 25 * len(instructions)),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2
             )
 
             cv2.imshow("Camera Controls", frame_bgr)
 
             key = cv2.waitKey(1) & 0xFF
-            if key == ord('q'):
+            if key == ord('q') or key == ord('m'):
                 print("Exiting camera controls...")
                 cv2.destroyWindow("Camera Controls")
                 break
@@ -234,7 +231,6 @@ if __name__ == '__main__':
                 frame_bgr = lab_auto_calibration.undistort_frame(frame_bgr, K, D)
             mask, original = run(frame_bgr)
             cv2.imshow('Original', original)
-            cv2.imshow('Mask', mask)
 
             key = cv2.waitKey(1) & 0xFF
             if key == ord('u'):
@@ -252,30 +248,70 @@ if __name__ == '__main__':
             elif key == ord('3'):
                 __target_color = ('blue',)
                 print("Selected Blue")
-            elif key == ord('p'):
-                print("\n📸 Please hold up the ColorChecker chart clearly in front of the camera.")
-                print("Press 'c' to capture the reference image or 'q' to cancel.")
+            elif key == ord('c'):
+                # Color Calibration (ColorCalib) with integrated reference image capture and undistort toggle
+                undistort_enabled_cc = False
                 while True:
                     frame_ref = picam2.capture_array()
                     if frame_ref is not None:
-                        frame_bgr = cv2.cvtColor(frame_ref, cv2.COLOR_RGB2BGR)
-                        cv2.imshow("Reference Capture - Press 'c' to capture", frame_bgr)
+                        frame_display = frame_ref.copy()
+                        if undistort_enabled_cc and K is not None and D is not None:
+                            frame_display = lab_auto_calibration.undistort_frame(frame_display, K, D)
+                        frame_bgr = cv2.cvtColor(frame_display, cv2.COLOR_RGB2BGR)
+                        cv2.putText(frame_bgr, "Hold up the ColorChecker chart clearly in front of the camera.", (30, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
+                        cv2.putText(frame_bgr, "Press 's' to capture, 'c' or 'q' to cancel.", (30, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
+                        cv2.putText(frame_bgr, "[u] Toggle undistort", (30, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
+                        cv2.putText(frame_bgr, f"Undistortion: {'ON' if undistort_enabled_cc else 'OFF'}", (400, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 128, 255), 2)
+                        cv2.imshow("Color Calibration - Capture Reference", frame_bgr)
                         capture_key = cv2.waitKey(1) & 0xFF
-                        if capture_key == ord('c'):
-                            lab_auto_calibration.capture_reference_image(frame_ref, save_path='reference_image.jpg')
+                        if capture_key == ord('s'):
+                            cv2.imwrite('reference_image.jpg', cv2.cvtColor(frame_display, cv2.COLOR_RGB2BGR))
                             print("✅ Reference image captured and saved.")
                             break
-                        elif capture_key == ord('q'):
-                            print("Reference capture cancelled.")
+                        elif capture_key == ord('q') or capture_key == ord('c'):
+                            print("Color calibration cancelled.")
+                            cv2.destroyWindow("Color Calibration - Capture Reference")
                             break
+                        elif capture_key == ord('u'):
+                            undistort_enabled_cc = not undistort_enabled_cc
                     else:
                         time.sleep(0.1)
-                cv2.destroyWindow("Reference Capture - Press 'c' to capture")
-            elif key == ord('c'):
-                lab_auto_calibration.calibrate_lab_ranges(
-                    reference_image_path='reference_image.jpg',
-                    yaml_output_path=yaml_handle.lab_file_path_imx477
-                )
+                cv2.destroyWindow("Color Calibration - Capture Reference")
+                # Now proceed to color patch selection as before
+                image = cv2.imread('reference_image.jpg')
+                if image is None:
+                    print("❌ Could not load reference image!")
+                else:
+                    color_order = ['red', 'green', 'blue', 'black', 'white']
+                    points = []
+                    def click_event(event, x, y, flags, param):
+                        if event == cv2.EVENT_LBUTTONDOWN:
+                            image_lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+                            avg_lab = np.mean(image_lab[max(0, y-5):y+5, max(0, x-5):x+5].reshape(-1, 3), axis=0)
+                            points.append(avg_lab.astype(int))
+                            print(f"Clicked at ({x}, {y}), Average LAB: {avg_lab}")
+                    cv2.namedWindow("Reference Image - Click Colors")
+                    cv2.setMouseCallback("Reference Image - Click Colors", click_event)
+                    while True:
+                        display_image = image.copy()
+                        cv2.putText(display_image, "Click: RED, GREEN, BLUE, BLACK, WHITE", (10, 30),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                        for idx, color in enumerate(color_order):
+                            if len(points) > idx:
+                                cv2.putText(display_image, f"{color.upper()} set", (10, 60 + idx*30),
+                                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                        # Only show quit instructions now
+                        cv2.putText(display_image, "Press 'c' or 'q' to quit Color Calibration.", (10, 220),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
+                        cv2.imshow("Reference Image - Click Colors", display_image)
+                        if len(points) == 5:
+                            break
+                        key_cc = cv2.waitKey(1) & 0xFF
+                        if key_cc == ord('q') or key_cc == ord('c'):
+                            print("Calibration aborted.")
+                            cv2.destroyAllWindows()
+                            break
+                    cv2.destroyAllWindows()
                 load_config()
                 print("✅ Calibration complete. LAB ranges updated!")
             elif key == ord('d'):
@@ -294,9 +330,9 @@ if __name__ == '__main__':
                         if frame_prompt is not None:
                             frame_bgr = cv2.cvtColor(frame_prompt, cv2.COLOR_RGB2BGR)
                             if undistort_enabled and K is not None and D is not None:
-                                frame_bgr = lab_auto_calibration.undistort_frame(frame_bgr, K, D)
+                                frame_bgr = lab_auto_calibration.undistort_frame(frame_prompt, K, D)
                             
-                            cv2.putText(frame_bgr, "Reuse images? (y/n)", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 255), 3)
+                            cv2.putText(frame_bgr, "Reuse images? (y/n)", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (255, 0, 0), 3)
                             cv2.imshow('Original', frame_bgr)
 
                         key_choice = cv2.waitKey(1) & 0xFF
@@ -313,7 +349,7 @@ if __name__ == '__main__':
                     print("\n🔍 Starting Distortion Calibration in High Resolution...")
                     print("Please hold up the checkerboard for distortion calibration.")
                     print("Move the checkerboard around and take at least 10-15 images from different angles.")
-                    print("Press 'c' to capture calibration images, 'q' to finish capture.")
+                    print("Press 'c' to capture calibration images, 'd'/'q' to finish capture.")
 
                     # Switch to higher resolution for better accuracy
                     print("Switching to 1920x1080 resolution...")
@@ -337,9 +373,9 @@ if __name__ == '__main__':
                     frame_cb = picam2.capture_array()
                     if frame_cb is not None:
                         frame_bgr = cv2.cvtColor(frame_cb, cv2.COLOR_RGB2BGR)
-                        instructions = "Move checkerboard. Press 'c' to capture, 'q' to finish."
+                        instructions = "Move checkerboard. Press 'c' to capture, 'd'/'q' to finish."
                         cv2.putText(frame_bgr, instructions, (10, 30),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
                         cv2.imshow("Checkerboard Capture", frame_bgr)
 
                         key_cb = cv2.waitKey(1) & 0xFF
@@ -348,21 +384,21 @@ if __name__ == '__main__':
                             img_name = os.path.join(image_dir, f"calib_{img_counter:03d}.jpg")
                             cv2.imwrite(img_name, frame_bgr)
                             print(f"✅ Calibration image saved as {img_name}")
-                        elif key_cb == ord('q'):
+                        elif key_cb == ord('q') or key_cb == ord('d'):
                             print("✅ Calibration image capture finished. Starting calibration...")
                             break
                     else:
                         time.sleep(0.1)
 
-                    cv2.destroyWindow("Checkerboard Capture")
+                cv2.destroyWindow("Checkerboard Capture")
 
-                    # Switch back to original resolution before heavy processing
-                    print("Switching back to original preview resolution...")
-                    picam2.stop()
-                    time.sleep(0.5)
-                    picam2.configure(config) # Revert to the original config
-                    picam2.start()
-                    time.sleep(1)
+                # Switch back to original resolution before heavy processing
+                print("Switching back to original preview resolution...")
+                picam2.stop()
+                time.sleep(0.5)
+                picam2.configure(config) # Revert to the original config
+                picam2.start()
+                time.sleep(1)
 
                 lab_auto_calibration.calibrate_camera(
                     image_dir=image_dir,
@@ -417,11 +453,10 @@ if __name__ == '__main__':
                 while jog_mode:
                     frame_jog = picam2.capture_array()
                     if frame_jog is not None:
-                        frame_bgr = cv2.cvtColor(frame_jog, cv2.COLOR_RGB2BGR)
-                        
-                        # Apply undistortion if enabled
+                        # Apply undistortion to raw frame first
                         if undistort_enabled and K is not None and D is not None:
-                            frame_bgr = lab_auto_calibration.undistort_frame(frame_bgr, K, D)
+                            frame_jog = lab_auto_calibration.undistort_frame(frame_jog, K, D)
+                        frame_bgr = cv2.cvtColor(frame_jog, cv2.COLOR_RGB2BGR)
                         
                         # Define text color
                         blue_color = (255, 128, 0) # Medium Blue (BGR)
@@ -444,7 +479,7 @@ if __name__ == '__main__':
                         for i, text in enumerate(instructions_with_angles):
                             y = y0 + i * dy
                             cv2.putText(frame_bgr, text, (10, y),
-                                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, blue_color, 2)
+                                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, blue_color, 2)
                         
                         cv2.imshow("Jog Mode", frame_bgr)
                         
@@ -535,12 +570,11 @@ if __name__ == '__main__':
                     while prompt_user_to_move:
                         frame_calib = picam2.capture_array()
                         if frame_calib is None: continue
+                        # Apply undistortion to raw frame first
+                        if undistort_enabled and K is not None and D is not None:
+                            frame_calib = lab_auto_calibration.undistort_frame(frame_calib, K, D)
                         frame_bgr = cv2.cvtColor(frame_calib, cv2.COLOR_RGB2BGR)
                         
-                        # Apply undistortion if enabled
-                        if undistort_enabled and K is not None and D is not None:
-                            frame_bgr = lab_auto_calibration.undistort_frame(frame_bgr, K, D)
-
                         instructions = [
                             f"POINT {point_index + 1}/{len(CALIBRATION_GRID_POINTS)} - STEP 1: JOG ARM",
                             f"TARGET (X,Y,Z): {target_world_pos} cm",
@@ -549,9 +583,9 @@ if __name__ == '__main__':
                             "Press [u] to toggle undistortion, [y] to exit."
                         ]
                         for i, text in enumerate(instructions):
-                            cv2.putText(frame_bgr, text, (10, 30 + 25 * i), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
-                        
-                        cv2.putText(frame_bgr, "Press [i] for detailed instructions", (10, 205), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+                            cv2.putText(frame_bgr, text, (10, 30 + 25 * i), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
+                        print("3DPoseCalib (jog) frame_bgr shape:", frame_bgr.shape, "dtype:", frame_bgr.dtype, "min:", frame_bgr.min(), "max:", frame_bgr.max())
+                        cv2.putText(frame_bgr, "Press [i] for detailed instructions", (10, 205), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
                         cv2.imshow("3D Calibration", frame_bgr)
                         calib_key = cv2.waitKey(1) & 0xFF
 
@@ -579,12 +613,11 @@ if __name__ == '__main__':
                     while prompt_user_to_click:
                         frame_calib = picam2.capture_array()
                         if frame_calib is None: continue
+                        # Apply undistortion to raw frame first
+                        if undistort_enabled and K is not None and D is not None:
+                            frame_calib = lab_auto_calibration.undistort_frame(frame_calib, K, D)
                         frame_bgr = cv2.cvtColor(frame_calib, cv2.COLOR_RGB2BGR)
                         
-                        # Apply undistortion if enabled
-                        if undistort_enabled and K is not None and D is not None:
-                            frame_bgr = lab_auto_calibration.undistort_frame(frame_bgr, K, D)
-
                         instructions = [
                             f"POINT {point_index + 1}/{len(CALIBRATION_GRID_POINTS)} - STEP 2: CLICK PIXEL",
                             "Click the exact pixel where the gripper tip is.",
@@ -594,12 +627,11 @@ if __name__ == '__main__':
                             "Press [y] to exit."
                         ]
                         for i, text in enumerate(instructions):
-                             cv2.putText(frame_bgr, text, (10, 30 + 25 * i), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
-
+                            cv2.putText(frame_bgr, text, (10, 30 + 25 * i), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
                         if camera_processor.clicked_pixel:
                             cv2.circle(frame_bgr, camera_processor.clicked_pixel, 10, (0, 255, 0), 2)
-                        
-                        cv2.putText(frame_bgr, "Press [i] for detailed instructions", (10, 225), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+                        print("3DPoseCalib (click) frame_bgr shape:", frame_bgr.shape, "dtype:", frame_bgr.dtype, "min:", frame_bgr.min(), "max:", frame_bgr.max())
+                        cv2.putText(frame_bgr, "Press [i] for detailed instructions", (10, 225), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
                         cv2.imshow("3D Calibration", frame_bgr)
                         click_key = cv2.waitKey(1) & 0xFF
 

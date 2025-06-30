@@ -12,6 +12,7 @@ import numpy as np
 import common.yaml_handle as yaml_handle
 from arm_controller import ArmController
 from camera_processor import CameraProcessor
+from scan_utils import generate_polar_scan_angles
 
 # Configure logging
 logging.basicConfig(
@@ -154,7 +155,7 @@ class ColorPalletizing:
         """
         Enhanced polar scan with ±180° range, with immediate pickup after detection.
         """
-        angles = list(range(-180, 181, 75))  # Rotation angles to cover ±180°
+        angles = generate_polar_scan_angles(-180, 180, 75)  # Rotation angles to cover ±180°
         angle_idx = 0
         fixed_pitch = -10  # Slight downward pitch angle
 

@@ -9,6 +9,7 @@ import mediapipe as mp
 from common import yaml_handle
 from arm_controller import ArmController
 from Camera import Camera
+from scan_utils import generate_polar_scan_angles
 
 # Face Recognition for IMX477 Camera
 # Migrated from USB camera version with enhanced polar scanning
@@ -81,7 +82,7 @@ def move():
     global arm_controller
     
     # Define scanning angles (cover ±180° range)
-    angles = list(range(-180, 181, 60))  # 60° intervals for face scanning
+    angles = generate_polar_scan_angles(-180, 180, 60)  # 60° intervals for face scanning
     angle_idx = 0
     fixed_pitch = -10  # Slight downward pitch angle for face detection
     
