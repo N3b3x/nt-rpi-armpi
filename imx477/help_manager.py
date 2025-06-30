@@ -70,7 +70,7 @@ After completing these steps, your system will be fully calibrated and ready to 
 
     def show_calibration_help(self):
         """Saves instructions to a markdown file and opens it in a web browser."""
-        instructions_file = "calibration_instructions.md"
+        instructions_file = "docs/calibration_instructions.md"
         with open(instructions_file, "w") as f:
             f.write(self.calibration_instructions)
         
