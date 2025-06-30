@@ -57,7 +57,7 @@ start_pick_up = False
 number = 0
 size = (640, 480)
 draw_color = range_rgb["black"]
-table_calib_file = 'table_height.yaml'  # Path to save table height
+table_calib_file = 'yaml/table_height.yaml'  # Path to save table height
 block_height = 3  # cm, as specified
 
 table_z = None  # Will be set by calibration or loaded
@@ -67,7 +67,7 @@ stacking_X = 12  # Default stacking X (can be changed)
 stacking_Y = 0   # Default stacking Y (can be changed)
 stacking_Z = 0.5 # Default stacking Z (table height at stacking location)
 
-stacking_calib_file = 'stacking_height.yaml'  # Path to save stacking Z
+stacking_calib_file = 'yaml/stacking_height.yaml'  # Path to save stacking Z
 
 manual_mode = False
 manual_x = None
