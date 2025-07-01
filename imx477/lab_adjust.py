@@ -148,7 +148,8 @@ def manual_camera_controls(picam2):
                 "[e] Exposure-  [r] Exposure+",
                 "[g] Gain-  [h] Gain+",
                 "[b] Brightness-  [n] Brightness+",
-                "[m] Apply  |  [m]/[q] Quit Controls"
+                "[m] Apply  |  [m]/[q] Quit Controls",
+                "[i] Detailed Instructions"
             ]
             for idx, text in enumerate(instructions):
                 cv2.putText(frame_bgr, text, (10, 30 + 25 * idx),
@@ -165,7 +166,9 @@ def manual_camera_controls(picam2):
             cv2.imshow("Camera Controls", frame_bgr)
 
             key = cv2.waitKey(1) & 0xFF
-            if key == ord('q') or key == ord('m'):
+            if key == ord('i'):
+                help_manager.show_manual_camera_controls_help()
+            elif key == ord('q') or key == ord('m'):
                 print("Exiting camera controls...")
                 cv2.destroyWindow("Camera Controls")
                 break
@@ -262,9 +265,12 @@ if __name__ == '__main__':
                         cv2.putText(frame_bgr, "Press 's' to capture, 'c' or 'q' to cancel.", (30, 80), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
                         cv2.putText(frame_bgr, "[u] Toggle undistort", (30, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
                         cv2.putText(frame_bgr, f"Undistortion: {'ON' if undistort_enabled_cc else 'OFF'}", (400, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 128, 255), 2)
+                        cv2.putText(frame_bgr, "Press [i] for detailed instructions", (30, 160), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
                         cv2.imshow("Color Calibration - Capture Reference", frame_bgr)
                         capture_key = cv2.waitKey(1) & 0xFF
-                        if capture_key == ord('s'):
+                        if capture_key == ord('i'):
+                            help_manager.show_color_calibration_help()
+                        elif capture_key == ord('s'):
                             cv2.imwrite('reference_image.jpg', cv2.cvtColor(frame_display, cv2.COLOR_RGB2BGR))
                             print("✅ Reference image captured and saved.")
                             break
@@ -303,11 +309,15 @@ if __name__ == '__main__':
                         # Only show quit instructions now
                         cv2.putText(display_image, "Press 'c' or 'q' to quit Color Calibration.", (10, 220),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
+                        cv2.putText(display_image, "Press [i] for detailed instructions", (10, 250),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
                         cv2.imshow("Reference Image - Click Colors", display_image)
                         if len(points) == 5:
                             break
                         key_cc = cv2.waitKey(1) & 0xFF
-                        if key_cc == ord('q') or key_cc == ord('c'):
+                        if key_cc == ord('i'):
+                            help_manager.show_color_calibration_help()
+                        elif key_cc == ord('q') or key_cc == ord('c'):
                             print("Calibration aborted.")
                             cv2.destroyAllWindows()
                             break
@@ -376,10 +386,14 @@ if __name__ == '__main__':
                         instructions = "Move checkerboard. Press 'c' to capture, 'd'/'q' to finish."
                         cv2.putText(frame_bgr, instructions, (10, 30),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+                        cv2.putText(frame_bgr, "Press [i] for detailed instructions", (10, 60),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
                         cv2.imshow("Checkerboard Capture", frame_bgr)
 
                         key_cb = cv2.waitKey(1) & 0xFF
-                        if key_cb == ord('c'):
+                        if key_cb == ord('i'):
+                            help_manager.show_distortion_calibration_help()
+                        elif key_cb == ord('c'):
                             img_counter += 1
                             img_name = os.path.join(image_dir, f"calib_{img_counter:03d}.jpg")
                             cv2.imwrite(img_name, frame_bgr)
@@ -481,10 +495,16 @@ if __name__ == '__main__':
                             cv2.putText(frame_bgr, text, (10, y),
                                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, blue_color, 2)
                         
+                        # Add help instruction
+                        cv2.putText(frame_bgr, "Press [i] for detailed instructions", (10, y0 - 40),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, blue_color, 2)
+                        
                         cv2.imshow("Jog Mode", frame_bgr)
                         
                         jog_key = cv2.waitKey(1) & 0xFF
-                        if jog_key == ord('j'):
+                        if jog_key == ord('i'):
+                            help_manager.show_jog_mode_help()
+                        elif jog_key == ord('j'):
                             print("Exiting Jog Mode...")
                             jog_mode = False
                         elif jog_key == ord('u'):
@@ -584,7 +604,7 @@ if __name__ == '__main__':
                         ]
                         for i, text in enumerate(instructions):
                             cv2.putText(frame_bgr, text, (10, 30 + 25 * i), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
-                        print("3DPoseCalib (jog) frame_bgr shape:", frame_bgr.shape, "dtype:", frame_bgr.dtype, "min:", frame_bgr.min(), "max:", frame_bgr.max())
+                        #print("3DPoseCalib (jog) frame_bgr shape:", frame_bgr.shape, "dtype:", frame_bgr.dtype, "min:", frame_bgr.min(), "max:", frame_bgr.max())
                         cv2.putText(frame_bgr, "Press [i] for detailed instructions", (10, 205), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
                         cv2.imshow("3D Calibration", frame_bgr)
                         calib_key = cv2.waitKey(1) & 0xFF

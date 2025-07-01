@@ -75,10 +75,10 @@ This shows the arm's general dimensions.
                               -Y
                      ← -X             +X →
 ```
-
+    
 ---
 
-## Calibration Point Arrangement
+## Calibration Point Arrangement   
 
 ### ✅ XY Plane Points (Z = 0)
 To cover the full table reach:

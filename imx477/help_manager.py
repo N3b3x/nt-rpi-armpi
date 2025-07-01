@@ -69,14 +69,100 @@ After completing these steps, your system will be fully calibrated and ready to 
 """
 
     def show_calibration_help(self):
-        """Saves instructions to a markdown file and opens it in a web browser."""
-        instructions_file = "docs/calibration_instructions.md"
-        with open(instructions_file, "w") as f:
-            f.write(self.calibration_instructions)
+        """Opens calibration instructions in a web browser."""
+        print(f"🔍 Current working directory: {os.getcwd()}")
+        docs_dir = "../docs"  # Look in parent directory's docs folder
+        if not os.path.exists(docs_dir):
+            os.makedirs(docs_dir)
         
-        # Get the full path to the file
-        file_path = os.path.abspath(instructions_file)
+        instructions_file = os.path.join(docs_dir, "calibration_instructions.md")
+        if os.path.exists(instructions_file):
+            file_path = os.path.abspath(instructions_file)
+            print(f"🔍 Opening file: {file_path}")
+            webbrowser.open_new_tab(f'file://{file_path}')
+            print(f"✅ Opened calibration instructions in your web browser.")
+        else:
+            print("❌ Calibration instructions file not found.")
+            print("Creating default calibration instructions file...")
+            # Only create the file if it doesn't exist
+            with open(instructions_file, "w") as f:
+                f.write(self.calibration_instructions)
+            file_path = os.path.abspath(instructions_file)
+            print(f"🔍 Created and opening file: {file_path}")
+            webbrowser.open_new_tab(f'file://{file_path}')
+            print(f"✅ Created and opened default calibration instructions in your web browser.")
+    
+    def show_color_calibration_help(self):
+        """Opens color calibration instructions in a web browser."""
+        docs_dir = "../docs"  # Look in parent directory's docs folder
+        if not os.path.exists(docs_dir):
+            os.makedirs(docs_dir)
         
-        # Open in the default web browser
-        webbrowser.open_new_tab(f'file://{file_path}')
-        print(f"✅ Opened calibration instructions in your web browser.") 
+        instructions_file = os.path.join(docs_dir, "color_calibration_instructions.md")
+        if os.path.exists(instructions_file):
+            file_path = os.path.abspath(instructions_file)
+            webbrowser.open_new_tab(f'file://{file_path}')
+            print(f"✅ Opened color calibration instructions in your web browser.")
+        else:
+            print("❌ Color calibration instructions file not found.")
+            print("Please ensure the color_calibration_instructions.md file exists in the docs folder.")
+    
+    def show_distortion_calibration_help(self):
+        """Opens distortion calibration instructions in a web browser."""
+        docs_dir = "../docs"  # Look in parent directory's docs folder
+        if not os.path.exists(docs_dir):
+            os.makedirs(docs_dir)
+        
+        instructions_file = os.path.join(docs_dir, "distortion_calibration_instructions.md")
+        if os.path.exists(instructions_file):
+            file_path = os.path.abspath(instructions_file)
+            webbrowser.open_new_tab(f'file://{file_path}')
+            print(f"✅ Opened distortion calibration instructions in your web browser.")
+        else:
+            print("❌ Distortion calibration instructions file not found.")
+            print("Please ensure the distortion_calibration_instructions.md file exists in the docs folder.")
+    
+    def show_jog_mode_help(self):
+        """Opens jog mode instructions in a web browser."""
+        docs_dir = "../docs"  # Look in parent directory's docs folder
+        if not os.path.exists(docs_dir):
+            os.makedirs(docs_dir)
+        
+        instructions_file = os.path.join(docs_dir, "jog_mode_instructions.md")
+        if os.path.exists(instructions_file):
+            file_path = os.path.abspath(instructions_file)
+            webbrowser.open_new_tab(f'file://{file_path}')
+            print(f"✅ Opened jog mode instructions in your web browser.")
+        else:
+            print("❌ Jog mode instructions file not found.")
+            print("Please ensure the jog_mode_instructions.md file exists in the docs folder.")
+    
+    def show_test_3d_calibration_help(self):
+        """Opens test 3D calibration instructions in a web browser."""
+        docs_dir = "../docs"  # Look in parent directory's docs folder
+        if not os.path.exists(docs_dir):
+            os.makedirs(docs_dir)
+        
+        instructions_file = os.path.join(docs_dir, "test_3d_calibration_instructions.md")
+        if os.path.exists(instructions_file):
+            file_path = os.path.abspath(instructions_file)
+            webbrowser.open_new_tab(f'file://{file_path}')
+            print(f"✅ Opened test 3D calibration instructions in your web browser.")
+        else:
+            print("❌ Test 3D calibration instructions file not found.")
+            print("Please ensure the test_3d_calibration_instructions.md file exists in the docs folder.")
+    
+    def show_manual_camera_controls_help(self):
+        """Opens manual camera controls instructions in a web browser."""
+        docs_dir = "../docs"  # Look in parent directory's docs folder
+        if not os.path.exists(docs_dir):
+            os.makedirs(docs_dir)
+        
+        instructions_file = os.path.join(docs_dir, "manual_camera_controls_instructions.md")
+        if os.path.exists(instructions_file):
+            file_path = os.path.abspath(instructions_file)
+            webbrowser.open_new_tab(f'file://{file_path}')
+            print(f"✅ Opened manual camera controls instructions in your web browser.")
+        else:
+            print("❌ Manual camera controls instructions file not found.")
+            print("Please ensure the manual_camera_controls_instructions.md file exists in the docs folder.") 
