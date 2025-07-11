@@ -16,7 +16,7 @@ To accurately calibrate the camera so the system can translate a pixel seen by t
 
 ## Coordinate System Overview
 
-Based on the official ArmPi mini documentation, the coordinate system is defined as follows:
+Based on the official ArmPi mini documentation, the coordinate system is defined as follows: (all units in centimeters)
 
 ### Angled View
 This shows the arm's general posture.
@@ -53,7 +53,7 @@ This shows the arm's general dimensions.
 ## Updated Top-Down Layout (ASCII Diagram)
 
 ```
-(View from Above)
+(View from Above - all units in centimeters)
 
                               +Y (forward → table)
                                ↑

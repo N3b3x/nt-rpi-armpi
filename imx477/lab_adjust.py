@@ -55,7 +55,7 @@ def show_instructions_in_browser():
     """Opens the calibration_instructions.md file in a web browser."""
     # This script is typically run from the project root (e.g., /home/pi/ArmPi_mini),
     # so the path to the instructions file is relative to that root.
-    instructions_file = "docs/calibration_instructions.md"
+    instructions_file = "docs/pose_calibration_instructions.md"
 
     if not os.path.exists(instructions_file):
         print(f"❌ Error: Could not find the instructions file at '{instructions_file}'.")
