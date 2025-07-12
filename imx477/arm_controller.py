@@ -111,7 +111,7 @@ class ArmController:
         """Initialize arm to starting position (match Hiwonder sample)."""
         self.board.pwm_servo_set_position(0.3, [[SERVO_GRIPPER, 1500]])
         self.current_gripper_pos = 1500  # Track gripper position
-        res = self.AK.setPitchRangeMoving((0, 8, 10), -90, -90, 90, 1500)
+        res = self.AK.setPitchRangeMoving((0, 8, 10), -90, -90, 0, 1500)  # Set base angle to 0 (center)
         if res and res[0] is not False:  # Check if we got valid results
             servos, alpha, movetime, angles = res
             self.current_elbow_angle = angles['theta3']

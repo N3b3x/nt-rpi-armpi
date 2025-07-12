@@ -218,6 +218,12 @@ if __name__ == '__main__':
     picam2.configure(config)
     picam2.start()
     time.sleep(1)
+    # Force all camera controls to auto mode
+    picam2.set_controls({
+        "AwbEnable": True,
+        "AeEnable": True,
+        "AwbMode": 0
+    })
 
     arm_controller = ArmController()  # Create arm controller instance
     camera_processor = CameraProcessor(picam2=picam2)  # Create camera processor instance

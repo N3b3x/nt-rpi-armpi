@@ -11,7 +11,7 @@ class Camera:
             self.picam2 = picam2
         else:
             self.picam2 = Picamera2()
-            config = self.picam2.create_still_configuration(main={"size": resolution})
+            config = self.picam2.create_preview_configuration(main={"size": resolution})
             self.picam2.configure(config)
             self.picam2.start()
             time.sleep(1)  # give time to warm up
