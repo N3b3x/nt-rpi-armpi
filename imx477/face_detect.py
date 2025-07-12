@@ -1,11 +1,19 @@
 #!/usr/bin/python3
 # coding=utf8
 import sys
+import os
+sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/common_sdk')
+sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/kinematics')
+sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/yaml')
+sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/CameraCalibration')
+sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/kinematics_sdk')
+sys.path.append('/home/pi/ArmPi_mini/')
 import cv2
 import time
 import numpy as np
 import threading
 import mediapipe as mp
+import lab_auto_calibration  # <-- Add this import
 from common import yaml_handle
 from arm_controller import ArmController
 from Camera import Camera
@@ -35,11 +43,12 @@ load_config()
 # Initialize arm controller
 arm_controller = None
 
-# Initial position
+# Initial position (disabled for face detection)
 def initMove():
     global arm_controller
     if arm_controller:
-        arm_controller.init_move()
+        # Don't move arm for face detection
+        pass
     
 
 start_greet = False
@@ -62,9 +71,9 @@ def init():
     print("Face Detection Init")
     load_config()
     
-    # Initialize arm controller for buzzer access
+    # Initialize arm controller for buzzer access only (no movement)
     arm_controller = ArmController()
-    initMove()
+    # Don't call initMove() - we don't want arm movement for face detection
 
 # Start game
 def start():
@@ -146,21 +155,44 @@ def run(img):
     return img
 
 if __name__ == '__main__':
-    # Initialize IMX477 camera
-    camera = Camera(resolution=(640, 480))
-    
+    # Initialize IMX477 camera with same setup as lab_adjust.py
+    from picamera2 import Picamera2
+    picam2 = Picamera2()
+    config = picam2.create_preview_configuration(
+        main={"size": (1920, 1080)},
+        controls={"FrameDurationLimits": (19989, 19989)}  # ~50 FPS
+    )
+    picam2.configure(config)
+    picam2.start()
+    time.sleep(1)
+
+    # Undistort support
+    undistort_enabled = False
+    K, D = None, None
+    if os.path.exists('calibration_data.npz'):
+        K, D = lab_auto_calibration.load_calibration_data('calibration_data.npz')
+
     init()
     start()
     
     while True:
-        img = camera.get_frame()
-        if img is not None:
-            frame = img.copy()
-            Frame = run(frame)  
+        frame = picam2.capture_array()
+        if frame is not None:
+            frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            if undistort_enabled and K is not None and D is not None:
+                frame_bgr = lab_auto_calibration.undistort_frame(frame_bgr, K, D)
+            Frame = run(frame_bgr)
             frame_resize = cv2.resize(Frame, (640, 480))
+            # Overlay key info
+            cv2.putText(frame_resize, '[u] Toggle undistort', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
+            cv2.putText(frame_resize, '[q] Quit', (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
             cv2.imshow('IMX477 Face Detection', frame_resize)
-            key = cv2.waitKey(1)
-            if key == 27:
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('u'):
+                undistort_enabled = not undistort_enabled
+                print(f"Undistortion {'enabled' if undistort_enabled else 'disabled'}")
+            elif key == ord('q') or key == 27:
+                print("Quitting...")
                 break
         else:
             time.sleep(0.01)
