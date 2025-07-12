@@ -1,6 +1,14 @@
 #!/usr/bin/python3
 # coding=utf8
 import sys
+import os
+sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/common_sdk')
+sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/kinematics')
+sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/yaml')
+sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/CameraCalibration')
+sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/kinematics_sdk')
+sys.path.append('/home/pi/ArmPi_mini/')
+
 import cv2
 import time
 import math
@@ -9,9 +17,11 @@ import numpy as np
 import common.pid as PID
 import common.misc as Misc
 import mediapipe as mp
+import lab_auto_calibration
+from common import yaml_handle
+from arm_controller import ArmController
 from Camera import Camera
-from hiwonder import FaceDetect
-from hiwonder import FaceRecognition
+from scan_utils import generate_polar_scan_angles
 
 if sys.version_info.major == 2:
     print('Please run this program with python3!')
@@ -61,9 +71,26 @@ hands = mp_hands.Hands(
     min_tracking_confidence=0.7
 )
 
-# Initialize HiWonder face detection and recognition
-face_detect = FaceDetect()
-face_recognition = FaceRecognition()
+# Initialize MediaPipe face detection and mesh
+Face = mp.solutions.face_detection
+FaceMesh = mp.solutions.face_mesh
+
+faceDetection = Face.FaceDetection(min_detection_confidence=0.8)
+faceMesh = FaceMesh.FaceMesh(
+    static_image_mode=False,
+    max_num_faces=1,
+    min_detection_confidence=0.8,
+    min_tracking_confidence=0.8
+)
+
+# Simple face recognition using MediaPipe features
+known_faces = {}  # Dictionary to store known face features
+
+lab_data = None
+
+def load_config():
+    global lab_data
+    lab_data = yaml_handle.get_yaml_data(yaml_handle.lab_file_path)
 
 # Define gestures
 GESTURES = {
@@ -83,9 +110,13 @@ REFERENCE_SIZE = 1000  # Reference size at REFERENCE_DISTANCE
 current_depth = None
 depth_confidence = 0.0
 
+# Initialize arm controller
+arm_controller = None
+
 def initMove():
-    board.pwm_servo_set_position(0.8, [[1, servo1]])
-    AK.setPitchRangeMoving((0, y_dis, z_dis), 0,-90, 90, 1500)
+    global arm_controller
+    if arm_controller:
+        arm_controller.init_move_face_scan()
 
 def set_rgb(color):
     if color == "red":
@@ -189,10 +220,13 @@ def reset():
     depth_confidence = 0.0
 
 def init():
+    global arm_controller
     print("Gesture/Face Tracking Init")
+    load_config()
+    
+    # Initialize arm controller
+    arm_controller = ArmController()
     initMove()
-    # Initialize face recognition database
-    face_recognition.load_known_faces()
 
 def start():
     global __isRunning
@@ -330,21 +364,67 @@ def detect_gesture(hand_landmarks):
     return None
 
 def detect_face(frame):
-    # Use HiWonder's face detection
-    faces = face_detect.detect(frame)
-    if faces:
+    # Use MediaPipe face detection
+    imgRGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    results = faceDetection.process(imgRGB)
+    
+    if results.detections:
         # Get the largest face
-        largest_face = max(faces, key=lambda x: x['w'] * x['h'])
-        x, y, w, h = largest_face['x'], largest_face['y'], largest_face['w'], largest_face['h']
-        center_x = x + w//2
-        center_y = y + h//2
+        largest_detection = max(results.detections, key=lambda x: x.location_data.relative_bounding_box.width * x.location_data.relative_bounding_box.height)
         
-        # Try to recognize the face
-        face_img = frame[y:y+h, x:x+w]
-        name = face_recognition.recognize(face_img)
+        bboxC = largest_detection.location_data.relative_bounding_box
+        h, w = frame.shape[:2]
         
-        return (center_x, center_y), w * h, name
+        # Convert to pixel coordinates
+        x = int(bboxC.xmin * w)
+        y = int(bboxC.ymin * h)
+        face_w = int(bboxC.width * w)
+        face_h = int(bboxC.height * h)
+        
+        center_x = x + face_w//2
+        center_y = y + face_h//2
+        
+        # Try to recognize the face using MediaPipe features
+        face_img = frame[y:y+face_h, x:x+face_w]
+        name = recognize_face_mediapipe(face_img)
+        
+        return (center_x, center_y), face_w * face_h, name
     return None, 0, None
+
+def recognize_face_mediapipe(face_img):
+    """Simple face recognition using MediaPipe features"""
+    if face_img.size == 0:
+        return "Unknown"
+    
+    try:
+        # Extract face features using MediaPipe
+        face_rgb = cv2.cvtColor(face_img, cv2.COLOR_BGR2RGB)
+        results = faceMesh.process(face_rgb)
+        
+        if results.multi_face_landmarks:
+            landmarks = results.multi_face_landmarks[0]
+            # Extract key facial landmarks as features
+            features = []
+            h, w = face_img.shape[:2]
+            
+            # Get key landmark points (eyes, nose, mouth corners)
+            key_points = [33, 133, 362, 263, 19, 94, 2, 61, 291, 375]
+            for point_id in key_points:
+                if point_id < len(landmarks.landmark):
+                    point = landmarks.landmark[point_id]
+                    features.extend([point.x * w, point.y * h])
+            
+            features = tuple(features)
+            
+            # Simple matching with known faces
+            if features in known_faces:
+                return known_faces[features]
+            else:
+                return "Unknown"
+    except Exception as e:
+        print(f"[ERROR] Face recognition failed: {e}")
+    
+    return "Unknown"
 
 def detect_hand(frame):
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -525,35 +605,86 @@ def run(img):
     return img_copy
 
 if __name__ == '__main__':
-    from kinematics.arm_move_ik import *
-    from common.ros_robot_controller_sdk import Board
-    board = Board()
-    AK = ArmIK()
-    AK.board = board
+    # Initialize IMX477 camera with same setup as face_detect/lab_adjust
+    import os
+    from picamera2 import Picamera2
     
+    picam2 = Picamera2()
+    config = picam2.create_preview_configuration(
+        main={"size": (1920, 1080)},
+        controls={"FrameDurationLimits": (19989, 19989)}  # ~50 FPS
+    )
+    picam2.configure(config)
+    picam2.start()
+    time.sleep(1)
+    
+    # Force all camera controls to auto mode
+    picam2.set_controls({
+        "AwbEnable": True,
+        "AeEnable": True,
+        "AwbMode": 0
+    })
+
+    # Undistort support
+    undistort_enabled = False
+    K, D = None, None
+    if os.path.exists('calibration_data.npz'):
+        K, D = lab_auto_calibration.load_calibration_data('calibration_data.npz')
+
     init()
     start()
-    camera = Camera(resolution=CAMERA_RESOLUTION)
+    
+    print("\n=== Gesture/Face Tracking Controls ===")
+    print("f - Switch to Face Detection Mode")
+    print("h - Switch to Hand Gesture Detection Mode")
+    print("z - Cycle through zoom levels")
+    print("l - Toggle spotlight")
+    print("u - Toggle undistort")
+    print("q - Quit")
+    print("=====================================\n")
     
     while True:
-        frame = camera.get_frame()
+        frame = picam2.capture_array()
         if frame is not None:
-            Frame = run(frame)
-            frame_resize = cv2.resize(Frame, DISPLAY_RESOLUTION)
+            frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            if undistort_enabled and K is not None and D is not None:
+                frame_bgr = lab_auto_calibration.undistort_frame(frame_bgr, K, D)
+            Frame = run(frame_bgr)
+            frame_resize = cv2.resize(Frame, (640, 480))
+            
+            # Overlay key info
+            cv2.putText(frame_resize, f'Mode: {detection_mode.upper()}', (10, 30), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
+            cv2.putText(frame_resize, '[f] Face | [h] Hand | [z] Zoom | [l] Light | [u] Undistort | [q] Quit', 
+                       (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+            
+            if recognized_face:
+                cv2.putText(frame_resize, f'Recognized: {recognized_face}', (10, 90), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+            if current_gesture:
+                cv2.putText(frame_resize, f'Gesture: {current_gesture}', (10, 120), 
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2)
+            
             cv2.imshow('IMX477 Gesture/Face Tracking', frame_resize)
-            key = cv2.waitKey(1)
-            if key == 27:  # ESC
-                break
-            elif key == ord('f'):  # Switch to face detection
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('f'):  # Switch to face detection
                 setDetectionMode('face')
+                print("[INFO] Switched to Face Detection Mode")
             elif key == ord('h'):  # Switch to hand detection
                 setDetectionMode('hand')
+                print("[INFO] Switched to Hand Gesture Detection Mode")
             elif key == ord('z'):  # Cycle through zoom levels
                 current_index = ZOOM_LEVELS.index(current_zoom)
                 next_index = (current_index + 1) % len(ZOOM_LEVELS)
                 set_zoom(ZOOM_LEVELS[next_index])
             elif key == ord('l'):  # Toggle spotlight
                 control_spotlight(not spotlight_on)
+            elif key == ord('u'):
+                undistort_enabled = not undistort_enabled
+                print(f"Undistortion {'enabled' if undistort_enabled else 'disabled'}")
+            elif key == ord('q') or key == 27:
+                print("Quitting...")
+                break
         else:
             time.sleep(0.01)
     
