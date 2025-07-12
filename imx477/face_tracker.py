@@ -46,11 +46,11 @@ load_config()
 # Initialize arm controller
 arm_controller = None
 
-# Initial position (unchanged)
+# Initial position for face scanning
 def initMove():
     global arm_controller
     if arm_controller:
-        arm_controller.init_move()
+        arm_controller.init_move_face_scan()
     
 start_greet = False
 action_finish = True
@@ -87,7 +87,7 @@ def start():
 def move():
     """
     Enhanced polar scan with ±180° range for face detection.
-    Based on color_palletizing.py scanning pattern.
+    Implements bidirectional scanning (ping-pong style).
     """
     global start_greet
     global action_finish
@@ -96,6 +96,7 @@ def move():
     # Define scanning angles (cover ±180° range)
     angles = generate_polar_scan_angles(-180, 180, 60)  # 60° intervals for face scanning
     angle_idx = 0
+    scan_direction = 1  # 1 for forward, -1 for reverse
     fixed_pitch = 0  # Upright pitch angle for face-level scanning
     
     while __isRunning and arm_controller:
@@ -129,6 +130,18 @@ def move():
                     # Face detected - perform greeting action
                     action_finish = False
                     
+                    # Longer buzzer beep to indicate face detection
+                    arm_controller.board.set_buzzer(1900, 0.5, 0.1, 3)  # 1900Hz beep for 0.5s, repeat 3 times
+                    
+                    # RGB effect - flash green to indicate face detection
+                    arm_controller.board.set_rgb([[1, 0, 255, 0], [2, 0, 255, 0]])  # Green
+                    time.sleep(0.3)
+                    arm_controller.board.set_rgb([[1, 0, 0, 0], [2, 0, 0, 0]])  # Off
+                    time.sleep(0.2)
+                    arm_controller.board.set_rgb([[1, 0, 255, 0], [2, 0, 255, 0]])  # Green again
+                    time.sleep(0.3)
+                    arm_controller.board.set_rgb([[1, 0, 0, 0], [2, 0, 0, 0]])  # Off
+                    
                     # Use arm controller for gripper movement
                     arm_controller.open_gripper()
                     time.sleep(0.4)
@@ -142,10 +155,19 @@ def move():
 
             # Move to next angle if no face detected
             if not start_greet:
-                angle_idx += 1
+                angle_idx += scan_direction
+                
+                # Check if we've reached the end of the angle list
                 if angle_idx >= len(angles):
-                    angle_idx = 0
-                    print("[Scan] Completed full face sweep. Restarting.")
+                    # Reverse direction and start from the end
+                    scan_direction = -1
+                    angle_idx = len(angles) - 2  # Start from second-to-last
+                    print("[Scan] Reached end of sweep. Reversing direction.")
+                elif angle_idx < 0:
+                    # Reverse direction and start from the beginning
+                    scan_direction = 1
+                    angle_idx = 1  # Start from second angle
+                    print("[Scan] Reached start of sweep. Reversing direction.")
                 else:
                     print(f"[Scan] Moving to next angle: {angles[angle_idx]}°")
         else:

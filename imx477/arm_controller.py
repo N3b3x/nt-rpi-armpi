@@ -135,6 +135,45 @@ class ArmController:
             self.current_base_angle = 0
             self.current_base_pos = 1500
     
+    def init_move_face_scan(self):
+        """Initialize arm to face scanning position: center base with camera tilted up 20-30°."""
+        # Set gripper to neutral position
+        self.board.pwm_servo_set_position(0.3, [[SERVO_GRIPPER, 1500]])
+        self.current_gripper_pos = 1500
+        
+        # Set base to center (0°) - this is the key difference from init_move()
+        self.current_base_angle = 0
+        self.current_base_pos = 1500
+        self.board.pwm_servo_set_position(0.5, [[SERVO_BASE, 1500]])
+        time.sleep(0.5)
+        
+        # Move to a position that tilts the camera up at 20-30° angle
+        # Using positive pitch angles to tilt camera upward
+        res = self.AK.setPitchRangeMoving((0, 8, 12), 20, 20, 20, 1000)  # Tilted up position with positive pitch
+        if res and res[0] is not False:
+            servos, alpha, movetime, angles = res
+            self.current_elbow_angle = angles['theta3']
+            self.current_shoulder_angle = angles['theta4']
+            self.current_lift_angle = 90 - angles['theta5']
+            
+            print(f"[DEBUG] Face scan init - IK angles: theta3(elbow)={angles['theta3']:.1f}°, theta4(shoulder)={angles['theta4']:.1f}°, theta5(lift)={angles['theta5']:.1f}°, theta6(base)={angles['theta6']:.1f}°")
+            print(f"[DEBUG] Face scan init - Jog angles: elbow={self.current_elbow_angle:.1f}°, shoulder={self.current_shoulder_angle:.1f}°, lift={self.current_lift_angle:.1f}°, base={self.current_base_angle:.1f}°")
+        else:
+            # Fallback: use direct servo positioning for camera tilt
+            print("[WARNING] IK calculation failed for face scan init, using direct servo positioning")
+            # Set servos to create upward camera tilt
+            self.board.pwm_servo_set_position(0.5, [
+                [SERVO_LIFT, 1800],      # Lift up more
+                [SERVO_SHOULDER, 1400],  # Shoulder back to tilt camera up
+                [SERVO_ELBOW, 1200]      # Elbow bent to support upward tilt
+            ])
+            self.current_elbow_angle = 0
+            self.current_shoulder_angle = 0
+            self.current_lift_angle = 0
+            time.sleep(1)
+        
+        print("[DEBUG] Face scan initialization complete - camera should be tilted up 20-30°")
+    
     def set_rgb(self, color):
         """Set RGB LED color."""
         if color == "red":
