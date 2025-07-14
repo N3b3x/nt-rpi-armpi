@@ -32,8 +32,8 @@ if sys.version_info.major == 2:
 # Import face detection module
 Face = mp.solutions.face_detection
 
-# Customize face detection method, minimum face detection confidence 0.8
-faceDetection = Face.FaceDetection(min_detection_confidence=0.8)
+# Customize face detection method, lower confidence for longer range detection
+faceDetection = Face.FaceDetection(min_detection_confidence=0.3)
 
 lab_data = None
 
@@ -59,12 +59,23 @@ action_finish = True
 def reset():
     global start_greet
     global action_finish
+    global tracking_mode
+    global face_lost_count
+    global center_x, center_y, area
 
     start_greet = False
     action_finish = True
+    tracking_mode = False  # False = scanning, True = continuous tracking
+    face_lost_count = 0
+    center_x, center_y, area = -1, -1, 0
     initMove()  
 
 __isRunning = False
+tracking_mode = False  # False = scanning, True = continuous tracking
+face_lost_count = 0
+face_detected_time = 0
+center_x, center_y, area = -1, -1, 0
+scan_started = False  # Flag to track when SPACE is pressed
 
 # Initialize app
 def init():
@@ -81,25 +92,139 @@ def start():
     global __isRunning
     __isRunning = True
     print("Face Tracker Start")
-    # Restore the scan thread
-    threading.Thread(target=move, args=(), daemon=True).start()
+    print("DEBUG: Camera initialized, waiting for user to start scan...")
+    # Don't start scan thread yet - wait for user input
+
+def continuous_tracking():
+    """
+    Continuous tracking mode - once face is detected, continuously track it.
+    Very conservative approach to prevent drift.
+    """
+    global tracking_mode, face_lost_count, face_detected_time
+    global center_x, center_y, area
+    
+    # Simple tracking - start from current arm position
+    base_pos = arm_controller.current_base_pos if arm_controller else 1500
+    last_face_time = time.time()
+    
+    # Conservative hysteresis to prevent drift
+    consecutive_off_center_frames = 0
+    required_consecutive_frames = 3  # Must be off-center for 3 frames before moving (reduced from 5)
+    last_movement_time = 0
+    min_movement_interval = 0.3  # Minimum 0.3 seconds between movements (reduced from 0.5)
+    
+    print(f"[Track] Entering continuous tracking mode - starting from base position {base_pos}")
+    
+    while __isRunning and tracking_mode and arm_controller:
+        # Get current face position from run() function
+        if center_x != -1 and center_y != -1 and area > 100:  # Reduced minimum area for longer range detection
+            # Face detected - track it
+            face_lost_count = 0
+            face_detected_time = time.time()
+            last_face_time = time.time()
+            
+            # Debug: Check variable types
+            print(f"[Track] Debug - center_x: {center_x} ({type(center_x)}), center_y: {center_y} ({type(center_y)}), area: {area} ({type(area)})")
+            
+            # Ensure variables are numbers
+            if not isinstance(center_x, (int, float)) or not isinstance(center_y, (int, float)) or not isinstance(area, (int, float)):
+                print(f"[Track] Error: Invalid variable types - center_x: {type(center_x)}, center_y: {type(center_y)}, area: {type(area)}")
+                continue
+            
+            # Conservative tracking
+            img_w, img_h = 1920, 1080  # Camera resolution
+            center_threshold = 150  # pixels from center - smaller dead zone for more responsive tracking
+            
+            # Calculate how far the face is from center
+            face_offset = center_x - img_w/2
+            
+            # Only move if face is significantly off-center AND has been off-center for many frames
+            # AND enough time has passed since last movement
+            current_time = time.time()
+            if abs(face_offset) > center_threshold and (current_time - last_movement_time) > min_movement_interval:
+                consecutive_off_center_frames += 1
+                print(f"[Track] Face off-center at {center_x} (offset {face_offset:.1f}) - frame {consecutive_off_center_frames}/{required_consecutive_frames}")
+                
+                # Only move after many consecutive frames of being off-center
+                if consecutive_off_center_frames >= required_consecutive_frames:
+                    # Calculate small adjustment - conservative but responsive
+                    adjustment = face_offset * 0.015  # Slightly larger adjustment factor for more responsive tracking
+                    new_base_pos = base_pos + adjustment
+                    
+                    # Debug direction change
+                    direction = "RIGHT" if face_offset > 0 else "LEFT"
+                    print(f"[Track] Face moving {direction} (offset {face_offset:.1f}), adjusting base from {base_pos:.1f} to {new_base_pos:.1f}")
+                    
+                    # Only move if the new position is within safe limits
+                    if 800 <= new_base_pos <= 2200:  # Conservative range
+                        base_pos = new_base_pos
+                        # Move base servo using the same method as scanning (IK system)
+                        try:
+                            # Use the same method as the IK system that works during scanning
+                            deviation = arm_controller.deviation_data.get('6', 0)
+                            final_pos = int(base_pos) + deviation
+                            # Use the same format as the IK system: board.pwm_servo_set_position(float(movetime)/1000.0, [[6, int(servos[3]+deviation_data['6'])]])
+                            arm_controller.board.pwm_servo_set_position(0.1, [[6, final_pos]])
+                            arm_controller.current_base_pos = int(base_pos)  # Update the tracked position
+                            print(f"[Track] Following face: moved base to {base_pos:.1f} (face at {center_x}, offset {face_offset:.1f})")
+                            last_movement_time = current_time
+                        except Exception as e:
+                            print(f"[Track] Error moving base: {e}")
+                    else:
+                        print(f"[Track] Face at {center_x} (offset {face_offset:.1f}) but base position {new_base_pos:.1f} out of safe range")
+                    
+                    # Reset counter after moving
+                    consecutive_off_center_frames = 0
+            else:
+                # Face is centered or not enough time passed, reset counter
+                consecutive_off_center_frames = 0
+                if abs(face_offset) <= center_threshold:
+                    print(f"[Track] Face centered at {center_x}, no movement needed")
+                else:
+                    print(f"[Track] Face off-center but waiting for time interval ({(current_time - last_movement_time):.1f}s)")
+            
+            # Set RGB to green to indicate tracking
+            arm_controller.set_rgb("green")
+            
+        else:
+            # Face lost - increment counter
+            face_lost_count += 1
+            print(f"[Track] Face lost, count: {face_lost_count} (center_x={center_x}, center_y={center_y}, area={area})")
+            
+            if face_lost_count > 120:  # ~6 seconds at 20Hz - longer timeout for longer range
+                print("[Track] Face lost for too long, returning to scan mode")
+                tracking_mode = False
+                arm_controller.set_rgb("off")
+                break
+        
+        time.sleep(0.05)  # 20Hz tracking rate
 
 def move():
     """
-    Enhanced polar scan with ±180° range for face detection.
-    Implements bidirectional scanning (ping-pong style).
+    Hybrid approach: Polar scanning + Continuous tracking.
+    Switches between scanning and tracking modes.
     """
-    global start_greet
-    global action_finish
-    global arm_controller
+    global start_greet, action_finish, arm_controller, tracking_mode
     
-    # Define scanning angles (cover ±180° range)
-    angles = generate_polar_scan_angles(-180, 180, 60)  # 60° intervals for face scanning
+    print("[Scan] Move function started - entering scan loop")
+    
+    # Define scanning angles (cover ±90° range - more conservative)
+    angles = generate_polar_scan_angles(-90, 90, 60)  # 60° intervals for face scanning
     angle_idx = 0
     scan_direction = 1  # 1 for forward, -1 for reverse
     fixed_pitch = 0  # Upright pitch angle for face-level scanning
     
+    print(f"[Scan] Generated {len(angles)} scan angles: {angles}")
+    
     while __isRunning and arm_controller:
+        print(f"[Scan] Loop iteration - tracking_mode: {tracking_mode}, start_greet: {start_greet}, action_finish: {action_finish}")
+        if tracking_mode:
+            # Switch to continuous tracking mode
+            continuous_tracking()
+            # After tracking ends, resume scanning
+            print("[Scan] Resuming scan mode")
+            continue
+            
         if not start_greet and action_finish:
             base_angle = angles[angle_idx]
             print(f"[Scan] Starting face scan at base angle: {base_angle}° (pitch {fixed_pitch}°)")
@@ -119,12 +244,13 @@ def move():
                 print(f"[Scan] Visiting position {idx+1}/{len(scan_positions)}: {pos} (pitch {fixed_pitch}°)")
                 arm_controller.scan_position(pos, pitch_angle=fixed_pitch)
 
-                # Check for face detection
-                for _ in range(3):  # Check multiple times at each position
-                    time.sleep(0.05)
-                    if start_greet:
-                        print(f"[Scan] Face detected at position {pos}")
-                        break
+                # Check for face detection - but only if we're not already in tracking mode
+                if not tracking_mode:
+                    for _ in range(3):  # Check multiple times at each position
+                        time.sleep(0.05)
+                        if start_greet:
+                            print(f"[Scan] Face detected at position {pos}")
+                            break
 
                 if start_greet:
                     # Face detected - perform greeting action
@@ -147,9 +273,13 @@ def move():
                     time.sleep(0.4)
                     arm_controller.close_gripper()
                     
-                    # Action when face is detected
-                    action_finish = True
+                    # Switch to continuous tracking mode
+                    tracking_mode = True
+                    print("[Scan] Switching to continuous tracking mode")
+                    
+                    # Reset variables for tracking mode
                     start_greet = False
+                    action_finish = True
                     time.sleep(0.5)
                     break
 
@@ -171,6 +301,11 @@ def move():
                 else:
                     print(f"[Scan] Moving to next angle: {angles[angle_idx]}°")
         else:
+            print(f"[Scan] Waiting - start_greet: {start_greet}, action_finish: {action_finish}")
+            # Add timeout to prevent infinite waiting
+            if start_greet and action_finish:
+                print("[Scan] Timeout - resetting start_greet to continue scanning")
+                start_greet = False
             time.sleep(0.01)
 
 size = (640, 480)  # Updated for IMX477 resolution
@@ -180,8 +315,13 @@ def run(img):
     global center_x, center_y
     global start_greet
     global action_finish
+    global tracking_mode
     
     if not __isRunning:   # Check if game is started, if not return original image
+        return img
+    
+    # Don't do face detection during extreme arm movements
+    if hasattr(arm_controller, 'current_base_pos') and arm_controller.current_base_pos < 800:
         return img
     
     img_copy = img.copy()
@@ -191,10 +331,14 @@ def run(img):
     results = faceDetection.process(imgRGB)  # Process each frame with face detection
 
     if results.detections:  # If faces are detected
+        if tracking_mode:
+            print(f"[Run] Face detection: {len(results.detections)} faces detected with scores: {[d.score[0] for d in results.detections]}")
 
         for index, detection in enumerate(results.detections):  # Return face index and keypoint coordinates
             scores = list(detection.score)
-            if scores and scores[0] > 0.7:
+            # Lower confidence threshold for longer range detection
+            confidence_threshold = 0.3 if tracking_mode else 0.5
+            if scores and scores[0] > confidence_threshold:
                 bboxC = detection.location_data.relative_bounding_box  # Set bounding box for all boxes' xywh and keypoint info
                 
                 # Convert bounding box coordinates from relative to pixel coordinates
@@ -216,6 +360,8 @@ def run(img):
                     start_greet = True
 
     else:
+        if tracking_mode:
+            print(f"[Run] No faces detected in frame")
         center_x, center_y, area = -1, -1, 0
             
     return img
@@ -266,30 +412,92 @@ if __name__ == '__main__':
         K, D = lab_auto_calibration.load_calibration_data('calibration_data.npz')
 
     init()
+    print("DEBUG: After init() - arm controller initialized")
     start()
-    # Restore the frame display loop
-    while True:
-        frame = picam2.capture_array()
-        if frame is not None:
-            frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-            if undistort_enabled and K is not None and D is not None:
-                frame_bgr = lab_auto_calibration.undistort_frame(frame_bgr, K, D)
-            Frame = run(frame_bgr)
-            frame_resize = cv2.resize(Frame, (640, 480))
-            # Overlay key info
-            cv2.putText(frame_resize, '[u] Toggle undistort', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
-            cv2.putText(frame_resize, '[q] Quit', (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
-            cv2.imshow('IMX477 Face Tracker', frame_resize)
-            key = cv2.waitKey(1) & 0xFF
-            if key == ord('u'):
-                undistort_enabled = not undistort_enabled
-                print(f"Undistortion {'enabled' if undistort_enabled else 'disabled'}")
-            elif key == ord('q') or key == 27:
-                print("Quitting...")
-                break
-        else:
-            time.sleep(0.01)
-    cv2.destroyAllWindows()
+    print("DEBUG: After start() - camera ready")
+    
+    # Start the display loop immediately to open camera window
+    print("DEBUG: Starting display loop to open camera window...")
+    
+    # Create a separate thread for the display loop
+    def display_loop():
+        global __isRunning, undistort_enabled, K, D, tracking_mode, scan_started
+        while __isRunning:
+            frame = picam2.capture_array()
+            if frame is not None:
+                frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                if undistort_enabled and K is not None and D is not None:
+                    frame_bgr = lab_auto_calibration.undistort_frame(frame_bgr, K, D)
+                Frame = run(frame_bgr)
+                frame_resize = cv2.resize(Frame, (640, 480))
+                
+                # Show tracking mode status
+                mode_text = "TRACKING" if tracking_mode else "SCANNING"
+                mode_color = (0, 255, 0) if tracking_mode else (255, 255, 0)
+                cv2.putText(frame_resize, f'Mode: {mode_text}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, mode_color, 2)
+                
+                # Overlay key info
+                cv2.putText(frame_resize, '[SPACE] Start scan', (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
+                cv2.putText(frame_resize, '[u] Toggle undistort', (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
+                cv2.putText(frame_resize, '[q] Quit', (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
+                
+                cv2.imshow('IMX477 Face Tracker', frame_resize)
+                key = cv2.waitKey(1) & 0xFF
+                if key == ord(' '):  # SPACE key
+                    scan_started = True
+                    print("SPACE pressed - starting scan")
+                elif key == ord('u'):
+                    undistort_enabled = not undistort_enabled
+                    print(f"Undistortion {'enabled' if undistort_enabled else 'disabled'}")
+                elif key == ord('q') or key == 27:
+                    print("Quitting...")
+                    __isRunning = False
+                    break
+            else:
+                time.sleep(0.01)
+        cv2.destroyAllWindows()
+    
+    # Start display loop in separate thread
+    display_thread = threading.Thread(target=display_loop, daemon=True)
+    display_thread.start()
+    
+    # Wait a moment for window to open
+    time.sleep(2)
+    
+    # Add user prompt before starting scan
+    print("\n" + "="*50)
+    print("Face Tracker Ready!")
+    print("Camera window should be open now.")
+    print("Press SPACE in camera window to start face scanning...")
+    print("="*50)
+    
+    # Wait for SPACE key in camera window instead of terminal input
+    scan_started = False
+    while not scan_started and __isRunning:
+        time.sleep(0.1)
+    
+    print("DEBUG: SPACE pressed - starting scan thread")
+    
+    # Start scan thread AFTER user presses SPACE
+    print("DEBUG: Starting face scan thread...")
+    
+    # Reset scan variables before starting
+    start_greet = False
+    action_finish = True
+    print("DEBUG: Reset scan variables - start_greet: False, action_finish: True")
+    
+    scan_thread = threading.Thread(target=move, args=(), daemon=True)
+    scan_thread.start()
+    print("DEBUG: Scan thread started successfully")
+    print("DEBUG: Scan thread is alive:", scan_thread.is_alive())
+    
+    # Keep main thread alive
+    try:
+        while __isRunning:
+            time.sleep(0.1)
+    except KeyboardInterrupt:
+        print("Interrupted by user")
+        __isRunning = False
     
     # Before exiting, reset the camera to clear any stuck color state
     #reset_camera(picam2)
