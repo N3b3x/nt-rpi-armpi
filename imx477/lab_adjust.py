@@ -563,7 +563,7 @@ if __name__ == '__main__':
                 
                 print("Jogging mode finished.")
             elif key == ord('y'):  # 3D Gripper Real World Calibration
-                print("\n🎯 Starting Guided 3D Gripper Calibration...")
+                print("\n🎯 Starting Guided 3D Gripper Pose Calibration...")
                 print("This mode uses higher resolution for accuracy.")
                 print(f"We will guide you through touching {len(CALIBRATION_GRID_POINTS)} known physical points.")
                 print("Press [y] at any time to cancel.")
@@ -619,7 +619,7 @@ if __name__ == '__main__':
                         calib_key = cv2.waitKey(1) & 0xFF
 
                         if calib_key == ord('i'):
-                            help_manager.show_calibration_help()
+                            help_manager.show_pose_calibration_help()
                         elif calib_key == ord('u'):
                             undistort_enabled = not undistort_enabled
                             print(f"Undistortion {'enabled' if undistort_enabled else 'disabled'}")

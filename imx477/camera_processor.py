@@ -23,6 +23,10 @@ class CameraProcessor:
         self.start_pick_up = False
         self.clicked_pixel = None  # For 3D calibration
         
+        # IMX477 specific settings
+        self.camera_resolution = (1920, 1080)  # Higher resolution for better detection
+        self.display_resolution = (640, 480)   # Lower resolution for display
+        
         # Color mapping for display
         self.range_rgb = {
             'red': (0, 0, 255),    # BGR for red
@@ -31,6 +35,10 @@ class CameraProcessor:
             'black': (0, 0, 0),
             'white': (255, 255, 255),
         }
+        
+        # Tracking state
+        self.tracking_enabled = False
+        self.tracking_target = None
     
     def get_frame(self):
         """Get a frame from the camera."""
@@ -424,4 +432,42 @@ class CameraProcessor:
         np.savez(path, **calib_results)
         print(f"✅ 3D camera pose saved to '{path}'")
 
-    # Removed test_3d_calibration function as it is now in lab_auto_calibration.py 
+    # Removed test_3d_calibration function as it is now in lab_auto_calibration.py
+    
+    def enable_tracking(self, enabled=True):
+        """Enable or disable target tracking."""
+        self.tracking_enabled = enabled
+        print(f"[CAMERA] Tracking {'enabled' if enabled else 'disabled'}")
+    
+    def set_tracking_target(self, target):
+        """Set the target to track."""
+        self.tracking_target = target
+        print(f"[CAMERA] Tracking target set to {target}")
+    
+    def get_tracking_target(self):
+        """Get the current tracking target."""
+        return self.tracking_target
+    
+    def is_tracking_enabled(self):
+        """Check if tracking is enabled."""
+        return self.tracking_enabled
+    
+    def process_frame_for_tracking(self, frame):
+        """
+        Process frame for tracking applications.
+        
+        Args:
+            frame: Input frame (BGR)
+            
+        Returns:
+            frame: Processed frame
+        """
+        # Resize for display
+        display_frame = cv2.resize(frame, self.display_resolution)
+        
+        # Add tracking overlay if enabled
+        if self.tracking_enabled and self.tracking_target:
+            cv2.putText(display_frame, f'Tracking: {self.tracking_target}', 
+                       (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        
+        return display_frame 

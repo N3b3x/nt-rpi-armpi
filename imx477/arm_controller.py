@@ -506,3 +506,57 @@ class ArmController:
         self.current_base_pos = 1500
         
         print("[DEBUG] Reset complete - all servos at center position")
+    
+    def track_target(self, target_x, target_y, current_z=18):
+        """
+        Track a target using PID control.
+        
+        Args:
+            target_x: Target X coordinate in image
+            target_y: Target Y coordinate in image
+            current_z: Current Z position
+        """
+        # Initialize PID controllers if not already done
+        if not hasattr(self, 'x_pid'):
+            import common.pid as PID
+            self.x_pid = PID.PID(P=0.26, I=0.05, D=0.008)
+            self.y_pid = PID.PID(P=0.012, I=0, D=0.000)
+            self.z_pid = PID.PID(P=0.003, I=0, D=0)
+        
+        # Update PID controllers
+        self.x_pid.SetPoint = target_x
+        self.y_pid.SetPoint = target_y
+        
+        self.x_pid.update(target_x)
+        self.y_pid.update(target_y)
+        
+        # Calculate arm movements
+        x_delta = self.x_pid.output
+        y_delta = self.y_pid.output
+        
+        # Apply movements to arm
+        if abs(x_delta) > 1:  # Only move if change is significant
+            self.move_base(x_delta / 10)  # Scale down for smoother movement
+        
+        if abs(y_delta) > 1:  # Only move if change is significant
+            self.move_shoulder(y_delta / 10)  # Scale down for smoother movement
+        
+        # Update Z position if needed
+        if hasattr(self, 'target_z') and abs(self.target_z - current_z) > 0.5:
+            z_delta = (self.target_z - current_z) / 10
+            self.move_lift(z_delta)
+    
+    def set_target_depth(self, depth):
+        """Set target depth for tracking."""
+        self.target_z = depth
+    
+    def get_tracking_status(self):
+        """Get current tracking status."""
+        if hasattr(self, 'x_pid'):
+            return {
+                'x_error': self.x_pid.error,
+                'y_error': self.y_pid.error,
+                'x_output': self.x_pid.output,
+                'y_output': self.y_pid.output
+            }
+        return None

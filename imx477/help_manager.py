@@ -68,14 +68,14 @@ This step verifies the accuracy of your calibration.
 After completing these steps, your system will be fully calibrated and ready to translate camera detections into arm movements.
 """
 
-    def show_calibration_help(self):
+    def show_pose_calibration_help(self):
         """Opens calibration instructions in a web browser."""
         print(f"🔍 Current working directory: {os.getcwd()}")
         docs_dir = "../docs"  # Look in parent directory's docs folder
         if not os.path.exists(docs_dir):
             os.makedirs(docs_dir)
         
-        instructions_file = os.path.join(docs_dir, "calibration_instructions.md")
+        instructions_file = os.path.join(docs_dir, "pose_calibration_instructions.md")
         if os.path.exists(instructions_file):
             file_path = os.path.abspath(instructions_file)
             print(f"🔍 Opening file: {file_path}")
