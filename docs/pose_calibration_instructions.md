@@ -11,7 +11,8 @@ To accurately calibrate the camera so the system can translate a pixel seen by t
 - 3cm blocks for height calibration.
 - (Optional) A color reference chart.
 - FYI: The arm uses **11 PWM units per degree**.
-
+- [Printed copy of the Pose Calibration layout chart](file:///home/pi/ArmPi_mini/docs/Pose_Calibration_Layout_Printable_TrueScale.pdf)
+  
 ---
 
 ## Coordinate System Overview
@@ -50,7 +51,7 @@ This shows the arm's general dimensions.
 
 ---
 
-## Updated Top-Down Layout (ASCII Diagram)
+## Updated Top-Down Layout ![ASCII Diagram](/home/pi/ArmPi_mini/docs/images/Pose_Calibration_Layout_Printable_TrueScale.png)
 
 ```
 (View from Above - all units in centimeters)

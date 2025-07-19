@@ -1,24 +1,3 @@
-FO: Created TensorFlow Lite XNNPACK delegate for CPU.
-[49:52:02.194117375] [384944]  INFO Camera camera_manager.cpp:326 libcamera v0.5.0+59-d83ff0a4
-[49:52:02.201239762] [384971]  INFO RPI pisp.cpp:720 libpisp version v1.2.1 981977ff21f3 29-04-2025 (14:13:50)
-[49:52:02.210500124] [384971]  INFO RPI pisp.cpp:1179 Registered camera /base/axi/pcie@1000120000/rp1/i2c@80000/imx477@1a to CFE device /dev/media0 and ISP device /dev/media1 using PiSP variant BCM2712_C0
-[49:52:02.213314764] [384944]  INFO Camera camera.cpp:1205 configuring streams: (0) 1920x1080-XBGR8888 (1) 2028x1080-BGGR_PISP_COMP1
-[49:52:02.213421560] [384971]  INFO RPI pisp.cpp:1483 Sensor: /base/axi/pcie@1000120000/rp1/i2c@80000/imx477@1a - Selected sensor format: 2028x1080-SBGGR12_1X12 - Selected CFE format: 2028x1080-PC1B
-Face Tracker Init
-[49:52:03.940160964] [384976]  WARN IPARPI ipa_base.cpp:1392 Ctrl AeEnable is not handled.
-[WARNING] Failed to load deviation data: module 'common.yaml_handle' has no attribute 'deviation_file_path'
-[WARNING] IK calculation failed for face scan init, using direct servo positioning
-[DEBUG] Face scan initialization complete - camera should be tilted up 20-30�
-DEBUG: After init() - arm controller initialized
-Face Tracker Start
-DEBUG: Camera initialized, waiting for user to start scan...
-DEBUG: After start() - camera ready
-DEBUG: Starting display loop to open camera window...
-Undistortion enabled
-
-==================================================
-Face Tracker Ready!
-Camera window should be open now.
 Press SPACE in camera window to start face scanning...
 ==================================================
 SPACE pressed - starting scan
@@ -27,21 +6,144 @@ DEBUG: Starting face scan thread...
 DEBUG: Reset scan variables - start_greet: False, action_finish: True
 [Scan] Move function started - entering scan loop
 DEBUG: Scan thread started successfully
+[Scan] Starting scan from current arm position: 0�
 DEBUG: Scan thread is alive: True
+[Scan] Closest predefined angle to current position (0�) is -30� at index 1
 [Scan] Generated 4 scan angles: [-90, -30, 30, 90]
-[Scan] Loop iteration - tracking_mode: False, start_greet: False, action_finish: True
-[Scan] Starting face scan at base angle: -90� (pitch 0�)
-[Arm] Rotating base to servo pos 500 for angle -90
-[Scan] Visiting position 1/3: (4.898587196589413e-16, -8.0, 18) (pitch 0�)
-[Arm] Moving to scan position: (4.898587196589413e-16, -8.0, 18) with pitch 0� (base angle -90)
-[Scan] Visiting position 2/3: (6.123233995736766e-16, -10.0, 18) (pitch 0�)
-[Arm] Moving to scan position: (6.123233995736766e-16, -10.0, 18) with pitch 0� (base angle -90)
-[Scan] Visiting position 3/3: (7.347880794884119e-16, -12.0, 18) (pitch 0�)
-[Arm] Moving to scan position: (7.347880794884119e-16, -12.0, 18) with pitch 0� (base angle -90)
-[Scan] Moving to next angle: -30�
 [Scan] Loop iteration - tracking_mode: False, start_greet: False, action_finish: True
 [Scan] Starting face scan at base angle: -30� (pitch 0�)
 [Arm] Rotating base to servo pos 1167 for angle -30
+[Scan] Visiting position 1/3: (6.92820323027551, -3.9999999999999996, 18) (pitch 0�)
+[Arm] Moving to scan position: (6.92820323027551, -3.9999999999999996, 18) with pitch 0� (base angle -30)
+[Scan] Face detected at position (6.92820323027551, -3.9999999999999996, 18)
+[Arm] Opening gripper
+[Arm] Closing gripper
+[Scan] Switching to continuous tracking mode
+[Run] Face detection: 1 faces detected with scores: [0.745525598526001]
+[Run] Face detection: 1 faces detected with scores: [0.6670477390289307]
+[Scan] Loop iteration - tracking_mode: True, start_greet: True, action_finish: True
+[Track] Entering continuous tracking mode - starting from base position 1167
+[Track] Debug - center_x: 806 (<class 'int'>), center_y: 387 (<class 'int'>), area: 121801 (<class 'int'>)
+[Track] Face centered at 806, no movement needed
+[Track] Debug - center_x: 806 (<class 'int'>), center_y: 387 (<class 'int'>), area: 121801 (<class 'int'>)
+[Track] Face centered at 806, no movement needed
+[Run] No faces detected in frame
+[Track] Face lost, count: 1 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 2 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 3 (center_x=-1, center_y=-1, area=0)
+[Run] Face detection: 1 faces detected with scores: [0.5527708530426025]
+[Track] Debug - center_x: 827 (<class 'int'>), center_y: 467 (<class 'int'>), area: 85849 (<class 'int'>)
+[Track] Face centered at 827, no movement needed
+[Track] Debug - center_x: 827 (<class 'int'>), center_y: 467 (<class 'int'>), area: 85849 (<class 'int'>)
+[Track] Face centered at 827, no movement needed
+[Track] Debug - center_x: 827 (<class 'int'>), center_y: 467 (<class 'int'>), area: 85849 (<class 'int'>)
+[Track] Face centered at 827, no movement needed
+[Run] No faces detected in frame
+[Track] Face lost, count: 1 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 2 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 3 (center_x=-1, center_y=-1, area=0)
+[Run] Face detection: 1 faces detected with scores: [0.5535213351249695]
+[Track] Debug - center_x: 847 (<class 'int'>), center_y: 447 (<class 'int'>), area: 76176 (<class 'int'>)
+[Track] Face centered at 847, no movement needed
+[Track] Debug - center_x: 847 (<class 'int'>), center_y: 447 (<class 'int'>), area: 76176 (<class 'int'>)
+[Track] Face centered at 847, no movement needed
+[Track] Debug - center_x: 847 (<class 'int'>), center_y: 447 (<class 'int'>), area: 76176 (<class 'int'>)
+[Track] Face centered at 847, no movement needed
+[Track] Debug - center_x: 847 (<class 'int'>), center_y: 447 (<class 'int'>), area: 76176 (<class 'int'>)
+[Track] Face centered at 847, no movement needed
+[Track] Debug - center_x: 847 (<class 'int'>), center_y: 447 (<class 'int'>), area: 76176 (<class 'int'>)
+[Track] Face centered at 847, no movement needed
+[Track] Debug - center_x: 847 (<class 'int'>), center_y: 447 (<class 'int'>), area: 76176 (<class 'int'>)
+[Track] Face centered at 847, no movement needed
+[Run] No faces detected in frame
+[Track] Face lost, count: 1 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 2 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 3 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 4 (center_x=-1, center_y=-1, area=0)
+[Run] No faces detected in frame
+[Track] Face lost, count: 5 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 6 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 7 (center_x=-1, center_y=-1, area=0)
+[Run] No faces detected in frame
+[Track] Face lost, count: 8 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 9 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 10 (center_x=-1, center_y=-1, area=0)
+[Run] No faces detected in frame
+[Track] Face lost, count: 11 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 12 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 13 (center_x=-1, center_y=-1, area=0)
+[Run] No faces detected in frame
+[Track] Face lost, count: 14 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 15 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 16 (center_x=-1, center_y=-1, area=0)
+[Run] No faces detected in frame
+[Track] Face lost, count: 17 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 18 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 19 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 20 (center_x=-1, center_y=-1, area=0)
+[Run] No faces detected in frame
+[Track] Face lost, count: 21 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 22 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 23 (center_x=-1, center_y=-1, area=0)
+[Run] No faces detected in frame
+[Track] Face lost, count: 24 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 25 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 26 (center_x=-1, center_y=-1, area=0)
+[Run] No faces detected in frame
+[Track] Face lost, count: 27 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 28 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 29 (center_x=-1, center_y=-1, area=0)
+[Run] No faces detected in frame
+[Track] Face lost, count: 30 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 31 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 32 (center_x=-1, center_y=-1, area=0)
+[Run] No faces detected in frame
+[Track] Face lost, count: 33 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 34 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 35 (center_x=-1, center_y=-1, area=0)
+[Run] No faces detected in frame
+[Track] Face lost, count: 36 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 37 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 38 (center_x=-1, center_y=-1, area=0)
+[Run] No faces detected in frame
+[Track] Face lost, count: 39 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 40 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 41 (center_x=-1, center_y=-1, area=0)
+[Run] No faces detected in frame
+[Track] Face lost, count: 42 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 43 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 44 (center_x=-1, center_y=-1, area=0)
+[Run] No faces detected in frame
+[Track] Face lost, count: 45 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 46 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 47 (center_x=-1, center_y=-1, area=0)
+[Run] No faces detected in frame
+[Track] Face lost, count: 48 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 49 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 50 (center_x=-1, center_y=-1, area=0)
+[Run] No faces detected in frame
+[Track] Face lost, count: 51 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 52 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 53 (center_x=-1, center_y=-1, area=0)
+[Run] No faces detected in frame
+[Track] Face lost, count: 54 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 55 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 56 (center_x=-1, center_y=-1, area=0)
+[Run] No faces detected in frame
+[Track] Face lost, count: 57 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 58 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 59 (center_x=-1, center_y=-1, area=0)
+[Run] No faces detected in frame
+[Track] Face lost, count: 60 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost, count: 61 (center_x=-1, center_y=-1, area=0)
+[Track] Face lost for too long, returning to scan mode
+[Scan] Resuming scan mode
+[Scan] Loop iteration - tracking_mode: False, start_greet: True, action_finish: True
+[Scan] Waiting - start_greet: True, action_finish: True
+[Scan] Timeout - resetting start_greet to continue scanning
+[Scan] Loop iteration - tracking_mode: False, start_greet: False, action_finish: True
+[Scan] Starting face scan at base angle: -30� (pitch 0�)
+[Scan] Already at target angle -30� (current: -30�)
 [Scan] Visiting position 1/3: (6.92820323027551, -3.9999999999999996, 18) (pitch 0�)
 [Arm] Moving to scan position: (6.92820323027551, -3.9999999999999996, 18) with pitch 0� (base angle -30)
 [Scan] Visiting position 2/3: (9.81495457622364, -5.666666666666666, 18) (pitch 0�)
@@ -55,725 +157,5 @@ DEBUG: Scan thread is alive: True
 [Scan] Visiting position 1/3: (6.92820323027551, 3.9999999999999996, 18) (pitch 0�)
 [Arm] Moving to scan position: (6.92820323027551, 3.9999999999999996, 18) with pitch 0� (base angle 30)
 [Scan] Face detected at position (6.92820323027551, 3.9999999999999996, 18)
-[Arm] Opening gripper
-[Arm] Closing gripper
-[Scan] Switching to continuous tracking mode
-[Run] No faces detected in frame
-[Run] No faces detected in frame
-[Run] No faces detected in frame
-[Run] No faces detected in frame
-[Scan] Moving to next angle: 90�
-[Scan] Loop iteration - tracking_mode: True, start_greet: False, action_finish: True
-[Track] Entering continuous tracking mode - starting from base position 1833
-[Track] Face lost, count: 1 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 2 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 3 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 4 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 5 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 6 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 7 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 8 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 9 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 10 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 11 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 12 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 13 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 14 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 15 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 16 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 17 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 18 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 19 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 20 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 21 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 22 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 23 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 24 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 25 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 26 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 27 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 28 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 29 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 30 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 31 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 32 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 33 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 34 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 35 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 36 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 37 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 38 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 39 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 40 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 41 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 42 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 43 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 44 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 45 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 46 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 47 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 48 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 49 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 50 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 51 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 52 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 53 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 54 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 55 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 56 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 57 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 58 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 59 (center_x=-1, center_y=-1, area=0)
-[Run] Face detection: 1 faces detected with scores: [0.5282703042030334]
-[Track] Debug - center_x: 1746 (<class 'int'>), center_y: 390 (<class 'int'>), area: 84100 (<class 'int'>)
-[Track] Face off-center at 1746 (offset 786.0) - frame 1/3
-[Track] Debug - center_x: 1746 (<class 'int'>), center_y: 390 (<class 'int'>), area: 84100 (<class 'int'>)
-[Track] Face off-center at 1746 (offset 786.0) - frame 2/3
-[Track] Debug - center_x: 1746 (<class 'int'>), center_y: 390 (<class 'int'>), area: 84100 (<class 'int'>)
-[Track] Face off-center at 1746 (offset 786.0) - frame 3/3
-[Track] Face moving RIGHT (offset 786.0), adjusting base from 1833.0 to 1844.8
-[Track] Following face: moved base to 1844.8 (face at 1746, offset 786.0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 1 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 2 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 3 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 4 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 5 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 6 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 7 (center_x=-1, center_y=-1, area=0)
-[Run] Face detection: 1 faces detected with scores: [0.5747668743133545]
-[Track] Debug - center_x: 1670 (<class 'int'>), center_y: 453 (<class 'int'>), area: 136161 (<class 'int'>)
-[Track] Face off-center at 1670 (offset 710.0) - frame 1/3
-[Track] Debug - center_x: 1670 (<class 'int'>), center_y: 453 (<class 'int'>), area: 136161 (<class 'int'>)
-[Track] Face off-center at 1670 (offset 710.0) - frame 2/3
-[Track] Debug - center_x: 1670 (<class 'int'>), center_y: 453 (<class 'int'>), area: 136161 (<class 'int'>)
-[Run] No faces detected in frame
-[Track] Face off-center at 1670 (offset 710.0) - frame 3/3
-[Track] Face moving RIGHT (offset 710.0), adjusting base from 1844.8 to 1855.4
-[Track] Following face: moved base to 1855.4 (face at -1, offset 710.0)
-[Track] Face lost, count: 1 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 2 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 3 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 4 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 5 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 6 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 7 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 8 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 9 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 10 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 11 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 12 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 13 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 14 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 15 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 16 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 17 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 18 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 19 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 20 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 21 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 22 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 23 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 24 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 25 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 26 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 27 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 28 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 29 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 30 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 31 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 32 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 33 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 34 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 35 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 36 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 37 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 38 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 39 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 40 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 41 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 42 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 43 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 44 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 45 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 46 (center_x=-1, center_y=-1, area=0)
-[Run] Face detection: 1 faces detected with scores: [0.5232281684875488]
-[Track] Debug - center_x: 1515 (<class 'int'>), center_y: 479 (<class 'int'>), area: 60516 (<class 'int'>)
-[Track] Face off-center at 1515 (offset 555.0) - frame 1/3
-[Track] Debug - center_x: 1515 (<class 'int'>), center_y: 479 (<class 'int'>), area: 60516 (<class 'int'>)
-[Track] Face off-center at 1515 (offset 555.0) - frame 2/3
-[Track] Debug - center_x: 1515 (<class 'int'>), center_y: 479 (<class 'int'>), area: 60516 (<class 'int'>)
-[Track] Face off-center at 1515 (offset 555.0) - frame 3/3
-[Track] Face moving RIGHT (offset 555.0), adjusting base from 1855.4 to 1863.8
-[Track] Following face: moved base to 1863.8 (face at 1515, offset 555.0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 1 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 2 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 3 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 4 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 5 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 6 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 7 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 8 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 9 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 10 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 11 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 12 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 13 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 14 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 15 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 16 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 17 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 18 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 19 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 20 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 21 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 22 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 23 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 24 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 25 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 26 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 27 (center_x=-1, center_y=-1, area=0)
-[Run] Face detection: 1 faces detected with scores: [0.7511823177337646]
-[Track] Debug - center_x: 1750 (<class 'int'>), center_y: 303 (<class 'int'>), area: 189225 (<class 'int'>)
-[Track] Face off-center at 1750 (offset 790.0) - frame 1/3
-[Track] Debug - center_x: 1750 (<class 'int'>), center_y: 303 (<class 'int'>), area: 189225 (<class 'int'>)
-[Track] Face off-center at 1750 (offset 790.0) - frame 2/3
-[Run] Face detection: 1 faces detected with scores: [0.7955915927886963]
-[Track] Debug - center_x: 1705 (<class 'int'>), center_y: 321 (<class 'int'>), area: 178929 (<class 'int'>)
-[Track] Face off-center at 1705 (offset 745.0) - frame 3/3
-[Track] Face moving RIGHT (offset 745.0), adjusting base from 1863.8 to 1874.9
-[Track] Following face: moved base to 1874.9 (face at 1705, offset 745.0)
-[Track] Debug - center_x: 1705 (<class 'int'>), center_y: 321 (<class 'int'>), area: 178929 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Track] Debug - center_x: 1705 (<class 'int'>), center_y: 321 (<class 'int'>), area: 178929 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Run] Face detection: 1 faces detected with scores: [0.7349762320518494]
-[Track] Debug - center_x: 1679 (<class 'int'>), center_y: 348 (<class 'int'>), area: 148996 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Track] Debug - center_x: 1679 (<class 'int'>), center_y: 348 (<class 'int'>), area: 148996 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Track] Debug - center_x: 1679 (<class 'int'>), center_y: 348 (<class 'int'>), area: 148996 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.3s)
-[Run] Face detection: 1 faces detected with scores: [0.8637315034866333]
-[Track] Debug - center_x: 1659 (<class 'int'>), center_y: 387 (<class 'int'>), area: 133225 (<class 'int'>)
-[Track] Face off-center at 1659 (offset 699.0) - frame 1/3
-[Track] Debug - center_x: 1659 (<class 'int'>), center_y: 387 (<class 'int'>), area: 133225 (<class 'int'>)
-[Track] Face off-center at 1659 (offset 699.0) - frame 2/3
-[Track] Debug - center_x: 1659 (<class 'int'>), center_y: 387 (<class 'int'>), area: 133225 (<class 'int'>)
-[Track] Face off-center at 1659 (offset 699.0) - frame 3/3
-[Track] Face moving RIGHT (offset 699.0), adjusting base from 1874.9 to 1885.4
-[Track] Following face: moved base to 1885.4 (face at 1659, offset 699.0)
-[Track] Debug - center_x: 1659 (<class 'int'>), center_y: 387 (<class 'int'>), area: 133225 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Run] Face detection: 1 faces detected with scores: [0.7761501669883728]
-[Track] Debug - center_x: 1626 (<class 'int'>), center_y: 397 (<class 'int'>), area: 131769 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Track] Debug - center_x: 1626 (<class 'int'>), center_y: 397 (<class 'int'>), area: 131769 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Track] Debug - center_x: 1626 (<class 'int'>), center_y: 397 (<class 'int'>), area: 131769 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Run] Face detection: 1 faces detected with scores: [0.7070465087890625]
-[Track] Debug - center_x: 1557 (<class 'int'>), center_y: 432 (<class 'int'>), area: 114921 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.3s)
-[Track] Debug - center_x: 1557 (<class 'int'>), center_y: 432 (<class 'int'>), area: 114921 (<class 'int'>)
-[Track] Face off-center at 1557 (offset 597.0) - frame 1/3
-[Track] Debug - center_x: 1557 (<class 'int'>), center_y: 432 (<class 'int'>), area: 114921 (<class 'int'>)
-[Track] Face off-center at 1557 (offset 597.0) - frame 2/3
-[Run] No faces detected in frame
-[Track] Face lost, count: 1 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 2 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 3 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 4 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 5 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 6 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 7 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 8 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 9 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 10 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 11 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 12 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 13 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 14 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 15 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 16 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 17 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 18 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 19 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 20 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 21 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 22 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 23 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 24 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 25 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 26 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 27 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 28 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 29 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 30 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 31 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 32 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 33 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 34 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 35 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 36 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 37 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 38 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 39 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 40 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 41 (center_x=-1, center_y=-1, area=0)
-[Run] Face detection: 1 faces detected with scores: [0.5441749095916748]
-[Track] Debug - center_x: 1440 (<class 'int'>), center_y: 415 (<class 'int'>), area: 104329 (<class 'int'>)
-[Track] Face off-center at 1440 (offset 480.0) - frame 3/3
-[Track] Face moving RIGHT (offset 480.0), adjusting base from 1885.4 to 1892.6
-[Track] Following face: moved base to 1892.6 (face at 1440, offset 480.0)
-[Track] Debug - center_x: 1440 (<class 'int'>), center_y: 415 (<class 'int'>), area: 104329 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Run] Face detection: 1 faces detected with scores: [0.5290931463241577]
-[Track] Debug - center_x: 1440 (<class 'int'>), center_y: 415 (<class 'int'>), area: 104329 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Track] Debug - center_x: 1498 (<class 'int'>), center_y: 365 (<class 'int'>), area: 123904 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Track] Debug - center_x: 1498 (<class 'int'>), center_y: 365 (<class 'int'>), area: 123904 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Track] Debug - center_x: 1498 (<class 'int'>), center_y: 365 (<class 'int'>), area: 123904 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.3s)
-[Run] Face detection: 1 faces detected with scores: [0.7786145806312561]
-[Track] Debug - center_x: 1520 (<class 'int'>), center_y: 370 (<class 'int'>), area: 110224 (<class 'int'>)
-[Track] Face off-center at 1520 (offset 560.0) - frame 1/3
-[Track] Debug - center_x: 1520 (<class 'int'>), center_y: 370 (<class 'int'>), area: 110224 (<class 'int'>)
-[Track] Face off-center at 1520 (offset 560.0) - frame 2/3
-[Track] Debug - center_x: 1520 (<class 'int'>), center_y: 370 (<class 'int'>), area: 110224 (<class 'int'>)
-[Track] Face off-center at 1520 (offset 560.0) - frame 3/3
-[Track] Face moving RIGHT (offset 560.0), adjusting base from 1892.6 to 1901.0
-[Track] Following face: moved base to 1901.0 (face at 1520, offset 560.0)
-[Run] Face detection: 1 faces detected with scores: [0.7958064079284668]
-[Track] Debug - center_x: 1574 (<class 'int'>), center_y: 328 (<class 'int'>), area: 133956 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Track] Debug - center_x: 1574 (<class 'int'>), center_y: 328 (<class 'int'>), area: 133956 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Track] Debug - center_x: 1574 (<class 'int'>), center_y: 328 (<class 'int'>), area: 133956 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Run] Face detection: 1 faces detected with scores: [0.8161777257919312]
-[Track] Debug - center_x: 1637 (<class 'int'>), center_y: 341 (<class 'int'>), area: 161604 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Track] Debug - center_x: 1637 (<class 'int'>), center_y: 341 (<class 'int'>), area: 161604 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.3s)
-[Track] Debug - center_x: 1637 (<class 'int'>), center_y: 341 (<class 'int'>), area: 161604 (<class 'int'>)
-[Track] Face off-center at 1637 (offset 677.0) - frame 1/3
-[Run] Face detection: 1 faces detected with scores: [0.8334870338439941]
-[Track] Debug - center_x: 1694 (<class 'int'>), center_y: 309 (<class 'int'>), area: 173889 (<class 'int'>)
-[Track] Face off-center at 1694 (offset 734.0) - frame 2/3
-[Track] Debug - center_x: 1694 (<class 'int'>), center_y: 309 (<class 'int'>), area: 173889 (<class 'int'>)
-[Track] Face off-center at 1694 (offset 734.0) - frame 3/3
-[Track] Face moving RIGHT (offset 734.0), adjusting base from 1901.0 to 1912.0
-[Track] Following face: moved base to 1912.0 (face at 1694, offset 734.0)
-[Track] Debug - center_x: 1694 (<class 'int'>), center_y: 309 (<class 'int'>), area: 173889 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Run] Face detection: 1 faces detected with scores: [0.6759525537490845]
-[Track] Debug - center_x: 1743 (<class 'int'>), center_y: 267 (<class 'int'>), area: 216225 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Track] Debug - center_x: 1743 (<class 'int'>), center_y: 267 (<class 'int'>), area: 216225 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Track] Debug - center_x: 1743 (<class 'int'>), center_y: 267 (<class 'int'>), area: 216225 (<class 'int'>)
-[Run] Face detection: 1 faces detected with scores: [0.5128675103187561]
-[Track] Face off-center but waiting for time interval (0.2s)
-[Track] Debug - center_x: 1766 (<class 'int'>), center_y: 271 (<class 'int'>), area: 197136 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.3s)
-[Track] Debug - center_x: 1766 (<class 'int'>), center_y: 271 (<class 'int'>), area: 197136 (<class 'int'>)
-[Track] Face off-center at 1766 (offset 806.0) - frame 1/3
-[Run] No faces detected in frame
-[Track] Face lost, count: 1 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 2 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 3 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 4 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 5 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 6 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 7 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 8 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 9 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 10 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 11 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 12 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 13 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 14 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 15 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 16 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 17 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 18 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 19 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 20 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 21 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 22 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 23 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 24 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 25 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 26 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 27 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 28 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 29 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 30 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 31 (center_x=-1, center_y=-1, area=0)
-[Run] Face detection: 1 faces detected with scores: [0.5073376297950745]
-[Track] Debug - center_x: 1782 (<class 'int'>), center_y: 266 (<class 'int'>), area: 211600 (<class 'int'>)
-[Track] Face off-center at 1782 (offset 822.0) - frame 2/3
-[Track] Debug - center_x: 1782 (<class 'int'>), center_y: 266 (<class 'int'>), area: 211600 (<class 'int'>)
-[Track] Face off-center at 1782 (offset 822.0) - frame 3/3
-[Track] Face moving RIGHT (offset 822.0), adjusting base from 1912.0 to 1924.4
-[Track] Following face: moved base to 1924.4 (face at 1782, offset 822.0)
-[Track] Debug - center_x: 1782 (<class 'int'>), center_y: 266 (<class 'int'>), area: 211600 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Run] Face detection: 1 faces detected with scores: [0.6740988492965698]
-[Track] Debug - center_x: 1743 (<class 'int'>), center_y: 253 (<class 'int'>), area: 240100 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Track] Debug - center_x: 1743 (<class 'int'>), center_y: 253 (<class 'int'>), area: 240100 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Track] Debug - center_x: 1743 (<class 'int'>), center_y: 253 (<class 'int'>), area: 240100 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Run] Face detection: 1 faces detected with scores: [0.724165678024292]
-[Track] Debug - center_x: 1684 (<class 'int'>), center_y: 313 (<class 'int'>), area: 170569 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.3s)
-[Track] Debug - center_x: 1684 (<class 'int'>), center_y: 313 (<class 'int'>), area: 170569 (<class 'int'>)
-[Track] Face off-center at 1684 (offset 724.0) - frame 1/3
-[Track] Debug - center_x: 1684 (<class 'int'>), center_y: 313 (<class 'int'>), area: 170569 (<class 'int'>)
-[Track] Face off-center at 1684 (offset 724.0) - frame 2/3
-[Run] Face detection: 1 faces detected with scores: [0.9006393551826477]
-[Track] Debug - center_x: 1653 (<class 'int'>), center_y: 318 (<class 'int'>), area: 150544 (<class 'int'>)
-[Track] Face off-center at 1653 (offset 693.0) - frame 3/3
-[Track] Face moving RIGHT (offset 693.0), adjusting base from 1924.4 to 1934.8
-[Track] Following face: moved base to 1934.8 (face at 1653, offset 693.0)
-[Track] Debug - center_x: 1653 (<class 'int'>), center_y: 318 (<class 'int'>), area: 150544 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Track] Debug - center_x: 1653 (<class 'int'>), center_y: 318 (<class 'int'>), area: 150544 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Run] Face detection: 1 faces detected with scores: [0.8167803883552551]
-[Track] Debug - center_x: 1612 (<class 'int'>), center_y: 323 (<class 'int'>), area: 155236 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Track] Debug - center_x: 1612 (<class 'int'>), center_y: 323 (<class 'int'>), area: 155236 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Run] Face detection: 1 faces detected with scores: [0.7959753274917603]
-[Track] Debug - center_x: 1588 (<class 'int'>), center_y: 342 (<class 'int'>), area: 139876 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.3s)
-[Track] Debug - center_x: 1588 (<class 'int'>), center_y: 342 (<class 'int'>), area: 139876 (<class 'int'>)
-[Track] Face off-center at 1588 (offset 628.0) - frame 1/3
-[Track] Debug - center_x: 1588 (<class 'int'>), center_y: 342 (<class 'int'>), area: 139876 (<class 'int'>)
-[Track] Face off-center at 1588 (offset 628.0) - frame 2/3
-[Run] Face detection: 1 faces detected with scores: [0.7119314670562744]
-[Track] Debug - center_x: 1636 (<class 'int'>), center_y: 347 (<class 'int'>), area: 145161 (<class 'int'>)
-[Track] Face off-center at 1636 (offset 676.0) - frame 3/3
-[Track] Face moving RIGHT (offset 676.0), adjusting base from 1934.8 to 1944.9
-[Track] Following face: moved base to 1944.9 (face at 1636, offset 676.0)
-[Track] Debug - center_x: 1636 (<class 'int'>), center_y: 347 (<class 'int'>), area: 145161 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Track] Debug - center_x: 1636 (<class 'int'>), center_y: 347 (<class 'int'>), area: 145161 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Run] Face detection: 1 faces detected with scores: [0.7147051095962524]
-[Track] Debug - center_x: 1616 (<class 'int'>), center_y: 357 (<class 'int'>), area: 175561 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Track] Debug - center_x: 1616 (<class 'int'>), center_y: 357 (<class 'int'>), area: 175561 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Track] Debug - center_x: 1616 (<class 'int'>), center_y: 357 (<class 'int'>), area: 175561 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.3s)
-[Run] Face detection: 1 faces detected with scores: [0.7612268328666687]
-[Track] Debug - center_x: 1588 (<class 'int'>), center_y: 341 (<class 'int'>), area: 154449 (<class 'int'>)
-[Track] Face off-center at 1588 (offset 628.0) - frame 1/3
-[Track] Debug - center_x: 1588 (<class 'int'>), center_y: 341 (<class 'int'>), area: 154449 (<class 'int'>)
-[Track] Face off-center at 1588 (offset 628.0) - frame 2/3
-[Track] Debug - center_x: 1588 (<class 'int'>), center_y: 341 (<class 'int'>), area: 154449 (<class 'int'>)
-[Track] Face off-center at 1588 (offset 628.0) - frame 3/3
-[Track] Face moving RIGHT (offset 628.0), adjusting base from 1944.9 to 1954.3
-[Track] Following face: moved base to 1954.3 (face at 1588, offset 628.0)
-[Run] Face detection: 1 faces detected with scores: [0.7110748887062073]
-[Track] Debug - center_x: 1595 (<class 'int'>), center_y: 360 (<class 'int'>), area: 165649 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Track] Debug - center_x: 1595 (<class 'int'>), center_y: 360 (<class 'int'>), area: 165649 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Run] Face detection: 1 faces detected with scores: [0.7289430499076843]
-[Track] Debug - center_x: 1591 (<class 'int'>), center_y: 372 (<class 'int'>), area: 190969 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Track] Debug - center_x: 1591 (<class 'int'>), center_y: 372 (<class 'int'>), area: 190969 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Track] Debug - center_x: 1591 (<class 'int'>), center_y: 372 (<class 'int'>), area: 190969 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.3s)
-[Run] Face detection: 1 faces detected with scores: [0.6822965145111084]
-[Track] Debug - center_x: 1591 (<class 'int'>), center_y: 405 (<class 'int'>), area: 173056 (<class 'int'>)
-[Track] Face off-center at 1591 (offset 631.0) - frame 1/3
-[Track] Debug - center_x: 1591 (<class 'int'>), center_y: 405 (<class 'int'>), area: 173056 (<class 'int'>)
-[Track] Face off-center at 1591 (offset 631.0) - frame 2/3
-[Track] Debug - center_x: 1591 (<class 'int'>), center_y: 405 (<class 'int'>), area: 173056 (<class 'int'>)
-[Track] Face off-center at 1591 (offset 631.0) - frame 3/3
-[Track] Face moving RIGHT (offset 631.0), adjusting base from 1954.3 to 1963.8
-[Track] Following face: moved base to 1963.8 (face at 1591, offset 631.0)
-[Run] Face detection: 1 faces detected with scores: [0.6601236462593079]
-[Track] Debug - center_x: 1593 (<class 'int'>), center_y: 414 (<class 'int'>), area: 173056 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Track] Debug - center_x: 1593 (<class 'int'>), center_y: 414 (<class 'int'>), area: 173056 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Track] Debug - center_x: 1593 (<class 'int'>), center_y: 414 (<class 'int'>), area: 173056 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Run] No faces detected in frame
-[Track] Face lost, count: 1 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 2 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 3 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 4 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 5 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 6 (center_x=-1, center_y=-1, area=0)
-[Run] Face detection: 1 faces detected with scores: [0.6405487656593323]
-[Track] Debug - center_x: 1552 (<class 'int'>), center_y: 395 (<class 'int'>), area: 122500 (<class 'int'>)
-[Track] Face off-center at 1552 (offset 592.0) - frame 1/3
-[Track] Debug - center_x: 1552 (<class 'int'>), center_y: 395 (<class 'int'>), area: 122500 (<class 'int'>)
-[Track] Face off-center at 1552 (offset 592.0) - frame 2/3
-[Track] Debug - center_x: 1552 (<class 'int'>), center_y: 395 (<class 'int'>), area: 122500 (<class 'int'>)
-[Track] Face off-center at 1552 (offset 592.0) - frame 3/3
-[Track] Face moving RIGHT (offset 592.0), adjusting base from 1963.8 to 1972.7
-[Track] Following face: moved base to 1972.7 (face at 1552, offset 592.0)
-[Run] Face detection: 1 faces detected with scores: [0.5642377138137817]
-[Track] Debug - center_x: 1560 (<class 'int'>), center_y: 380 (<class 'int'>), area: 156025 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Track] Debug - center_x: 1560 (<class 'int'>), center_y: 380 (<class 'int'>), area: 156025 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Track] Debug - center_x: 1560 (<class 'int'>), center_y: 380 (<class 'int'>), area: 156025 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Run] No faces detected in frame
-[Track] Face lost, count: 1 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 2 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 3 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 4 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 5 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 6 (center_x=-1, center_y=-1, area=0)
-[Run] Face detection: 1 faces detected with scores: [0.7547319531440735]
-[Track] Debug - center_x: 1564 (<class 'int'>), center_y: 438 (<class 'int'>), area: 136900 (<class 'int'>)
-[Track] Face off-center at 1564 (offset 604.0) - frame 1/3
-[Track] Debug - center_x: 1564 (<class 'int'>), center_y: 438 (<class 'int'>), area: 136900 (<class 'int'>)
-[Track] Face off-center at 1564 (offset 604.0) - frame 2/3
-[Track] Debug - center_x: 1564 (<class 'int'>), center_y: 438 (<class 'int'>), area: 136900 (<class 'int'>)
-[Track] Face off-center at 1564 (offset 604.0) - frame 3/3
-[Track] Face moving RIGHT (offset 604.0), adjusting base from 1972.7 to 1981.7
-[Track] Following face: moved base to 1981.7 (face at 1564, offset 604.0)
-[Run] Face detection: 1 faces detected with scores: [0.6334701180458069]
-[Track] Debug - center_x: 1559 (<class 'int'>), center_y: 487 (<class 'int'>), area: 92416 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Track] Debug - center_x: 1559 (<class 'int'>), center_y: 487 (<class 'int'>), area: 92416 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Track] Debug - center_x: 1559 (<class 'int'>), center_y: 487 (<class 'int'>), area: 92416 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Run] No faces detected in frame
-[Track] Face lost, count: 1 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 2 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 3 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 4 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 5 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 6 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 7 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 8 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 9 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 10 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 11 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 12 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 13 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 14 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 15 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 16 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 17 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 18 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 19 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 20 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 21 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 22 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 23 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 24 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 25 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 26 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 27 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 28 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 29 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 30 (center_x=-1, center_y=-1, area=0)
-[Run] Face detection: 1 faces detected with scores: [0.5815770626068115]
-[Track] Debug - center_x: 1563 (<class 'int'>), center_y: 441 (<class 'int'>), area: 120409 (<class 'int'>)
-[Track] Face off-center at 1563 (offset 603.0) - frame 1/3
-[Track] Debug - center_x: 1563 (<class 'int'>), center_y: 441 (<class 'int'>), area: 120409 (<class 'int'>)
-[Track] Face off-center at 1563 (offset 603.0) - frame 2/3
-[Track] Debug - center_x: 1563 (<class 'int'>), center_y: 441 (<class 'int'>), area: 120409 (<class 'int'>)
-[Track] Face off-center at 1563 (offset 603.0) - frame 3/3
-[Track] Face moving RIGHT (offset 603.0), adjusting base from 1981.7 to 1990.8
-[Track] Following face: moved base to 1990.8 (face at 1563, offset 603.0)
-[Track] Debug - center_x: 1563 (<class 'int'>), center_y: 441 (<class 'int'>), area: 120409 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Run] Face detection: 1 faces detected with scores: [0.5496470332145691]
-[Track] Debug - center_x: 1587 (<class 'int'>), center_y: 412 (<class 'int'>), area: 165649 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Track] Debug - center_x: 1587 (<class 'int'>), center_y: 412 (<class 'int'>), area: 165649 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Track] Debug - center_x: 1587 (<class 'int'>), center_y: 412 (<class 'int'>), area: 165649 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Run] No faces detected in frame
-[Track] Face lost, count: 1 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 2 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 3 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 4 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 5 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 6 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 7 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 8 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 9 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 10 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 11 (center_x=-1, center_y=-1, area=0)
-[Run] Face detection: 1 faces detected with scores: [0.65395587682724]
-[Track] Debug - center_x: 1642 (<class 'int'>), center_y: 350 (<class 'int'>), area: 137641 (<class 'int'>)
-[Track] Face off-center at 1642 (offset 682.0) - frame 1/3
-[Track] Debug - center_x: 1642 (<class 'int'>), center_y: 350 (<class 'int'>), area: 137641 (<class 'int'>)
-[Track] Face off-center at 1642 (offset 682.0) - frame 2/3
-[Track] Debug - center_x: 1642 (<class 'int'>), center_y: 350 (<class 'int'>), area: 137641 (<class 'int'>)
-[Track] Face off-center at 1642 (offset 682.0) - frame 3/3
-[Track] Face moving RIGHT (offset 682.0), adjusting base from 1990.8 to 2001.0
-[Track] Following face: moved base to 2001.0 (face at 1642, offset 682.0)
-[Run] Face detection: 1 faces detected with scores: [0.5024175047874451]
-[Track] Debug - center_x: 1682 (<class 'int'>), center_y: 288 (<class 'int'>), area: 176400 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Track] Debug - center_x: 1682 (<class 'int'>), center_y: 288 (<class 'int'>), area: 176400 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.1s)
-[Track] Debug - center_x: 1682 (<class 'int'>), center_y: 288 (<class 'int'>), area: 176400 (<class 'int'>)
-[Track] Face off-center but waiting for time interval (0.2s)
-[Run] No faces detected in frame
-[Track] Face lost, count: 1 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 2 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 3 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 4 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 5 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 6 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 7 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 8 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 9 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 10 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 11 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 12 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 13 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 14 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 15 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 16 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 17 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 18 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 19 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 20 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 21 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 22 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 23 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 24 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 25 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 26 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 27 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 28 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 29 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 30 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 31 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 32 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 33 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 34 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 35 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 36 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
-[Track] Face lost, count: 37 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 38 (center_x=-1, center_y=-1, area=0)
-[Track] Face lost, count: 39 (center_x=-1, center_y=-1, area=0)
-[Run] No faces detected in frame
 Quitting...
-[Scan] Resuming scan mode
 QObject::~QObject: Timers cannot be stopped from another thread
-?? ? ? ? ~/ArmPi_mini/imx477 ? ? ? master !1 ?1 ?                                                                         ? ? ? 38s ? ? 11:47:08 ? 
-?? 
-
