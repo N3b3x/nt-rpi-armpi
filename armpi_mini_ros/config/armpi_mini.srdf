@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<robot name="armpi_mini">
+
+  <!-- Virtual Joint -->
+  <virtual_joint name="FixedBase" type="fixed" parent_frame="world" child_link="base_link" />
+
+  <!-- Planning Groups -->
+  <group name="arm">
+    <chain base_link="base_link" tip_link="end_effector" />
+  </group>
+
+  <group name="gripper">
+    <joint name="gripper_joint" />
+  </group>
+
+  <group name="manipulator">
+    <chain base_link="base_link" tip_link="end_effector" />
+  </group>
+
+  <!-- End Effectors -->
+  <end_effector name="gripper" parent_link="end_effector" group="gripper" />
+
+  <!-- Disabled Collisions -->
+  <disable_collisions link1="base_link" link2="link1" reason="Adjacent" />
+  <disable_collisions link1="link1" link2="link2" reason="Adjacent" />
+  <disable_collisions link1="link2" link2="link3" reason="Adjacent" />
+  <disable_collisions link1="link3" link2="end_effector" reason="Adjacent" />
+  <disable_collisions link1="end_effector" link2="gripper_left" reason="Adjacent" />
+
+  <!-- Self Collisions -->
+  <disable_collisions link1="base_link" link2="link3" reason="Never" />
+  <disable_collisions link1="base_link" link2="end_effector" reason="Never" />
+  <disable_collisions link1="link1" link2="link3" reason="Never" />
+  <disable_collisions link1="link1" link2="end_effector" reason="Never" />
+  <disable_collisions link1="link2" link2="end_effector" reason="Never" />
+
+</robot> 
