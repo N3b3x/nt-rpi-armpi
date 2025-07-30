@@ -1,0 +1,37 @@
+# Joint limits for ArmPi Mini
+joint_limits:
+  base_joint:
+    has_velocity_limits: true
+    max_velocity: 1.0
+    has_acceleration_limits: true
+    max_acceleration: 0.5
+    has_jerk_limits: true
+    max_jerk: 0.1
+  shoulder_joint:
+    has_velocity_limits: true
+    max_velocity: 1.0
+    has_acceleration_limits: true
+    max_acceleration: 0.5
+    has_jerk_limits: true
+    max_jerk: 0.1
+  elbow_joint:
+    has_velocity_limits: true
+    max_velocity: 1.0
+    has_acceleration_limits: true
+    max_acceleration: 0.5
+    has_jerk_limits: true
+    max_jerk: 0.1
+  wrist_joint:
+    has_velocity_limits: true
+    max_velocity: 1.0
+    has_acceleration_limits: true
+    max_acceleration: 0.5
+    has_jerk_limits: true
+    max_jerk: 0.1
+  gripper_joint:
+    has_velocity_limits: true
+    max_velocity: 0.5
+    has_acceleration_limits: true
+    max_acceleration: 0.2
+    has_jerk_limits: true
+    max_jerk: 0.05 
