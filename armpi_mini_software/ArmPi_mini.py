@@ -36,15 +36,15 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
         super(MainWindow, self).__init__()
         self.setupUi(self)                               
         self.setWindowIcon(QIcon(':/images/ArmPi_mini.png'))
-        self.tabWidget.setCurrentIndex(0)  # 设置默认标签为第一个标签(set the default label to the first one)
-        self.tableWidget.setSelectionBehavior(QAbstractItemView.SelectRows)  # 设置选中整行，若不设置默认选中单元格(Set to select the entire row, if not, the default is to select the cell.)
+        self.tabWidget.setCurrentIndex(0)  # set the default label to the first one
+        self.tableWidget.setSelectionBehavior(QAbstractItemView.SelectRows)  # Set to select the entire row, if not, the default is to select the cell.
         self.message = QMessageBox()
         self.resetServos_ = False
         self.path = '/home/pi/ArmPi_mini/'
         self.actdir = self.path + "action_groups/"
         self.button_controlaction_clicked('reflash')
-        ########################主界面(main interface)###############################
-        self.path = '/home/pi/ArmPi_mini/yaml/'
+        ######################## main interface ###############################
+        self.path = '/home/pi/ArmPi_mini/config/'
         self.lab_file = 'lab_config.yaml'
         self.Deviation_file = 'deviation.yaml'
         self.PickingCoordinates_file = 'picking_coordinates.yaml'
@@ -56,7 +56,7 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
         self.lineEdit_5.setValidator(self.validator1)
         self.lineEdit_6.setValidator(self.validator1)
 
-        # 滑竿同步对应文本框的数值,及滑竿控制相应舵机转动与valuechange函数绑定(Synchronize the value of the corresponding text box with the slider, and bind the 'valueChange' function to control the rotation of the corresponding servo by the slider.)
+        # Synchronize the value of the corresponding text box with the slider, and bind the 'valueChange' function to control the rotation of the corresponding servo by the slider.
         self.horizontalSlider_1.valueChanged.connect(lambda: self.valuechange1('id1'))
         self.horizontalSlider_3.valueChanged.connect(lambda: self.valuechange1('id3'))
         self.horizontalSlider_4.valueChanged.connect(lambda: self.valuechange1('id4'))
@@ -74,13 +74,13 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
         self.radioButton_zn.setChecked(True)
         self.chinese = True
         
-        # tableWidget点击获取定位的信号与icon_position函数（添加运行图标）绑定(Bind the locating signal obtained by clicking 'tableWidget' to the 'icon_position' function (which adds a running icon).)
+        # Bind the locating signal obtained by clicking 'tableWidget' to the 'icon_position' function (which adds a running icon).
         self.tableWidget.pressed.connect(self.icon_position)
 
         self.validator3 = QIntValidator(20, 30000)
         self.lineEdit_time.setValidator(self.validator3)
 
-        # 将编辑动作组的按钮点击时的信号与button_editaction_clicked函数绑定(Bind the signal for clicking the button of action group editing to the 'button_editaction_clicked' function.)
+        # Bind the signal for clicking the button of action group editing to the 'button_editaction_clicked' function.
 
         self.Button_AddAction.pressed.connect(lambda: self.button_editaction_clicked('addAction'))
         self.Button_DelectAction.pressed.connect(lambda: self.button_editaction_clicked('delectAction'))
@@ -90,7 +90,7 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
         self.Button_MoveUpAction.pressed.connect(lambda: self.button_editaction_clicked('moveUpAction'))
         self.Button_MoveDownAction.pressed.connect(lambda: self.button_editaction_clicked('moveDownAction'))        
 
-        # 将运行及停止运行按钮点击的信号与button_runonline函数绑定(Bind the signal for clicking the buttons of running and stopping the run to the function 'button_runonline'.)
+        # Bind the signal for clicking the buttons of running and stopping the run to the function 'button_runonline'.
         self.Button_Run.clicked.connect(lambda: self.button_run('run'))
         self.Button_OpenActionGroup.pressed.connect(lambda: self.button_flie_operate('openActionGroup'))
         self.Button_SaveActionGroup.pressed.connect(lambda: self.button_flie_operate('saveActionGroup'))
@@ -99,7 +99,7 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
         self.Button_TandemActionGroup.pressed.connect(lambda: self.button_flie_operate('tandemActionGroup'))
         self.Button_ReSetServos.pressed.connect(lambda: self.button_re_clicked('reSetServos'))
         
-        # 将控制动作的按钮点击的信号与action_control_clicked函数绑定(Bind the signal for clicking the buttons of controlling actions to the function 'action_control_clicked'.)
+        # Bind the signal for clicking the buttons of controlling actions to the function 'action_control_clicked'.
         self.Button_DelectSingle.pressed.connect(lambda: self.button_controlaction_clicked('delectSingle'))
         self.Button_AllDelect.pressed.connect(lambda: self.button_controlaction_clicked('allDelect'))
         self.Button_RunAction.pressed.connect(lambda: self.button_controlaction_clicked('runAction'))
@@ -117,7 +117,7 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
         self.totalTime = 0
         self.row = 0
              
-        #################################副界面(Sub-interface)#######################################
+        #################################Sub-interface#######################################
         
         self.color = 'red'
         self.L_Min = 0
@@ -211,7 +211,7 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
         self.pushButton_quit2_2.setText(_translate("Form", "Exit"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("Form", "Camera Tool"))
 
-    # 弹窗提示函数(the pop-up message box function)
+    # the pop-up message box function
     def message_from(self, string):
         try:
             QMessageBox.about(self, '', string)
@@ -222,7 +222,7 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
     def message_From(self, string):
         self.message_from(string)
 
-    # 弹窗提示函数(the pop-up message box function)
+    # the pop-up message box function
     def message_delect(self, string):
         messageBox = QMessageBox()
         messageBox.setWindowTitle(' ')
@@ -231,12 +231,12 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
         messageBox.addButton(QPushButton('Cancel'), QMessageBox.NoRole)
         return messageBox.exec_()
 
-    # 窗口退出(close the window)
+    # close the window
     def closeEvent(self, e):        
         if self.chinese:
             result = QMessageBox.question(self,
-                                    "关闭窗口提醒",
-                                    "是否退出?",
+                                    "Close Window Reminder",
+                                    "Do you want to exit?",
                                     QMessageBox.Yes | QMessageBox.No,
                                     QMessageBox.No)
         else:
@@ -253,7 +253,7 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
             e.ignore()
     
     def language(self, name):
-        if name.text() == '中文':
+        if name.text() == 'Chinese':
             self.chinese = True
             Ui_Form.retranslateUi(self, self)
         else:
@@ -310,7 +310,7 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
     def closeqdialog(self):
         self.qdi.accept()
 
-    # 滑竿同步对应文本框的数值,及滑竿控制相应舵机转动（Synchronize the slider with the corresponding text box, and control the corresponding servo motor rotation with the slider.）
+    # Synchronize the slider with the corresponding text box, and control the corresponding servo motor rotation with the slider.
     def valuechange1(self, name):
         if not self.resetServos_:
             self.deviation_data = self.get_yaml_data(self.path + self.Deviation_file)
@@ -336,7 +336,7 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
                 board.pwm_servo_set_position(0.02,[[6,servoAngle6 + self.deviation_data[str(6)]]])
             
                 
-    # 滑竿同步对应文本框的数值,及滑竿控制相应舵机转动(Synchronize the value of the corresponding text box with the slider, and control the rotation of the corresponding servo by the slider.)
+    # Synchronize the value of the corresponding text box with the slider, and control the rotation of the corresponding servo by the slider.
     def valuechange2(self, name):
         if not self.resetServos_:
             if name == 'd1':
@@ -361,7 +361,7 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
                 self.label_d6.setText(str(self.devNew[4]))
                 board.pwm_servo_set_position(0.02,[[6,self.horizontalSlider_6.value() + self.devNew[4]]])    
 
-    # 复位按钮点击事件(reset button clicking event)
+    # reset button clicking event
     def button_re_clicked(self, name):
         self.resetServos_ = True
         if name == 'reSetServos':
@@ -387,7 +387,7 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
             
             self.resetServos_ = False
             
-    # 选项卡选择标签状态，获取对应舵机数值(use tabs for choosing the label status to obtain the corresponding servo value)
+    # use tabs for choosing the label status to obtain the corresponding servo value
     def tabindex(self, index):       
         return  [str(self.horizontalSlider_1.value()), 
                  str(self.horizontalSlider_3.value()),
@@ -401,7 +401,7 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
             data.append(str(self.tableWidget.item(index, j).text()))
         return data
     
-    # 往tableWidget表格添加一行数据的函数(add the function of a row of data to the table 'tableWidget')
+    # add the function of a row of data to the table 'tableWidget'
     def add_line(self, item, timer, id1, id3, id4, id5, id6):
         self.tableWidget.setItem(item, 1, QtWidgets.QTableWidgetItem(str(item + 1)))
         self.tableWidget.setItem(item, 2, QtWidgets.QTableWidgetItem(timer))
@@ -411,7 +411,7 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
         self.tableWidget.setItem(item, 6, QtWidgets.QTableWidgetItem(id5))
         self.tableWidget.setItem(item, 7, QtWidgets.QTableWidgetItem(id6))
 
-    # 在定位行添加运行图标按钮(add a running icon button to the locating line)
+    # add a running icon button to the locating line
     def icon_position(self):
         toolButton_run = QtWidgets.QToolButton()
         icon = QtGui.QIcon()
@@ -458,37 +458,37 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
             
         except Exception:
             if self.chinese:
-                self.message_From('运行出错')
+                self.message_From('Running error')
             else:
                 self.message_From('Running error')
         self.resetServos_ = False
 
-    # 编辑动作组按钮点击事件(action group editing button clicking event)
+    # action group editing button clicking event
     def button_editaction_clicked(self, name):
         list = self.tabindex(self.tabWidget.currentIndex())
         RowCont = self.tableWidget.rowCount()
         item = self.tableWidget.currentRow()
                    
-        if name == 'addAction':    # 添加动作(add action)
+        if name == 'addAction':    # add action
             if int(self.lineEdit_time.text()) < 20:
                 if self.chinese:
-                    self.message_From('运行时间必须大于20')
+                    self.message_From('Run time must greater than 20')
                 else:
                     self.message_From('Run time must greater than 20')
                 return
-            self.tableWidget.insertRow(RowCont)    # 增加一行(add a row)
-            self.tableWidget.selectRow(RowCont)    # 定位最后一行为选中行(locate the last row as the selected one)
+            self.tableWidget.insertRow(RowCont)    # add a row
+            self.tableWidget.selectRow(RowCont)    # locate the last row as the selected one
             self.add_line(RowCont, str(self.lineEdit_time.text()), list[0], list[1], list[2], list[3], list[4])
             self.totalTime += int(self.lineEdit_time.text())
             self.label_TotalTime.setText(str((self.totalTime)/1000.0))
-        if name == 'delectAction':    # 删除动作(delete action)
+        if name == 'delectAction':    # delete action
             if RowCont != 0:
                 self.totalTime -= int(self.tableWidget.item(item, 2).text())
-                self.tableWidget.removeRow(item)  # 删除选定行(delete the selected row)
+                self.tableWidget.removeRow(item)  # delete the selected row
                 self.label_TotalTime.setText(str((self.totalTime)/1000.0))
         if name == 'delectAllAction':
             if self.chinese:
-                result = self.message_delect('此操作会删除列表中的所有动作，是否继续？')
+                result = self.message_delect('This option will delete all actions in the list, do you want to continue?')
             else:
                 result = self.message_delect('This option will delete all actions in the list, do you want to continue?')
             if result == 0:                              
@@ -498,10 +498,10 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
                 self.label_TotalTime.setText(str(self.totalTime))
             else:
                 pass          
-        if name == 'updateAction':    # 更新动作(update action)
+        if name == 'updateAction':    # update action
             if int(self.lineEdit_time.text()) < 20:
                 if self.chinese:
-                    self.message_From('运行时间必须大于20')
+                    self.message_From('Run time must greater than 20')
                 else:
                     self.message_From('Run time must greater than 20')
                 return
@@ -511,17 +511,17 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
             for i in range(RowCont):
                 self.totalTime += int(self.tableWidget.item(i,2).text())
             self.label_TotalTime.setText(str((self.totalTime)/1000.0))            
-        if name == 'insertAction':    # 插入动作(insert action)
+        if name == 'insertAction':    # insert action
             if item == -1:
                 return
             if int(self.lineEdit_time.text()) < 20:
                 if self.chinese:
-                    self.message_From('运行时间必须大于20')
+                    self.message_From('Run time must greater than 20')
                 else:
                     self.message_From('Run time must greater than 20')
                 return
 
-            self.tableWidget.insertRow(item)       # 插入一行(insert a row)
+            self.tableWidget.insertRow(item)       # insert a row
             self.tableWidget.selectRow(item)
             self.add_line(item, str(self.lineEdit_time.text()), list[0], list[1], list[2], list[3], list[4])
             self.totalTime += int(self.lineEdit_time.text())
@@ -543,7 +543,7 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
             self.add_line(item, downlist_data[0], downlist_data[1], downlist_data[2], downlist_data[3], downlist_data[4], downlist_data[5])
             self.tableWidget.selectRow(item + 1)
                              
-        for i in range(self.tableWidget.rowCount()):    #刷新编号值(refresh number value)
+        for i in range(self.tableWidget.rowCount()):    # refresh number value
             self.tableWidget.item(i , 2).setFlags(self.tableWidget.item(i , 2).flags() & ~Qt.ItemIsEditable)
             self.tableWidget.setItem(i,1,QtWidgets.QTableWidgetItem(str(i + 1)))
         self.icon_position()
@@ -575,12 +575,12 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
                 self.lineEdit_6.setText(str(ServoPulse_6))
                 
                 if self.chinese:
-                    self.message_From('完成!')
+                    self.message_From('OK!')
                 else:
                     self.message_From('OK!')
             else:
                 if self.chinese:
-                    self.message_From('超出范围!')
+                    self.message_From('Out of range!')
                 else:
                     self.message_From('Out of range!')
             self.resetServos_ = False
@@ -594,12 +594,12 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
                 self.doubleSpinBox_Angle.setValue(self.Coordinates_data['Angle'])
                 self.doubleSpinBox_Time.setValue(self.Coordinates_data['Time'])
                 if self.chinese:
-                    self.message_From('读取完成')
+                    self.message_From('Read perform')
                 else:
                     self.message_From('Read perform')
             except:
                 if self.chinese:
-                    self.message_From('读取错误！')
+                    self.message_From('Read error !')
                 else:
                     self.message_From('Read error !')
             
@@ -613,27 +613,27 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
                 self.save_yaml_data(data, self.path + self.PickingCoordinates_file)
                 
                 if self.chinese:
-                    self.message_From('保存完成')
+                    self.message_From('Save perform')
                 else:
                     self.message_From('Save perform')
             except:
                 if self.chinese:
-                    self.message_From('保存错误！')
+                    self.message_From('Save error !')
                 else:
                     self.message_From('Save error !')
             
-    # 在线运行按钮点击事件(online running button clicking event)
+    # online running button clicking event
     def button_run(self, name):
         if self.tableWidget.rowCount() == 0:
             if self.chinese:
-                self.message_From('请先添加动作!')
+                self.message_From('Add action first!')
             else:
                 self.message_From('Add action first!')
         else:
             if name == 'run':
-                 if self.Button_Run.text() == '运行' or self.Button_Run.text() == 'Run':
+                 if self.Button_Run.text() == 'Run':
                     if self.chinese:
-                        self.Button_Run.setText('停止')
+                        self.Button_Run.setText('Stop')
                     else:
                         self.Button_Run.setText('Stop')
                     self.row = self.tableWidget.currentRow()
@@ -644,18 +644,18 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
                     if self.checkBox.isChecked():
                         for i in range(self.tableWidget.rowCount() - self.row):
                             s = self.tableWidget.item(i,2).text()
-                            self.timer.start(int(s))       # 设置计时间隔并启动(set time intervals and start)
+                            self.timer.start(int(s))       # set time intervals and start
                         self.timer.timeout.connect(self.operate1)
                     else:
                         for i in range(self.tableWidget.rowCount() - self.row):
                             s = self.tableWidget.item(i,2).text()
-                            self.timer.start(int(s))       # 设置计时间隔并启动(set time intervals and start)
+                            self.timer.start(int(s))       # set time intervals and start
                         self.timer.timeout.connect(self.operate2)
-                 elif self.Button_Run.text() == '停止' or self.Button_Run.text() == 'Stop':
+                 elif self.Button_Run.text() == 'Stop':
                     self.timer.stop()
                     if self.chinese:
-                        self.Button_Run.setText('运行')
-                        self.message_From('运行结束!')
+                        self.Button_Run.setText('Run')
+                        self.message_From('Run over!')
                     else:
                         self.Button_Run.setText('Run')
                         self.message_From('Run over!')  
@@ -677,8 +677,8 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
             self.timer.stop()
             self.tableWidget.selectRow(0)
             if self.chinese:
-                self.Button_Run.setText('运行')
-                self.message_From('运行结束!')
+                self.Button_Run.setText('Run')
+                self.message_From('Run over!')
             else:
                 self.Button_Run.setText('Run')
                 self.message_From('Run over!') 
@@ -722,14 +722,14 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
         except Exception:
             self.timer.stop()
             if self.chinese:
-                self.Button_Run.setText('运行')
-                self.message_From('运行出错!')
+                self.Button_Run.setText('Run')
+                self.message_From('Run error!')
             else:
                 self.Button_Run.setText('Run')
                 self.message_From('Run error!')              
         self.resetServos_ = False
 
-    # 文件打开及保存按钮点击事件(file opening and saving button clicking event)
+    # file opening and saving button clicking event
     def button_flie_operate(self, name):
         try:            
             if name == 'openActionGroup':
@@ -769,7 +769,7 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
                         self.label_TotalTime.setText(str(self.totalTime/1000.0))
                 except:
                     if self.chinese:
-                        self.message_From('动作组错误')
+                        self.message_From('Wrong action format')
                     else:
                         self.message_From('Wrong action format')
                     
@@ -777,7 +777,7 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
                 dig_s = QFileDialog()
                 if self.tableWidget.rowCount() == 0:
                     if self.chinese:
-                        self.message_From('动作列表是空的哦，没啥要保存的')
+                        self.message_From('The action list is empty，nothing to save')
                     else:
                         self.message_From('The action list is empty，nothing to save')
                     return
@@ -853,7 +853,7 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
                         self.label_TotalTime.setText(str(self.totalTime/1000.0))
                 except:
                     if self.chinese:
-                        self.message_From('动作组错误')
+                        self.message_From('Wrong action format')
                     else:
                         self.message_From('Wrong action format')
             if name == 'readDeviation':
@@ -886,13 +886,13 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
                     data.clear()
                     
                     if self.chinese:
-                        self.message_From('读取完成')
+                        self.message_From('Read perform')
                     else:
                         self.message_From('Read perform')
                     
                 except:
                     if self.chinese:
-                        self.message_From('读取错误！')
+                        self.message_From('Read error !')
                     else:
                         self.message_From('Read error !')
                 self.resetServos_ = False
@@ -906,12 +906,12 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
                             '6': self.horizontalSlider_16.value()}
                     self.save_yaml_data(data, self.path + self.Deviation_file)
                     if self.chinese:
-                        self.message_From('保存完成')
+                        self.message_From('Save perform')
                     else:
                         self.message_From('Save perform')
                 except:
                     if self.chinese:
-                        self.message_From('保存错误！')
+                        self.message_From('Save error !')
                     else:
                         self.message_From('Save error !')
                         
@@ -955,7 +955,7 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
                 self.reflash_action()
         if name == 'allDelect':
             if self.chinese:
-                result = self.message_delect('此操作会删除所有动作组，是否继续？')
+                result = self.message_delect('This action will delete all action groups, do you want to continue?')
             else:
                 result = self.message_delect('This action will delete all action groups, do you want to continue?')
             if result == 0:                              
@@ -1081,7 +1081,7 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
                 self.selectionchange() 
             except:
                 if self.chinese:
-                    self.message_From('读取颜色保存文件失败，格式错误！')
+                    self.message_From('Format error')
                 else:
                     self.message_From('Format error')
                           
@@ -1116,12 +1116,12 @@ class MainWindow(QtWidgets.QWidget, Ui_Form):
                 self.save_yaml_data(self.current_lab_data, self.path + self.lab_file)
             except Exception as e:
                 if self.chinese:
-                    self.message_From('保存失败！')
+                    self.message_From('Failed！')
                 else:
                     self.message_From('Failed！')
                 return
             if self.chinese:
-                self.message_From('保存成功！')
+                self.message_From('success！')
             else:
                 self.message_From('success！')
         elif buttonName == 'connect':

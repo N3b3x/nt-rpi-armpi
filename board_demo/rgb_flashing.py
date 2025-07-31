@@ -4,61 +4,61 @@ import ros_robot_controller_sdk as rrc
 
 print('''
 **********************************************************
-********功能:幻尔科技树莓派扩展板，RGB灯控制例程**********
+********Function: Hiwonder Raspberry Pi Expansion Board, RGB Light Control**********
 **********************************************************
 ----------------------------------------------------------
 Official website:https://www.hiwonder.com
 Online mall:https://hiwonder.tmall.com
 ----------------------------------------------------------
 Tips:
- * 按下Ctrl+C可关闭此次程序运行，若失败请多次尝试！
+ * Press Ctrl+C to close this program, if it fails please try multiple times!
 ----------------------------------------------------------
 ''')
 
 start = True
 
-#关闭前处理
+# Pre-shutdown processing
 def Stop(signum, frame):
     global start
     start = False
-    print('关闭中...')
+    print('Closing...')
 
 board = rrc.Board()
-#先将所有灯关闭
+# First turn off all lights
 board.set_rgb([[1, 0, 0, 0], [2, 0, 0, 0]])
 signal.signal(signal.SIGINT, Stop)
 
 while True:
-    #设置2个灯为红色
+    # Set 2 lights to red
     board.set_rgb([[1, 255, 0, 0], [2, 255, 0, 0]])
     time.sleep(0.5)
-    #设置2个灯关闭
+    # Set 2 lights off
     board.set_rgb([[1, 0, 0, 0], [2, 0, 0, 0]])
     time.sleep(0.5)
     
-    #设置2个灯为绿色
+    # Set 2 lights to green
     board.set_rgb([[1, 0, 255, 0], [2, 0, 255, 0]])
     time.sleep(0.5)
-    #设置2个灯关闭
+    # Set 2 lights off
     board.set_rgb([[1, 0, 0, 0], [2, 0, 0, 0]])
     time.sleep(0.5)
     
-    #设置2个灯为蓝色
+    # Set 2 lights to blue
     board.set_rgb([[1, 0, 0, 255], [2, 0, 0, 255]])
     time.sleep(0.5)
-    #设置2个灯关闭
+    # Set 2 lights off
     board.set_rgb([[1, 0, 0, 0], [2, 0, 0, 0]])
     time.sleep(0.5)
     
-    #设置2个灯为黄色
+    # Set 2 lights to yellow
     board.set_rgb([[1, 255, 255, 0], [2, 255, 255, 0]])
     time.sleep(0.5)
-    #设置2个灯关闭
+    # Set 2 lights off
     board.set_rgb([[1, 0, 0, 0], [2, 0, 0, 0]])
     time.sleep(0.5)
 
     if not start:
-        #所有灯关闭
+        # Turn off all lights
         board.set_rgb([[1, 0, 0, 0], [2, 0, 0, 0]])
-        print('已关闭')
+        print('Closed')
         break

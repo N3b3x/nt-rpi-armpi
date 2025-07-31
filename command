@@ -1,45 +1,45 @@
-#关掉开机自启
+# Disable auto-start
 sudo systemctl stop armpi_mini.service
 
-#重新开启开机自启
+# Re-enable auto-start
 sudo systemctl restart armpi_mini.service
 
-#测试上位机
+# Test upper computer
 python3 /home/pi/ArmPi_mini/armpi_mini_software/ArmPi_mini.py
 
-# 测试机械臂
+# Test robotic arm
 python3 /home/pi/ArmPi_mini/armpi_mini_demo/hardware_test.py
-或者按下扩展板的Key1按键
+Or press Key1 on the expansion board
 
-# 软关机
-# 长按Key2按键
+# Soft shutdown
+# Long press Key2
 
 
-# 第5章 机械臂基础运动课程
-# 第3课 控制机械臂上下移动
+# Chapter 5 Basic Robotic Arm Motion Course
+# Lesson 3 Control robotic arm up and down movement
 python3  /home/pi/ArmPi_mini/armpi_mini_demo/arm_move_IK_demo.py
-# 第4课 机械臂三轴联动
+# Lesson 4 Robotic arm three-axis linkage
 python3  /home/pi/ArmPi_mini/armpi_mini_demo/arm_move_IK_triaxial.py
 
 
-# 第6章 AI视觉学习课程
-# 第1课 颜色识别
+# Chapter 6 AI Vision Learning Course
+# Lesson 1 Color recognition
 python3 /home/pi/ArmPi_mini/functions/color_detect.py
 
-# 第2课 颜色分拣
+# Lesson 2 Color sorting
 python3 /home/pi/ArmPi_mini/functions/color_sorting.py
 
-# 第3课 目标位置检测
+# Lesson 3 Target position detection
 python3 /home/pi/ArmPi_mini/functions/position_detection.py
 
-# 第4课 目标追踪
+# Lesson 4 Target tracking
 python3 /home/pi/ArmPi_mini/functions/color_tracking.py
 
-# 第5课 智能码垛
+# Lesson 5 Intelligent palletizing
 python3 /home/pi/ArmPi_mini/functions/color_palletizing.py
 
 
-# 第7章 上位机动作编辑课程
-# 第5课 通过命令行的形式调用动作组（选看）
+# Chapter 7 Upper Computer Action Editing Course
+# Lesson 5 Call action groups through command line (optional)
 python3  /home/pi/ArmPi_mini/armpi_mini_demo/action_groups_control_demo.py
 

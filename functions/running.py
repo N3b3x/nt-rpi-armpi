@@ -16,15 +16,15 @@ cam = None
 
 FUNCTIONS = {
     0: None,
-    1: remote_control,    # 运动控制(motion control)
-    2: color_detect,      # 颜色识别(color recognition)
-    3: color_sorting,     # 颜色分拣(color sorting)
-    4: color_tracking,    # 颜色追踪(color tracking)
-    5: color_palletizing, # 智能码垛(intelligent stacking)
+    1: remote_control,    # motion control
+    2: color_detect,      # color recognition
+    3: color_sorting,     # color sorting
+    4: color_tracking,    # color tracking
+    5: color_palletizing, # intelligent stacking
     6: None,
     7: None,
     8: None,
-    9: lab_adjust        # lab校准(lab calibration)
+    9: lab_adjust        # lab calibration
 }
 
 def doHeartbeat(tmp=()):

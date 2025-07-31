@@ -12,14 +12,14 @@ if sys.version_info.major == 2:
     
 print('''
 **********************************************************
-********功能:幻尔科技树莓派扩展板，控制多个PWM舵机**********
+********Function: Hiwonder Raspberry Pi Expansion Board, Control Multiple PWM Servos**********
 **********************************************************
 ----------------------------------------------------------
 Official website:https://www.hiwonder.com
 Online mall:https://hiwonder.tmall.com
 ----------------------------------------------------------
 Tips:
- * 按下Ctrl+C可关闭此次程序运行，若失败请多次尝试！
+ * Press Ctrl+C to close this program, if it fails please try multiple times!
 ----------------------------------------------------------
 ''')
 
@@ -36,7 +36,7 @@ start = True
 def Stop(signum, frame):
     global start
     start = False
-    print('关闭中...')
+    print('Closing...')
     try:
         # Reset servo 2 to middle position
         print("Attempting to reset servo position...")
@@ -45,7 +45,7 @@ def Stop(signum, frame):
         print("Reset complete")
     except Exception as e:
         print(f"Error during reset: {e}")
-    print('已关闭')
+    print('Closed')
 
 signal.signal(signal.SIGINT, Stop)
 

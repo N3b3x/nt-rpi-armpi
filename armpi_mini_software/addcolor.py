@@ -29,7 +29,7 @@ class Ui_Dialog(object):
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("Dialog", "新增颜色"))
+        Dialog.setWindowTitle(_translate("Dialog", "Add New Color"))
         self.pushButton_cancel.setText(_translate("Dialog", "Cancel"))
         self.pushButton_ok.setText(_translate("Dialog", "OK"))
 

@@ -63,7 +63,7 @@
    </property>
    <property name="font">
     <font>
-     <family>黑体</family>
+     <family>Arial</family>
      <pointsize>12</pointsize>
     </font>
    </property>
@@ -72,7 +72,7 @@
    </property>
    <widget class="QWidget" name="tab_1">
     <attribute name="title">
-     <string>普通模式</string>
+     <string>Normal Mode</string>
     </attribute>
     <widget class="QWidget" name="widget_5" native="true">
      <property name="geometry">
@@ -98,12 +98,12 @@ border-color: rgb(200, 200, 200);}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
       <property name="text">
-       <string>动作组：</string>
+       <string>Action Group:</string>
       </property>
      </widget>
      <widget class="QComboBox" name="comboBox_action">
@@ -138,7 +138,7 @@ color: rgb(0, 0, 0);
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -148,7 +148,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>单个擦除</string>
+       <string>Erase Single</string>
       </property>
      </widget>
      <widget class="QPushButton" name="Button_AllDelect">
@@ -162,7 +162,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -172,7 +172,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>全部擦除</string>
+       <string>Erase All</string>
       </property>
      </widget>
      <widget class="QPushButton" name="Button_RunAction">
@@ -186,7 +186,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -196,7 +196,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>动作组运行</string>
+       <string>Run Action Group</string>
       </property>
      </widget>
      <widget class="QPushButton" name="Button_StopAction">
@@ -210,7 +210,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -220,7 +220,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>停止</string>
+       <string>Stop</string>
       </property>
      </widget>
      <widget class="QPushButton" name="Button_Quit">
@@ -234,7 +234,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -244,7 +244,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>退出</string>
+       <string>Exit</string>
       </property>
      </widget>
      <widget class="QPushButton" name="Button_Reflash">
@@ -258,7 +258,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -268,7 +268,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>刷新</string>
+       <string>Refresh</string>
       </property>
      </widget>
     </widget>
@@ -296,12 +296,12 @@ border-color: rgb(200, 200, 200);}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
       <property name="text">
-       <string>循环</string>
+       <string>Loop</string>
       </property>
      </widget>
      <widget class="QPushButton" name="Button_Run">
@@ -325,7 +325,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>运行</string>
+       <string>Run</string>
       </property>
       <property name="iconSize">
        <size>
@@ -365,7 +365,7 @@ border-color: rgb(200, 200, 200);}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -375,7 +375,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>读取偏差</string>
+       <string>Read Deviation</string>
       </property>
      </widget>
      <widget class="QPushButton" name="Button_SaveDeviation">
@@ -389,7 +389,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -399,7 +399,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>保存偏差</string>
+       <string>Save Deviation</string>
       </property>
      </widget>
      <widget class="QPushButton" name="Button_ReSetServos">
@@ -413,7 +413,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -423,7 +423,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>复位舵机</string>
+       <string>Reset Servos</string>
       </property>
      </widget>
     </widget>
@@ -444,7 +444,7 @@ QPushButton{border-radius:5px;}</string>
      </property>
      <property name="font">
       <font>
-       <family>黑体</family>
+       <family>Arial</family>
        <pointsize>11</pointsize>
       </font>
      </property>
@@ -485,7 +485,7 @@ border-color: rgb(200, 200, 200);</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>11</pointsize>
        </font>
       </property>
@@ -628,7 +628,7 @@ border-color: rgb(200, 200, 200);}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -638,7 +638,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>打开动作文件</string>
+       <string>Open Action File</string>
       </property>
      </widget>
      <widget class="QPushButton" name="Button_SaveActionGroup">
@@ -652,7 +652,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -662,7 +662,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>保存动作文件</string>
+       <string>Save Action File</string>
       </property>
      </widget>
      <widget class="QPushButton" name="Button_TandemActionGroup">
@@ -676,7 +676,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -686,7 +686,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>串联动作文件</string>
+       <string>Concatenate Files</string>
       </property>
      </widget>
     </widget>
@@ -720,12 +720,12 @@ border-color: rgb(200, 200, 200);}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
       <property name="text">
-       <string>动作时间</string>
+       <string>Action Time</string>
       </property>
      </widget>
      <widget class="QLineEdit" name="lineEdit_time">
@@ -764,7 +764,7 @@ border-color: rgb(200, 200, 200);}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -774,7 +774,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>添加动作</string>
+       <string>Add Action</string>
       </property>
      </widget>
      <widget class="QPushButton" name="Button_DelectAction">
@@ -788,7 +788,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -798,7 +798,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>删除动作</string>
+       <string>Delete Action</string>
       </property>
      </widget>
      <widget class="QPushButton" name="Button_UpdateAction">
@@ -812,7 +812,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -822,7 +822,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>更新动作</string>
+       <string>Update Action</string>
       </property>
      </widget>
      <widget class="QPushButton" name="Button_InsertAction">
@@ -836,7 +836,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -846,7 +846,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>插入动作</string>
+       <string>Insert Action</string>
       </property>
      </widget>
      <widget class="QPushButton" name="Button_MoveUpAction">
@@ -860,7 +860,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -870,7 +870,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>上移动作</string>
+       <string>Move Up</string>
       </property>
      </widget>
      <widget class="QPushButton" name="Button_MoveDownAction">
@@ -884,7 +884,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -894,7 +894,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>下移动作</string>
+       <string>Move Down</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_time_2">
@@ -908,12 +908,12 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
       <property name="text">
-       <string>总时长</string>
+       <string>Total Time</string>
       </property>
      </widget>
      <widget class="QLabel" name="label">
@@ -949,7 +949,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -990,7 +990,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -1000,7 +1000,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>删除全部</string>
+       <string>Delete All</string>
       </property>
      </widget>
     </widget>
@@ -1032,7 +1032,7 @@ QPushButton{border-radius:5px;}</string>
        </rect>
       </property>
       <property name="text">
-       <string>中文</string>
+       <string>Chinese</string>
       </property>
      </widget>
      <widget class="QRadioButton" name="radioButton_en">
@@ -1221,7 +1221,7 @@ border-radius:0px;</string>
        </property>
        <property name="font">
         <font>
-         <family>黑体</family>
+         <family>Arial</family>
          <pointsize>10</pointsize>
         </font>
        </property>
@@ -1246,7 +1246,7 @@ border-radius:0px;</string>
        </property>
        <property name="font">
         <font>
-         <family>黑体</family>
+         <family>Arial</family>
          <pointsize>10</pointsize>
         </font>
        </property>
@@ -1369,7 +1369,7 @@ border-radius:0px;</string>
        </property>
        <property name="font">
         <font>
-         <family>黑体</family>
+         <family>Arial</family>
          <pointsize>10</pointsize>
         </font>
        </property>
@@ -1416,7 +1416,7 @@ border-radius:0px;</string>
        </property>
        <property name="font">
         <font>
-         <family>黑体</family>
+         <family>Arial</family>
          <pointsize>10</pointsize>
         </font>
        </property>
@@ -1564,7 +1564,7 @@ border-radius:0px;</string>
        </property>
        <property name="font">
         <font>
-         <family>黑体</family>
+         <family>Arial</family>
          <pointsize>10</pointsize>
         </font>
        </property>
@@ -1611,7 +1611,7 @@ border-radius:0px;</string>
        </property>
        <property name="font">
         <font>
-         <family>黑体</family>
+         <family>Arial</family>
          <pointsize>10</pointsize>
         </font>
        </property>
@@ -1759,7 +1759,7 @@ border-radius:0px;</string>
        </property>
        <property name="font">
         <font>
-         <family>黑体</family>
+         <family>Arial</family>
          <pointsize>10</pointsize>
         </font>
        </property>
@@ -1806,7 +1806,7 @@ border-radius:0px;</string>
        </property>
        <property name="font">
         <font>
-         <family>黑体</family>
+         <family>Arial</family>
          <pointsize>10</pointsize>
         </font>
        </property>
@@ -1954,7 +1954,7 @@ border-radius:0px;</string>
        </property>
        <property name="font">
         <font>
-         <family>黑体</family>
+         <family>Arial</family>
          <pointsize>10</pointsize>
         </font>
        </property>
@@ -2001,7 +2001,7 @@ border-radius:0px;</string>
        </property>
        <property name="font">
         <font>
-         <family>黑体</family>
+         <family>Arial</family>
          <pointsize>10</pointsize>
         </font>
        </property>
@@ -2106,7 +2106,7 @@ border-radius:0px;</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>10</pointsize>
        </font>
       </property>
@@ -2131,7 +2131,7 @@ border-radius:0px;</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>10</pointsize>
        </font>
       </property>
@@ -2156,7 +2156,7 @@ border-radius:0px;</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>10</pointsize>
        </font>
       </property>
@@ -2181,7 +2181,7 @@ border-radius:0px;</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -2191,7 +2191,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>运行到坐标点</string>
+       <string>Run to Coordinate Point</string>
       </property>
      </widget>
      <widget class="QSpinBox" name="doubleSpinBox_Time">
@@ -2224,7 +2224,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>10</pointsize>
        </font>
       </property>
@@ -2232,7 +2232,7 @@ QPushButton{border-radius:5px;}</string>
        <string notr="true">background-color: rgb(255, 255, 255， 0);</string>
       </property>
       <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;运行时间&lt;/p&gt;&lt;p align=&quot;justify&quot;&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;Action Time&lt;/p&gt;&lt;p align=&quot;justify&quot;&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
@@ -2249,7 +2249,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>10</pointsize>
        </font>
       </property>
@@ -2274,7 +2274,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>10</pointsize>
        </font>
       </property>
@@ -2299,7 +2299,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>10</pointsize>
        </font>
       </property>
@@ -2324,7 +2324,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>10</pointsize>
        </font>
       </property>
@@ -2371,7 +2371,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>10</pointsize>
        </font>
       </property>
@@ -2379,7 +2379,7 @@ QPushButton{border-radius:5px;}</string>
        <string notr="true">background-color: rgb(255, 255, 255， 0);</string>
       </property>
       <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;俯仰角&lt;/p&gt;&lt;p align=&quot;justify&quot;&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;Pitch Angle&lt;/p&gt;&lt;p align=&quot;justify&quot;&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
@@ -2396,7 +2396,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>10</pointsize>
        </font>
       </property>
@@ -2421,7 +2421,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -2431,7 +2431,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>读取</string>
+       <string>Read</string>
       </property>
      </widget>
      <widget class="QPushButton" name="Button_SaveCoordinate">
@@ -2445,7 +2445,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>12</pointsize>
        </font>
       </property>
@@ -2455,7 +2455,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>保存</string>
+       <string>Save</string>
       </property>
      </widget>
     </widget>
@@ -2469,7 +2469,7 @@ QPushButton{border-radius:5px;}</string>
    </widget>
    <widget class="QWidget" name="tab">
     <attribute name="title">
-     <string>摄像头工具</string>
+     <string>Camera Tools</string>
     </attribute>
     <widget class="QLabel" name="label_8">
      <property name="geometry">
@@ -2482,12 +2482,12 @@ QPushButton{border-radius:5px;}</string>
      </property>
      <property name="font">
       <font>
-       <family>黑体</family>
+       <family>Arial</family>
        <pointsize>16</pointsize>
       </font>
      </property>
      <property name="text">
-      <string>400x300原图</string>
+      <string>400x300 Original Image</string>
      </property>
     </widget>
     <widget class="QWidget" name="widget_12" native="true">
@@ -2514,7 +2514,7 @@ border-color: rgb(200, 200, 200);}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>14</pointsize>
        </font>
       </property>
@@ -2536,7 +2536,7 @@ border-color: rgb(200, 200, 200);}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>14</pointsize>
        </font>
       </property>
@@ -2558,7 +2558,7 @@ border-color: rgb(200, 200, 200);}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>14</pointsize>
        </font>
       </property>
@@ -2637,7 +2637,7 @@ border-color: rgb(200, 200, 200);}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>14</pointsize>
        </font>
       </property>
@@ -2659,7 +2659,7 @@ border-color: rgb(200, 200, 200);}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>14</pointsize>
        </font>
       </property>
@@ -2681,7 +2681,7 @@ border-color: rgb(200, 200, 200);}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>14</pointsize>
        </font>
       </property>
@@ -2769,7 +2769,7 @@ border-color: rgb(200, 200, 200);}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>14</pointsize>
        </font>
       </property>
@@ -2791,7 +2791,7 @@ border-color: rgb(200, 200, 200);}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>14</pointsize>
        </font>
       </property>
@@ -2813,7 +2813,7 @@ border-color: rgb(200, 200, 200);}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>14</pointsize>
        </font>
       </property>
@@ -2859,7 +2859,7 @@ border-color: rgb(200, 200, 200);}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>14</pointsize>
        </font>
       </property>
@@ -2869,7 +2869,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>保存</string>
+       <string>Save</string>
       </property>
      </widget>
      <widget class="QPushButton" name="pushButton_addcolor">
@@ -2883,7 +2883,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>14</pointsize>
        </font>
       </property>
@@ -2893,7 +2893,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>新增</string>
+       <string>Add</string>
       </property>
      </widget>
      <widget class="QPushButton" name="pushButton_deletecolor">
@@ -2907,7 +2907,7 @@ QPushButton{border-radius:5px;}</string>
       </property>
       <property name="font">
        <font>
-        <family>黑体</family>
+        <family>Arial</family>
         <pointsize>14</pointsize>
        </font>
       </property>
@@ -2917,7 +2917,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
       </property>
       <property name="text">
-       <string>删除</string>
+       <string>Delete</string>
       </property>
      </widget>
     </widget>
@@ -2932,7 +2932,7 @@ QPushButton{border-radius:5px;}</string>
      </property>
      <property name="font">
       <font>
-       <family>黑体</family>
+       <family>Arial</family>
        <pointsize>14</pointsize>
       </font>
      </property>
@@ -2942,7 +2942,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
      </property>
      <property name="text">
-      <string>连接</string>
+      <string>Connect</string>
      </property>
     </widget>
     <widget class="QLabel" name="label_process">
@@ -2982,7 +2982,7 @@ QPushButton{border-radius:5px;}</string>
      </property>
      <property name="font">
       <font>
-       <family>黑体</family>
+       <family>Arial</family>
        <pointsize>14</pointsize>
       </font>
      </property>
@@ -2992,7 +2992,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
      </property>
      <property name="text">
-      <string>断开</string>
+      <string>Disconnect</string>
      </property>
     </widget>
     <widget class="QPushButton" name="pushButton_quit2_2">
@@ -3006,7 +3006,7 @@ QPushButton{border-radius:5px;}</string>
      </property>
      <property name="font">
       <font>
-       <family>黑体</family>
+       <family>Arial</family>
        <pointsize>16</pointsize>
       </font>
      </property>
@@ -3016,7 +3016,7 @@ QPushButton:hover{background-color:  rgb(255, 210, 0);}
 QPushButton{border-radius:5px;}</string>
      </property>
      <property name="text">
-      <string>退出</string>
+      <string>Exit</string>
      </property>
     </widget>
     <zorder>widget_15</zorder>

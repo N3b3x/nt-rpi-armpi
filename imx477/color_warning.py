@@ -10,7 +10,7 @@ import os
 # Custom module paths
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/common_sdk')
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/kinematics')
-sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/yaml')
+sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/common_sdk')
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/CameraCalibration')
 
 import common.yaml_handle as yaml_handle

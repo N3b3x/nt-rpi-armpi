@@ -4,15 +4,15 @@ import cv2
 import numpy as np
 from CalibrationConfig import *
 
-#生成标定棋盘, 按键盘任意键退出(Generate the calibration chessboard and press any key on the keyboard to exit.)
-print('按任意键退出')
+# Generate the calibration chessboard and press any key on the keyboard to exit.
+print('Press any key to exit')
 
 width = 640
 
 block_width = width//(calibration_size[0] + 1)
 black_block = np.full((block_width, block_width), 255)
 
-#棋盘分辨率(the resolution of the chessboard)
+# the resolution of the chessboard
 size = (block_width*(calibration_size[1] + 1), width)
 calibration_board = np.zeros(size)
 

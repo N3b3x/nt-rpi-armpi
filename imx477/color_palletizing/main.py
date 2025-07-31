@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 # Add SDK paths
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/common_sdk')
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/kinematics_sdk')  # Updated path
-sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/yaml')
+sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/common_sdk')
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/CameraCalibration')
 
 from block_tracker import BlockTracker

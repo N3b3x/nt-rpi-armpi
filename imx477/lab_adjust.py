@@ -6,7 +6,7 @@ import shutil
 import sys
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/common_sdk')
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/kinematics')
-sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/yaml')
+sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/common_sdk')
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/CameraCalibration')
 sys.path.insert(0, '/home/pi/ArmPi_mini/armpi_mini_sdk/kinematics_sdk')  # Add kinematics_sdk path
 sys.path.append('/home/pi/ArmPi_mini/')

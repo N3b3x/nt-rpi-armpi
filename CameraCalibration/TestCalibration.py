@@ -5,24 +5,24 @@ import time
 import numpy as np
 from CalibrationConfig import *
 
-print('测试畸变矫正, esc退出')
+print('Test distortion correction, esc to exit')
 
-#加载参数(load parameters)
+# load parameters
 param_data = np.load(calibration_param_path + '.npz')
 
-#获取参数(obtain parameters)
+# obtain parameters
 dim = tuple(param_data['dim_array'])
 k = np.array(param_data['k_array'].tolist())
 d = np.array(param_data['d_array'].tolist())
 
-print('加载参数完成')
+print('Parameters loaded successfully')
 print('dim:\n', dim)
 print('k:\n', k)
 print('d:\n', d)
 
-#截取区域，1表示完全截取(truncate area, '1' represents full truncation)
+# truncate area, '1' represents full truncation
 scale = 1
-#优化内参和畸变参数(optimize intrinsic and distortion parameters)
+# optimize intrinsic and distortion parameters
 p = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(k, d, dim ,None)
 Knew = p.copy()
 if scale:#change fov

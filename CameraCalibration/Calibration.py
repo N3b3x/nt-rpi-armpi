@@ -6,12 +6,12 @@ import glob
 import numpy as np
 from CalibrationConfig import *
 
-#单目鱼眼摄像头标定(monocular camera calibration)
+# monocular camera calibration
 
 def get_K_D(checkerboard_size, imgsPath, param_save_path):
-    #参数1：棋盘的横，纵内角点数(number of horizontal and vertical inner corners of the chessboard)
-    #参数2：待标定的图像路径(path to be calibrated image)
-    #参数3：标定后参数保存文件路径(path to save calibrated parameters file)
+    # number of horizontal and vertical inner corners of the chessboard
+    # path to be calibrated image
+    # path to save calibrated parameters file
 
     # termination criteria
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
@@ -26,7 +26,7 @@ def get_K_D(checkerboard_size, imgsPath, param_save_path):
     objpoints = [] # 3d point in real world space
     imgpoints = [] # 2d points in image plane.
 
-    #标定采集的图像存储路径(storage path for calibration image acquisition)
+    # storage path for calibration image acquisition
     images = glob.glob(imgsPath + '*.jpg')
     for fname in images:
         img = cv2.imread(fname)
@@ -74,17 +74,17 @@ def get_K_D(checkerboard_size, imgsPath, param_save_path):
             
     DIM = gray.shape[::-1]
     print("\nFound " + str(N_OK) + " valid images for calibration")
-    print("分辨率\t: DIM=" + str(gray.shape[::-1]))
-    print("内参\t: K=np.array(" + str(K.tolist()) + ")")
-    print("畸变系数: D=np.array(" + str(D.tolist()) + ")")
+    print("Resolution\t: DIM=" + str(gray.shape[::-1]))
+    print("Intrinsic\t: K=np.array(" + str(K.tolist()) + ")")
+    print("Distortion coefficient: D=np.array(" + str(D.tolist()) + ")")
     
-    #保存参数(save parameters)
+    # save parameters
     np.savez(param_save_path, dim_array = DIM, k_array = K, d_array = D, fmt="%d", delimiter=" ")    
     print('param save successful\n')  
 
     return DIM, K, D
 
 if __name__ == '__main__':
-    print('********开始标定***********')
+    print('********Start calibration***********')
     get_K_D(calibration_size, save_path, calibration_param_path)
-    print('********标定完成***********')
+    print('********Calibration complete***********')

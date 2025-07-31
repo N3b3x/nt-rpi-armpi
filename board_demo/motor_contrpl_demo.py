@@ -11,41 +11,41 @@ if sys.version_info.major == 2:
     
 print('''
 **********************************************************
-********功能:幻尔科技树莓派扩展板，控制直流带电机**********
+********Function: Hiwonder Raspberry Pi Expansion Board, Control DC Motors**********
 **********************************************************
 ----------------------------------------------------------
 Official website:https://www.hiwonder.com
 Online mall:https://hiwonder.tmall.com
 ----------------------------------------------------------
 Tips:
- * 按下Ctrl+C可关闭此次程序运行，若失败请多次尝试！
+ * Press Ctrl+C to close this program, if it fails please try multiple times!
 ----------------------------------------------------------
 ''')
 board = rrc.Board()
 
 start = True
-#关闭前处理
+# Pre-shutdown processing
 def Stop(signum, frame):
     global start
 
     start = False
-    print('关闭中...')
-    board.set_motor_duty([[1, 0], [2, 0], [3, 0], [4, 0]])  # 关闭所有电机
+    print('Closing...')
+    board.set_motor_duty([[1, 0], [2, 0], [3, 0], [4, 0]])  # Turn off all motors
 
 signal.signal(signal.SIGINT, Stop)
 
 if __name__ == '__main__':
     
     while True:
-        board.set_motor_duty([[1, 35]])  #设置1号电机速度35
+        board.set_motor_duty([[1, 35]])  # Set motor 1 speed to 35
         time.sleep(2)
-        board.set_motor_duty([[1, 90]])  #设置1号电机速度90
+        board.set_motor_duty([[1, 90]])  # Set motor 1 speed to 90
         time.sleep(1) 
         board.set_motor_duty([[1, 0]])   
         time.sleep(6)
         if not start:
-            board.set_motor_duty([[1, 0], [2, 0], [3, 0], [4, 0]])  # 关闭所有电机
-            print('已关闭')
+            board.set_motor_duty([[1, 0], [2, 0], [3, 0], [4, 0]])  # Turn off all motors
+            print('Closed')
             break
     
     

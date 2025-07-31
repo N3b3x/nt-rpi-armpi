@@ -27,7 +27,7 @@ class ArmController:
         # Load deviation data for smooth motion
         try:
             import common.yaml_handle as yaml_handle
-            self.deviation_data = yaml_handle.get_yaml_data(yaml_handle.deviation_file_path)
+            self.deviation_data = yaml_handle.get_yaml_data(yaml_handle.Deviation_file_path)
             print(f"[DEBUG] Loaded deviation data: {self.deviation_data}")
         except Exception as e:
             print(f"[WARNING] Failed to load deviation data: {e}")

@@ -19,9 +19,9 @@ class Camera:
         self.height = resolution[1]
         self.frame = None
         self.opened = False
-        #加载参数(load parameter)
+        # load parameter
         self.param_data = np.load(calibration_param_path + '.npz')        
-        #获取参数(obtain parameter)
+        # obtain parameter
         self.dim = tuple(self.param_data['dim_array'])
         self.k = np.array(self.param_data['k_array'].tolist())
         self.d = np.array(self.param_data['d_array'].tolist())
@@ -40,7 +40,7 @@ class Camera:
             self.cap.set(cv2.CAP_PROP_SATURATION, 40)
             self.opened = True
         except Exception as e:
-            print('打开摄像头失败:', e)
+            print('Failed to open camera:', e)
 
     def camera_close(self):
         try:
@@ -51,7 +51,7 @@ class Camera:
                 time.sleep(0.05)
             self.cap = None
         except Exception as e:
-            print('关闭摄像头失败:', e)
+            print('Failed to close camera:', e)
 
     def camera_task(self):
         while True:
@@ -75,7 +75,7 @@ class Camera:
                 else:
                     time.sleep(0.01)
             except Exception as e:
-                print('获取摄像头画面出错:', e)
+                print('Error getting camera frame:', e)
                 time.sleep(0.01)
 
 if __name__ == '__main__':

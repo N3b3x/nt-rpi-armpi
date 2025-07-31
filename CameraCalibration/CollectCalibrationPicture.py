@@ -2,24 +2,24 @@
 # encoding:utf-8
 # Data:2021/05/25
 # Author:Aiden
-# Function: 采集标定图像(Collect calibration images)
+# Function: Collect calibration images
 import os
 import cv2
 import time
 from CalibrationConfig import *
 
-print('按下键盘上的space键存储图像，按esc退出)')
+print('Press space key to save image, press esc to exit)')
 cap = cv2.VideoCapture(-1)
 
 pictures_list = []
-#如果calib文件夹不存在，则新建(If 'calib' folder does not exist, create it.)
+# If 'calib' folder does not exist, create it.
 if not os.path.exists(save_path):
     os.mkdir(save_path)
 else:
     for i in os.listdir(save_path):
         pictures_list.append(i[:-4])
 
-#计算存储的图片数量(calculate the number of stored images)
+# calculate the number of stored images
 num = 0
 while True:
     ret, frame = cap.read()
@@ -34,7 +34,7 @@ while True:
             while True:
                 num += 1
                 if num not in pictures_list:
-                    #图片名称格式：当前图片数量.jpg(The format of the image names is 'current image number.jpg'.)
+                    # The format of the image names is 'current image number.jpg'
                     cv2.imwrite(save_path + str(num) + ".jpg", frame)
                     break
     else:
