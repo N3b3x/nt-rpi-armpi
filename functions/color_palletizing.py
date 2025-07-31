@@ -1,11 +1,18 @@
 #!/usr/bin/python3
 # coding=utf8
 import sys
+import os
 import cv2
 import time
 import math
 import threading
 import numpy as np
+
+# Add the path to the common module
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)
+sys.path.append(os.path.join(project_root, 'armpi_mini_sdk', 'common_sdk'))
+
 import common.misc as Misc
 import common.yaml_handle as yaml_handle
 

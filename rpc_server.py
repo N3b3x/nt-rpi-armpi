@@ -3,6 +3,12 @@
 import os
 import sys
 sys.path.append('/home/pi/ArmPi_mini/')
+
+# Add the paths to the common and kinematics modules
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(current_dir, 'armpi_mini_sdk', 'common_sdk'))
+sys.path.append(os.path.join(current_dir, 'armpi_mini_sdk', 'kinematics_sdk'))
+
 import time
 import logging
 import threading
@@ -13,7 +19,7 @@ import functions.color_sorting as color_sorting
 import functions.color_detect as color_detect
 import functions.color_tracking as color_tracking
 import functions.color_palletizing as color_palletizing
-from kinematics.arm_move_ik import *
+from my_kinematics.arm_move_ik import *
 from werkzeug.serving import run_simple
 from werkzeug.wrappers import Request, Response
 from jsonrpc import JSONRPCResponseManager, dispatcher
@@ -315,20 +321,20 @@ def ColorSorting(*target_color):
 def ColorPalletizing(*target_color):
     return runbymainth(color_palletizing.setTargetColor, target_color)
 
-# 设置颜色阈值(set color threshold)
-# 参数：颜色lab(parameter: color lab)
-# 例如：[{'red': ((0, 0, 0), (255, 255, 255))}](for example: [{'red': ((0, 0, 0), (255, 255, 255))}])
+# set color threshold
+# parameter: color lab
+# for example: [{'red': ((0, 0, 0), (255, 255, 255))}]
 @dispatcher.add_method
 def SetLABValue(*lab_value):
     #print(lab_value)
     return runbymainth(lab_adjust.setLABValue, lab_value)
 
-# 保存颜色阈值(save color threshold)
+# save color threshold
 @dispatcher.add_method
 def GetLABValue():
     return (True, lab_adjust.getLABValue()[1], 'GetLABValue')
 
-# 保存颜色阈值(save color threshold)
+# save color threshold
 @dispatcher.add_method
 def SaveLABValue(color=''):
     return runbymainth(lab_adjust.saveLABValue, (color, ))

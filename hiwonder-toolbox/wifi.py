@@ -11,7 +11,7 @@ import subprocess
 import socketserver
 from find_device import get_cpu_serial_number
 
-led1_pin = 16  # 蓝色led
+led1_pin = 16  # blue led
 led2_pin = 26 
 chip = gpiod.Chip('gpiochip4')
 led1 = chip.get_line(led1_pin)

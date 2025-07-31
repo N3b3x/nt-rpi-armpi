@@ -6,6 +6,12 @@ import cv2
 import time
 import queue
 sys.path.append('/home/pi/ArmPi_mini/')
+
+# Add the paths to the common and kinematics modules
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(current_dir, 'armpi_mini_sdk', 'common_sdk'))
+sys.path.append(os.path.join(current_dir, 'armpi_mini_sdk', 'kinematics_sdk'))
+
 import Camera
 import logging
 import threading
@@ -13,7 +19,7 @@ import rpc_server
 import mjpg_server
 import numpy as np
 import functions.running as running
-from kinematics.arm_move_ik import *
+from my_kinematics.arm_move_ik import *
 from common.ros_robot_controller_sdk import Board
 
 if sys.version_info.major == 2:

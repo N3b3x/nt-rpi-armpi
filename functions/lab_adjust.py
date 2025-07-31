@@ -1,7 +1,13 @@
 #!/usr/bin/python3
 # coding=utf8
 import sys
+import os
 sys.path.append('/home/pi/ArmPi_mini/')
+# Add the path to the common module
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)
+sys.path.append(os.path.join(project_root, 'armpi_mini_sdk', 'common_sdk'))
+
 import cv2
 import math
 import time
@@ -46,21 +52,21 @@ def saveLABValue(color):
     
     return (True, (), 'SaveLABValue')
 
-# 找出面积最大的轮廓(find the contour with the largest area)
-# 参数为要比较的轮廓的列表(parameter is the listing of contours to be compared)
+# find the contour with the largest area
+# parameter is the listing of contours to be compared
 def getAreaMaxContour(contours):
     contour_area_temp = 0
     contour_area_max = 0
     area_max_contour = None
 
-    for c in contours:  # 历遍所有轮廓(iterate through all contours)
-        contour_area_temp = math.fabs(cv2.contourArea(c))  # 计算轮廓面积(calculate the contour area)
+    for c in contours:  # iterate through all contours
+        contour_area_temp = math.fabs(cv2.contourArea(c))  # calculate the contour area
         if contour_area_temp > contour_area_max:
             contour_area_max = contour_area_temp
-            if contour_area_temp > 10:  # 只有在面积大于10时，最大面积的轮廓才是有效的，以过滤干扰(Only the contour with the area larger than 10, which is greater than 300, is considered valid to filter out disturbance.)
+            if contour_area_temp > 10:  # Only the contour with the area larger than 10 is considered valid to filter out disturbance.
                 area_max_contour = c
 
-    return area_max_contour, contour_area_max  # 返回最大的轮廓(return the largest contour)
+    return area_max_contour, contour_area_max  # return the largest contour
 
 lab_data = None
 def load_config():
@@ -68,33 +74,33 @@ def load_config():
     
     lab_data = yaml_handle.get_yaml_data(yaml_handle.lab_file_path)
 
-# 变量重置(reset variables)
+# reset variables
 def reset():
     global __target_color
        
     __target_color = ()
 
-# app初始化调用(call the initialization of the app)
+# call the initialization of the app
 def init():
     print("lab_adjust Init")
     load_config()
     reset()
 
 __isRunning = False
-# app开始玩法调用(the app starts the game calling)
+# the app starts the game calling
 def start():
     global __isRunning
     __isRunning = True
     print("lab_adjust Start")
 
-# app停止玩法调用(the app stops the game calling)
+# the app stops the game calling
 def stop():
     global __isRunning
     __isRunning = False
     reset()
     print("lab_adjust Stop")
 
-# app退出玩法调用(the app exits the game calling)
+# the app exits the game calling
 def exit():
     global __isRunning
     __isRunning = False
@@ -108,7 +114,7 @@ def run(img):
         return img
     
     frame_gb = cv2.GaussianBlur(img_copy, (3, 3), 3)   
-    frame_lab = cv2.cvtColor(frame_gb, cv2.COLOR_BGR2LAB)  # 将图像转换到LAB空间(convert the image to LAB space)
+    frame_lab = cv2.cvtColor(frame_gb, cv2.COLOR_BGR2LAB)  # convert the image to LAB space
     
     for i in lab_data:
         if i in __target_color:
@@ -118,9 +124,9 @@ def run(img):
                                           lab_data[i]['min'][2]),
                                          (lab_data[i]['max'][0],
                                           lab_data[i]['max'][1],
-                                          lab_data[i]['max'][2]))  #对原图像和掩模进行位运算(perform bitwise operation on the original image and the mask)
-            eroded = cv2.erode(frame_mask, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3)))  #腐蚀(erode)
-            dilated = cv2.dilate(eroded, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))) #膨胀(dilate)
+                                          lab_data[i]['max'][2]))  # perform bitwise operation on the original image and the mask
+            eroded = cv2.erode(frame_mask, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3)))  # erode
+            dilated = cv2.dilate(eroded, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))) # dilate
             frame_bgr = cv2.cvtColor(dilated, cv2.COLOR_GRAY2BGR)
             img = frame_bgr
     return img
