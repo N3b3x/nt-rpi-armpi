@@ -22,7 +22,7 @@ import functions.color_palletizing as color_palletizing
 from my_kinematics.arm_move_ik import *
 from werkzeug.serving import run_simple
 from werkzeug.wrappers import Request, Response
-from jsonrpc import JSONRPCResponseManager, dispatcher
+from jsonrpc2 import JSONRPCResponseManager, dispatcher
 
 if sys.version_info.major == 2:
     print('Please run this program with python3!')
