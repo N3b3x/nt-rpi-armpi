@@ -7,7 +7,7 @@
 
 > **Advanced robotic arm control system for ARM-based single-board computers**
 
-The ArmPi Mini Robot is a sophisticated robotic arm kit from HiWonder designed to work with Raspberry Pi and similar ARM boards. This project provides a complete software stack for controlling the ArmPi Mini robot with advanced features including computer vision, color detection, face recognition, and intelligent object manipulation.
+The ArmPi Mini Robot is a 4 DOF robotic arm kit from HiWonder designed to work with Raspberry Pi and similar ARM boards. This project provides a complete software stack for controlling the ArmPi Mini robot with advanced features including computer vision, color detection, face recognition, and intelligent object manipulation.
 
 ## 📋 Table of Contents
 
