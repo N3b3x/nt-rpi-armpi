@@ -105,7 +105,8 @@ install_system_deps() {
                 libqt5core5a \
                 libqt5gui5 \
                 libqt5widgets5 \
-                libqt5test5
+                libqt5test5 \
+                libcap-dev
             ;;
         "jetson")
             print_status "Installing Jetson specific dependencies..."
@@ -132,7 +133,8 @@ install_system_deps() {
                 libtiff-dev \
                 gfortran \
                 libgtk2.0-dev \
-                pkg-config
+                pkg-config \
+                libcap-dev
             ;;
         "orange_pi"|"rock_pi"|"generic_arm")
             print_status "Installing generic ARM board dependencies..."
@@ -159,7 +161,8 @@ install_system_deps() {
                 libtiff-dev \
                 gfortran \
                 libgtk2.0-dev \
-                pkg-config
+                pkg-config \
+                libcap-dev
             ;;
         *)
             print_error "Unsupported board type: $BOARD_TYPE"

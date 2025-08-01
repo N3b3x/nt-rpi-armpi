@@ -23,6 +23,3 @@ jsonrpc2-zeromq>=0.5.0
 # Additional utilities
 Pillow>=10.0.0
 scipy>=1.11.0
-
-# For Jetson Nano compatibility
-jetson-stats>=4.0.0; platform_machine == "aarch64" and "jetson" in platform.platform().lower()
