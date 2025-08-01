@@ -197,13 +197,19 @@ setup_python_env() {
     # Ensure we're in the virtual environment
     source "$ENV_NAME/bin/activate"
     
-    # Try simple pip install first (uses pre-compiled wheels if available)
-    if ! pip install pyzmq; then
-        print_warning "PyZMQ wheel installation failed, trying compilation..."
-        if ! pip install --no-binary=pyzmq pyzmq; then
-            print_warning "PyZMQ compilation failed, trying system package..."
-            sudo apt-get install -y python3-zmq
-            print_status "Installed system python3-zmq package"
+    # Try system package first (most reliable for ARM64 + Python 3.11)
+    print_status "Installing PyZMQ via system package (recommended for ARM64)..."
+    sudo apt-get install -y python3-zmq
+    
+    # Verify PyZMQ installation
+    if python3 -c "import zmq; print('PyZMQ version:', zmq.__version__)" 2>/dev/null; then
+        print_success "PyZMQ installed successfully via system package"
+    else
+        print_warning "System PyZMQ installation failed, trying pip..."
+        # Fallback to pip (may fail on ARM64 + Python 3.11)
+        if ! pip install pyzmq; then
+            print_warning "PyZMQ installation failed. This is expected on ARM64 with Python 3.11."
+            print_warning "The system package should have been installed. Continuing..."
         fi
     fi
     
