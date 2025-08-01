@@ -192,12 +192,11 @@ setup_python_env() {
     # Install Python dependencies
     print_status "Installing Python dependencies..."
     
-    # Install PyZMQ separately to handle ARM compilation issues
-    print_status "Installing PyZMQ..."
-    # Ensure we're in the virtual environment
+    # Handle remote control dependencies for ARM64
+    print_status "Setting up remote control dependencies..."
     source "$ENV_NAME/bin/activate"
     
-    # Try system package first (most reliable for ARM64 + Python 3.11)
+    # Install system PyZMQ (most reliable for ARM64 + Python 3.11)
     print_status "Installing PyZMQ via system package (recommended for ARM64)..."
     sudo apt-get install -y python3-zmq
     
@@ -205,13 +204,12 @@ setup_python_env() {
     if python3 -c "import zmq; print('PyZMQ version:', zmq.__version__)" 2>/dev/null; then
         print_success "PyZMQ installed successfully via system package"
     else
-        print_warning "System PyZMQ installation failed, trying pip..."
-        # Fallback to pip (may fail on ARM64 + Python 3.11)
-        if ! pip install pyzmq; then
-            print_warning "PyZMQ installation failed. This is expected on ARM64 with Python 3.11."
-            print_warning "The system package should have been installed. Continuing..."
-        fi
+        print_warning "System PyZMQ installation failed. Remote control may not work."
+        print_warning "This is expected on some ARM64 + Python 3.11 configurations."
     fi
+    
+    # Note: jsonrpc2-zeromq removed from requirements.txt due to compilation issues
+    # The project uses HTTP-based RPC which works without ZeroMQ
     
     # Install remaining dependencies (excluding PyZMQ which is already installed)
     print_status "Installing remaining Python dependencies..."
