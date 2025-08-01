@@ -107,7 +107,11 @@ install_system_deps() {
                 libqt5widgets5 \
                 libqt5test5 \
                 libcap-dev \
-                libzmq3-dev
+                libzmq3-dev \
+                libcamera-apps \
+                libcamera-tools \
+                libcamera0 \
+                libcamera-dev
             ;;
         "jetson")
             print_status "Installing Jetson specific dependencies..."
@@ -136,7 +140,11 @@ install_system_deps() {
                 libgtk2.0-dev \
                 pkg-config \
                 libcap-dev \
-                libzmq3-dev
+                libzmq3-dev \
+                libcamera-apps \
+                libcamera-tools \
+                libcamera0 \
+                libcamera-dev
             ;;
         "orange_pi"|"rock_pi"|"generic_arm")
             print_status "Installing generic ARM board dependencies..."
@@ -165,7 +173,11 @@ install_system_deps() {
                 libgtk2.0-dev \
                 pkg-config \
                 libcap-dev \
-                libzmq3-dev
+                libzmq3-dev \
+                libcamera-apps \
+                libcamera-tools \
+                libcamera0 \
+                libcamera-dev
             ;;
         *)
             print_error "Unsupported board type: $BOARD_TYPE"

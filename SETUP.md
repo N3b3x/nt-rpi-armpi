@@ -106,7 +106,13 @@ sudo apt-get install -y \
     libqt5core5a \
     libqt5gui5 \
     libqt5widgets5 \
-    libqt5test5
+    libqt5test5 \
+    libcap-dev \
+    libzmq3-dev \
+    libcamera-apps \
+    libcamera-tools \
+    libcamera0 \
+    libcamera-dev
 ```
 
 #### Jetson Nano:
@@ -133,7 +139,13 @@ sudo apt-get install -y \
     libtiff-dev \
     gfortran \
     libgtk2.0-dev \
-    pkg-config
+    pkg-config \
+    libcap-dev \
+    libzmq3-dev \
+    libcamera-apps \
+    libcamera-tools \
+    libcamera0 \
+    libcamera-dev
 ```
 
 #### Other ARM Boards:
@@ -160,7 +172,13 @@ sudo apt-get install -y \
     libtiff-dev \
     gfortran \
     libgtk2.0-dev \
-    pkg-config
+    pkg-config \
+    libcap-dev \
+    libzmq3-dev \
+    libcamera-apps \
+    libcamera-tools \
+    libcamera0 \
+    libcamera-dev
 ```
 
 ### Step 2: Create Python Virtual Environment

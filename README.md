@@ -351,6 +351,9 @@ ls -l /dev/video*
 # Enable camera (Raspberry Pi)
 sudo raspi-config nonint do_camera 0
 
+# Install camera dependencies (if not already installed)
+sudo apt-get install -y libcamera-apps libcamera-tools libcamera0 libcamera-dev
+
 # Test camera
 python3 -c "from picamera2 import Picamera2; print('Camera OK')"
 ```
