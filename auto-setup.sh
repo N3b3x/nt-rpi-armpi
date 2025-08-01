@@ -106,7 +106,8 @@ install_system_deps() {
                 libqt5gui5 \
                 libqt5widgets5 \
                 libqt5test5 \
-                libcap-dev
+                libcap-dev \
+                libzmq3-dev
             ;;
         "jetson")
             print_status "Installing Jetson specific dependencies..."
@@ -134,7 +135,8 @@ install_system_deps() {
                 gfortran \
                 libgtk2.0-dev \
                 pkg-config \
-                libcap-dev
+                libcap-dev \
+                libzmq3-dev
             ;;
         "orange_pi"|"rock_pi"|"generic_arm")
             print_status "Installing generic ARM board dependencies..."
@@ -162,7 +164,8 @@ install_system_deps() {
                 gfortran \
                 libgtk2.0-dev \
                 pkg-config \
-                libcap-dev
+                libcap-dev \
+                libzmq3-dev
             ;;
         *)
             print_error "Unsupported board type: $BOARD_TYPE"
@@ -188,6 +191,13 @@ setup_python_env() {
     
     # Install Python dependencies
     print_status "Installing Python dependencies..."
+    
+    # Install PyZMQ separately to handle ARM compilation issues
+    print_status "Installing PyZMQ with system libzmq..."
+    pip install --no-binary=pyzmq pyzmq
+    
+    # Install remaining dependencies (excluding PyZMQ which is already installed)
+    print_status "Installing remaining Python dependencies..."
     pip install -r requirements.txt
     
     # Install board-specific dependencies
