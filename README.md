@@ -153,7 +153,6 @@ sudo apt-get install -y \
     libatlas-base-dev \
     libhdf5-dev \
     libhdf5-serial-dev \
-    libjasper-dev \
     libgstreamer1.0-0 \
     libgstreamer-plugins-base1.0-0 \
     libgtk-3-0 \
@@ -168,7 +167,11 @@ sudo apt-get install -y \
     libtiff-dev \
     gfortran \
     libgtk2.0-dev \
-    pkg-config
+    pkg-config \
+    libqt5core5a \
+    libqt5gui5 \
+    libqt5widgets5 \
+    libqt5test5
 ```
 
 **Jetson Nano:**
@@ -177,7 +180,6 @@ sudo apt-get install -y \
     libatlas-base-dev \
     libhdf5-dev \
     libhdf5-serial-dev \
-    libjasper-dev \
     libgstreamer1.0-0 \
     libgstreamer-plugins-base1.0-0 \
     libgtk-3-0 \

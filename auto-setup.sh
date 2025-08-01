@@ -87,10 +87,6 @@ install_system_deps() {
                 libhdf5-dev \
                 libhdf5-serial-dev \
                 libatlas-base-dev \
-                libjasper-dev \
-                libqtcore4 \
-                libqtgui4 \
-                libqt4-test \
                 libgstreamer1.0-0 \
                 libgstreamer-plugins-base1.0-0 \
                 libgtk-3-0 \
@@ -103,23 +99,13 @@ install_system_deps() {
                 libjpeg-dev \
                 libpng-dev \
                 libtiff-dev \
-                libatlas-base-dev \
                 gfortran \
                 libgtk2.0-dev \
                 pkg-config \
-                libavcodec-dev \
-                libavformat-dev \
-                libswscale-dev \
-                libv4l-dev \
-                libxvidcore-dev \
-                libx264-dev \
-                libjpeg-dev \
-                libpng-dev \
-                libtiff-dev \
-                libatlas-base-dev \
-                gfortran \
-                libgtk2.0-dev \
-                pkg-config
+                libqt5core5a \
+                libqt5gui5 \
+                libqt5widgets5 \
+                libqt5test5
             ;;
         "jetson")
             print_status "Installing Jetson specific dependencies..."
@@ -132,7 +118,6 @@ install_system_deps() {
                 libhdf5-dev \
                 libhdf5-serial-dev \
                 libatlas-base-dev \
-                libjasper-dev \
                 libgstreamer1.0-0 \
                 libgstreamer-plugins-base1.0-0 \
                 libgtk-3-0 \
@@ -145,7 +130,6 @@ install_system_deps() {
                 libjpeg-dev \
                 libpng-dev \
                 libtiff-dev \
-                libatlas-base-dev \
                 gfortran \
                 libgtk2.0-dev \
                 pkg-config
@@ -161,7 +145,6 @@ install_system_deps() {
                 libhdf5-dev \
                 libhdf5-serial-dev \
                 libatlas-base-dev \
-                libjasper-dev \
                 libgstreamer1.0-0 \
                 libgstreamer-plugins-base1.0-0 \
                 libgtk-3-0 \
@@ -174,7 +157,6 @@ install_system_deps() {
                 libjpeg-dev \
                 libpng-dev \
                 libtiff-dev \
-                libatlas-base-dev \
                 gfortran \
                 libgtk2.0-dev \
                 pkg-config
