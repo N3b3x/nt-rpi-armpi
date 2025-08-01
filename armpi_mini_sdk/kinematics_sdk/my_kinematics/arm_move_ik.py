@@ -8,7 +8,7 @@ from math import sqrt, radians, cos, sin, atan2, degrees, acos, pow
 import logging
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-from kinematics.inversekinematics import *
+from .inversekinematics import *
 import common.yaml_handle as yaml_handle
 
 # Setup logging
