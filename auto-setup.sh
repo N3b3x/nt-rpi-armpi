@@ -193,9 +193,19 @@ setup_python_env() {
     print_status "Installing Python dependencies..."
     
     # Install PyZMQ separately to handle ARM compilation issues
-    print_status "Installing PyZMQ with system libzmq..."
-    # Use a stable version that works with Python 3.11 on ARM
-    pip install --no-binary=pyzmq 'pyzmq==24.0.0'
+    print_status "Installing PyZMQ..."
+    # Ensure we're in the virtual environment
+    source "$ENV_NAME/bin/activate"
+    
+    # Try simple pip install first (uses pre-compiled wheels if available)
+    if ! pip install pyzmq; then
+        print_warning "PyZMQ wheel installation failed, trying compilation..."
+        if ! pip install --no-binary=pyzmq pyzmq; then
+            print_warning "PyZMQ compilation failed, trying system package..."
+            sudo apt-get install -y python3-zmq
+            print_status "Installed system python3-zmq package"
+        fi
+    fi
     
     # Install remaining dependencies (excluding PyZMQ which is already installed)
     print_status "Installing remaining Python dependencies..."
