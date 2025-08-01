@@ -110,7 +110,6 @@ install_system_deps() {
                 libzmq3-dev \
                 libcamera-apps \
                 libcamera-tools \
-                libcamera0 \
                 libcamera-dev
             ;;
         "jetson")
@@ -143,7 +142,6 @@ install_system_deps() {
                 libzmq3-dev \
                 libcamera-apps \
                 libcamera-tools \
-                libcamera0 \
                 libcamera-dev
             ;;
         "orange_pi"|"rock_pi"|"generic_arm")
@@ -176,7 +174,6 @@ install_system_deps() {
                 libzmq3-dev \
                 libcamera-apps \
                 libcamera-tools \
-                libcamera0 \
                 libcamera-dev
             ;;
         *)
