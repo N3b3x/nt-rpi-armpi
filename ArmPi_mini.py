@@ -49,7 +49,9 @@ def startMiniPi():
     threading.Thread(target=mjpg_server.startMjpgServer,
                      daemon=True).start()  # mjpq steam server
     
-    loading_picture = cv2.imread('/home/pi/ArmPi_mini/CameraCalibration/loading.jpg')
+    # Use project-relative loading image to avoid hardcoded absolute paths
+    loading_picture_path = os.path.join(current_dir, 'CameraCalibration', 'loading.png')
+    loading_picture = cv2.imread(loading_picture_path)
     cam = Camera.Camera()  # camera read
     cam.camera_open()
     running.cam = cam
