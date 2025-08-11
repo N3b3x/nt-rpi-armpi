@@ -10,6 +10,7 @@ sys.path.append(os.path.join(current_dir, 'armpi_mini_sdk', 'common_sdk'))
 sys.path.append(os.path.join(current_dir, 'armpi_mini_sdk', 'kinematics_sdk'))
 
 import time
+import json
 import logging
 import threading
 import numpy as np
@@ -22,7 +23,29 @@ import functions.color_palletizing as color_palletizing
 from my_kinematics.arm_move_ik import *
 from werkzeug.serving import run_simple
 from werkzeug.wrappers import Request, Response
-from jsonrpc2 import JSONRPCResponseManager, dispatcher
+from jsonrpc2 import JsonRpc
+
+# Compatibility dispatcher to preserve existing decorator and mapping usage
+class _Dispatcher(dict):
+    def __init__(self, rpc: JsonRpc) -> None:
+        super().__init__()
+        self._rpc = rpc
+
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+        # Mirror registrations into the jsonrpc2 router
+        self._rpc[key] = value
+
+    def add_method(self, func=None, name: str | None = None):
+        def decorator(f):
+            method_name = name or f.__name__
+            self[method_name] = f
+            return f
+        return decorator(func) if func is not None else decorator
+
+# Initialize JSON-RPC 2.0 router and a compatible dispatcher facade
+_rpc = JsonRpc()
+dispatcher = _Dispatcher(_rpc)
 
 if sys.version_info.major == 2:
     print('Please run this program with python3!')
@@ -347,10 +370,20 @@ def HaveLABAdjust():
 def application(request):
     dispatcher["echo"] = lambda s: s
     dispatcher["add"] = lambda a, b: a + b
-    #print(request.data)
-    response = JSONRPCResponseManager.handle(request.data, dispatcher)
 
-    return Response(response.json, mimetype='application/json')
+    # Parse request payload and dispatch via jsonrpc2
+    payload_bytes = request.data
+    if isinstance(payload_bytes, bytes):
+        try:
+            payload = json.loads(payload_bytes.decode("utf-8"))
+        except Exception:
+            # Fallback: try raw bytes as JSON (unlikely but safe)
+            payload = json.loads(payload_bytes)
+    else:
+        payload = json.loads(payload_bytes)
+
+    response_obj = _rpc(payload)
+    return Response(json.dumps(response_obj), mimetype='application/json')
 
 def startRPCServer():
     log = logging.getLogger('werkzeug')
