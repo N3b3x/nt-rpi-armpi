@@ -373,14 +373,14 @@ def application(request):
 
     # Serve a simple help page for non-POST requests
     if request.method != 'POST':
-        help_html = (
-            "<html><body>"
-            "<h3>ArmPi Mini JSON-RPC 2.0</h3>"
-            "<p>POST JSON-RPC requests to this endpoint.</p>"
-            "<pre>curl -s -X POST http://{host}/ -H 'Content-Type: application/json' "
-            "-d '{\"jsonrpc\":\"2.0\",\"method\":\"echo\",\"params\":[\"hi\"],\"id\":1}'</pre>"
-            "</body></html>".format(host=request.host)
-        )
+        help_html = f"""
+        <html><body>
+        <h3>ArmPi Mini JSON-RPC 2.0</h3>
+        <p>POST JSON-RPC requests to this endpoint.</p>
+        <pre>curl -s -X POST http://{request.host}/ -H 'Content-Type: application/json' \
+ -d '{{"jsonrpc":"2.0","method":"echo","params":["hi"],"id":1}}'</pre>
+        </body></html>
+        """
         return Response(help_html, mimetype='text/html')
 
     # Parse request payload and dispatch via jsonrpc2
