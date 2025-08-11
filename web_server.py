@@ -123,6 +123,18 @@ def update_camera_frame():
             print(f"Error updating camera frame: {e}")
             time.sleep(0.1)
 
+def sync_with_mjpg_server():
+    """Sync img_show with mjpg_server for shared display"""
+    global img_show
+    while True:
+        try:
+            import mjpg_server
+            if hasattr(mjpg_server, 'img_show') and mjpg_server.img_show is not None:
+                img_show = mjpg_server.img_show.copy()
+            time.sleep(0.033)  # ~30 FPS
+        except Exception as e:
+            time.sleep(0.1)
+
 def set_board():
     """Initialize robot board and kinematics"""
     if not ROBOT_AVAILABLE:
@@ -432,7 +444,8 @@ HTML_TEMPLATE = '''
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ArmPi Mini Robot Control</title>
+    <title>🤖 ArmPi Mini Robot Control</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -440,30 +453,145 @@ HTML_TEMPLATE = '''
             box-sizing: border-box;
         }
         
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --success-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --warning-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --dark-gradient: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --shadow-color: rgba(0, 0, 0, 0.2);
+            --text-light: rgba(255, 255, 255, 0.9);
+            --text-secondary: rgba(255, 255, 255, 0.7);
+        }
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary-gradient);
             color: #333;
             min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        /* Animated background particles */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"><animate attributeName="cy" values="20;80;20" dur="3s" repeatCount="indefinite"/></circle><circle cx="40" cy="40" r="1" fill="rgba(255,255,255,0.05)"><animate attributeName="cy" values="40;10;40" dur="2s" repeatCount="indefinite"/></circle><circle cx="60" cy="60" r="1.5" fill="rgba(255,255,255,0.08)"><animate attributeName="cy" values="60;90;60" dur="4s" repeatCount="indefinite"/></circle><circle cx="80" cy="30" r="1" fill="rgba(255,255,255,0.06)"><animate attributeName="cy" values="30;70;30" dur="2.5s" repeatCount="indefinite"/></circle></svg>') repeat;
+            animation: float 20s infinite linear;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            100% { transform: translateY(-100vh) rotate(360deg); }
         }
         
         .header {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            padding: 1rem 0;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            padding: 2rem 0;
             text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            border-bottom: 1px solid var(--glass-border);
+            position: relative;
+            overflow: hidden;
+            animation: slideDown 1s ease-out;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: rotate 20s linear infinite;
         }
         
         .header h1 {
             color: white;
-            font-size: 2.5rem;
+            font-size: 3rem;
             margin-bottom: 0.5rem;
+            font-weight: 700;
+            text-shadow: 0 4px 8px var(--shadow-color);
+            animation: glow 2s ease-in-out infinite alternate;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .header h1::before {
+            content: '🤖';
+            display: inline-block;
+            margin-right: 0.5rem;
+            animation: bounce 2s infinite;
         }
         
         .status-bar {
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 1rem;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            position: relative;
+            z-index: 2;
+            animation: fadeIn 1.5s ease-in;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.active {
+            background: #43e97b;
+            box-shadow: 0 0 10px #43e97b;
+        }
+        
+        .status-indicator.inactive {
+            background: #e74c3c;
+            box-shadow: 0 0 10px #e74c3c;
+        }
+        
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 4px 8px var(--shadow-color), 0 0 20px rgba(255,255,255,0.2); }
+            to { text-shadow: 0 4px 8px var(--shadow-color), 0 0 30px rgba(255,255,255,0.4); }
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .container {
@@ -471,60 +599,149 @@ HTML_TEMPLATE = '''
             margin: 2rem auto;
             padding: 0 1rem;
             display: grid;
-            grid-template-columns: 1fr 400px;
+            grid-template-columns: 1fr 420px;
             gap: 2rem;
+            animation: fadeInUp 1s ease-out 0.5s both;
         }
         
         .video-section {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px var(--shadow-color);
             overflow: hidden;
+            transition: all 0.3s ease;
+            animation: slideInLeft 1s ease-out;
+        }
+        
+        .video-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
         }
         
         .video-header {
-            background: #4a5568;
+            background: var(--dark-gradient);
             color: white;
-            padding: 1rem;
+            padding: 1.5rem;
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .video-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shine 3s infinite;
+        }
+        
+        .video-header h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin: 0;
+            position: relative;
+            z-index: 2;
         }
         
         .video-container {
             position: relative;
-            padding: 1rem;
+            padding: 2rem;
             text-align: center;
+            background: rgba(255, 255, 255, 0.05);
         }
         
         #videoStream {
             max-width: 100%;
             height: auto;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        #videoStream:hover {
+            transform: scale(1.02);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
         }
         
         .controls-section {
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 1.5rem;
+            animation: slideInRight 1s ease-out;
         }
         
         .control-panel {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px var(--shadow-color);
             overflow: hidden;
+            transition: all 0.3s ease;
+            animation: fadeInScale 0.6s ease-out;
+        }
+        
+        .control-panel:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
         }
         
         .panel-header {
-            background: #2d3748;
+            background: var(--dark-gradient);
             color: white;
-            padding: 1rem;
+            padding: 1.2rem;
             text-align: center;
-            font-weight: bold;
+            font-weight: 600;
+            font-size: 1.1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .panel-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shine 4s infinite;
         }
         
         .panel-content {
-            padding: 1.5rem;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes shine {
+            0% { left: -100%; }
+            100% { left: 100%; }
         }
         
         .button-grid {
@@ -535,98 +752,272 @@ HTML_TEMPLATE = '''
         }
         
         .btn {
-            padding: 0.75rem 1rem;
+            padding: 1rem 1.5rem;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--accent-gradient);
             color: white;
+            box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
         }
         
         .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.4);
         }
         
         .btn-secondary {
-            background: #e2e8f0;
-            color: #4a5568;
+            background: var(--glass-bg);
+            color: white;
+            box-shadow: 0 4px 15px var(--shadow-color);
         }
         
         .btn-secondary:hover {
-            background: #cbd5e0;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 25px var(--shadow-color);
         }
         
         .btn-danger {
-            background: linear-gradient(135deg, #fc466b 0%, #3f5efb 100%);
+            background: var(--secondary-gradient);
             color: white;
+            box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3);
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(240, 147, 251, 0.4);
+        }
+        
+        .btn-success {
+            background: var(--success-gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(67, 233, 123, 0.3);
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 8px 25px rgba(67, 233, 123, 0.4);
         }
         
         .color-buttons {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.8rem;
             flex-wrap: wrap;
-            margin-top: 1rem;
+            margin-top: 1.5rem;
+            justify-content: center;
         }
         
         .color-btn {
-            width: 50px;
-            height: 50px;
-            border: 3px solid white;
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             cursor: pointer;
-            transition: transform 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .color-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            transform: translate(-50%, -50%);
         }
         
         .color-btn:hover {
-            transform: scale(1.1);
+            transform: scale(1.15) rotate(5deg);
+            border-color: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
         }
         
-        .color-btn.red { background-color: #e53e3e; }
-        .color-btn.green { background-color: #38a169; }
-        .color-btn.blue { background-color: #3182ce; }
-        .color-btn.yellow { background-color: #d69e2e; }
-        .color-btn.purple { background-color: #805ad5; }
-        .color-btn.orange { background-color: #dd6b20; }
+        .color-btn:hover::before {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .color-btn.red { 
+            background: linear-gradient(135deg, #e53e3e 0%, #ff6b6b 100%);
+            box-shadow: 0 5px 15px rgba(229, 62, 62, 0.4);
+        }
+        .color-btn.green { 
+            background: linear-gradient(135deg, #38a169 0%, #48bb78 100%);
+            box-shadow: 0 5px 15px rgba(56, 161, 105, 0.4);
+        }
+        .color-btn.blue { 
+            background: linear-gradient(135deg, #3182ce 0%, #4299e1 100%);
+            box-shadow: 0 5px 15px rgba(49, 130, 206, 0.4);
+        }
+        .color-btn.yellow { 
+            background: linear-gradient(135deg, #d69e2e 0%, #ecc94b 100%);
+            box-shadow: 0 5px 15px rgba(214, 158, 46, 0.4);
+        }
+        .color-btn.purple { 
+            background: linear-gradient(135deg, #805ad5 0%, #9f7aea 100%);
+            box-shadow: 0 5px 15px rgba(128, 90, 213, 0.4);
+        }
+        .color-btn.orange { 
+            background: linear-gradient(135deg, #dd6b20 0%, #ed8936 100%);
+            box-shadow: 0 5px 15px rgba(221, 107, 32, 0.4);
+        }
         
         .servo-control {
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .servo-control:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
         }
         
         .servo-control label {
             display: block;
-            margin-bottom: 0.5rem;
-            font-weight: bold;
-            color: #4a5568;
+            margin-bottom: 0.8rem;
+            font-weight: 600;
+            color: var(--text-light);
+            font-size: 1rem;
+            text-shadow: 0 2px 4px var(--shadow-color);
         }
         
         .servo-control input[type="range"] {
             width: 100%;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.8rem;
+            height: 8px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            transition: all 0.3s ease;
+        }
+        
+        .servo-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4);
+            transition: all 0.3s ease;
+        }
+        
+        .servo-control input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 6px 16px rgba(79, 172, 254, 0.6);
+        }
+        
+        .servo-control input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-gradient);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4);
         }
         
         .servo-value {
             text-align: center;
-            color: #667eea;
-            font-weight: bold;
+            color: var(--text-light);
+            font-weight: 600;
+            font-size: 1.1rem;
+            padding: 0.5rem;
+            background: var(--accent-gradient);
+            border-radius: 10px;
+            text-shadow: 0 2px 4px var(--shadow-color);
+            box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
         }
         
         .log-output {
-            background: #1a202c;
-            color: #green;
-            font-family: 'Courier New', monospace;
-            padding: 1rem;
-            height: 200px;
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+            color: #00ff88;
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            padding: 1.5rem;
+            height: 250px;
             overflow-y: auto;
-            border-radius: 8px;
-            font-size: 0.85rem;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+        
+        .log-output::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00ff88, transparent);
+            animation: scanline 2s linear infinite;
+        }
+        
+        .log-output::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .log-output::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        
+        .log-output::-webkit-scrollbar-thumb {
+            background: var(--accent-gradient);
+            border-radius: 4px;
+        }
+        
+        .log-output::-webkit-scrollbar-thumb:hover {
+            background: var(--success-gradient);
+        }
+        
+        @keyframes scanline {
+            0% { opacity: 1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 1; }
         }
         
         @media (max-width: 768px) {
@@ -647,10 +1038,15 @@ HTML_TEMPLATE = '''
 </head>
 <body>
     <div class="header">
-        <h1>🤖 ArmPi Mini Robot Control</h1>
+        <h1>ArmPi Mini Robot Control</h1>
         <div class="status-bar" id="statusBar">
-            Camera: <span id="cameraStatus">Connecting...</span> | 
+            <span class="status-indicator active" id="cameraIndicator"></span>
+            Camera: <span id="cameraStatus">Connecting...</span> 
+            <span style="margin: 0 1rem;">|</span>
+            <span class="status-indicator active" id="batteryIndicator"></span>
             Battery: <span id="batteryVoltage">--</span>V
+            <span style="margin: 0 1rem;">|</span>
+            <i class="fas fa-clock"></i> <span id="currentTime">--:--:--</span>
         </div>
     </div>
     
@@ -670,50 +1066,74 @@ HTML_TEMPLATE = '''
         
         <div class="controls-section">
             <div class="control-panel">
-                <div class="panel-header">🎮 Robot Functions</div>
+                <div class="panel-header"><i class="fas fa-gamepad"></i> Robot Functions</div>
                 <div class="panel-content">
                     <div class="button-grid">
-                        <button class="btn btn-primary" onclick="loadFunction(1)">Color Detection</button>
-                        <button class="btn btn-primary" onclick="loadFunction(2)">Color Tracking</button>
-                        <button class="btn btn-primary" onclick="loadFunction(3)">Color Sorting</button>
-                        <button class="btn btn-primary" onclick="loadFunction(4)">Face Detection</button>
+                        <button class="btn btn-primary" onclick="loadFunction(1)">
+                            <i class="fas fa-eye"></i> Color Detection
+                        </button>
+                        <button class="btn btn-primary" onclick="loadFunction(2)">
+                            <i class="fas fa-crosshairs"></i> Color Tracking
+                        </button>
+                        <button class="btn btn-primary" onclick="loadFunction(3)">
+                            <i class="fas fa-sort"></i> Color Sorting
+                        </button>
+                        <button class="btn btn-primary" onclick="loadFunction(4)">
+                            <i class="fas fa-user"></i> Face Detection
+                        </button>
                     </div>
-                    <div class="button-grid">
-                        <button class="btn btn-secondary" onclick="startFunction()">▶️ Start</button>
-                        <button class="btn btn-danger" onclick="stopFunction()">⏹️ Stop</button>
+                    <div class="button-grid" style="margin-top: 1rem;">
+                        <button class="btn btn-success" onclick="startFunction()">
+                            <i class="fas fa-play"></i> Start
+                        </button>
+                        <button class="btn btn-danger" onclick="stopFunction()">
+                            <i class="fas fa-stop"></i> Stop
+                        </button>
                     </div>
                 </div>
             </div>
             
             <div class="control-panel">
-                <div class="panel-header">🎨 Color Selection</div>
+                <div class="panel-header"><i class="fas fa-palette"></i> Color Selection</div>
                 <div class="panel-content">
                     <div class="color-buttons">
-                        <div class="color-btn red" onclick="setTargetColor('red')" title="Red"></div>
-                        <div class="color-btn green" onclick="setTargetColor('green')" title="Green"></div>
-                        <div class="color-btn blue" onclick="setTargetColor('blue')" title="Blue"></div>
-                        <div class="color-btn yellow" onclick="setTargetColor('yellow')" title="Yellow"></div>
-                        <div class="color-btn purple" onclick="setTargetColor('purple')" title="Purple"></div>
-                        <div class="color-btn orange" onclick="setTargetColor('orange')" title="Orange"></div>
+                        <div class="color-btn red" onclick="setTargetColor('red')" title="Red">
+                            <i class="fas fa-circle" style="color: rgba(255,255,255,0.8); font-size: 1.5rem;"></i>
+                        </div>
+                        <div class="color-btn green" onclick="setTargetColor('green')" title="Green">
+                            <i class="fas fa-circle" style="color: rgba(255,255,255,0.8); font-size: 1.5rem;"></i>
+                        </div>
+                        <div class="color-btn blue" onclick="setTargetColor('blue')" title="Blue">
+                            <i class="fas fa-circle" style="color: rgba(255,255,255,0.8); font-size: 1.5rem;"></i>
+                        </div>
+                        <div class="color-btn yellow" onclick="setTargetColor('yellow')" title="Yellow">
+                            <i class="fas fa-circle" style="color: rgba(255,255,255,0.8); font-size: 1.5rem;"></i>
+                        </div>
+                        <div class="color-btn purple" onclick="setTargetColor('purple')" title="Purple">
+                            <i class="fas fa-circle" style="color: rgba(255,255,255,0.8); font-size: 1.5rem;"></i>
+                        </div>
+                        <div class="color-btn orange" onclick="setTargetColor('orange')" title="Orange">
+                            <i class="fas fa-circle" style="color: rgba(255,255,255,0.8); font-size: 1.5rem;"></i>
+                        </div>
                     </div>
                 </div>
             </div>
             
             <div class="control-panel">
-                <div class="panel-header">🦾 Servo Control</div>
+                <div class="panel-header"><i class="fas fa-robot"></i> Servo Control</div>
                 <div class="panel-content">
                     <div class="servo-control">
-                        <label>Servo 1 (Base):</label>
+                        <label><i class="fas fa-compass"></i> Servo 1 (Base):</label>
                         <input type="range" id="servo1" min="-90" max="90" value="0" oninput="updateServo(1, this.value)">
                         <div class="servo-value" id="servo1-value">0°</div>
                     </div>
                     <div class="servo-control">
-                        <label>Servo 2 (Shoulder):</label>
+                        <label><i class="fas fa-arrows-alt-v"></i> Servo 2 (Shoulder):</label>
                         <input type="range" id="servo2" min="-90" max="90" value="0" oninput="updateServo(2, this.value)">
                         <div class="servo-value" id="servo2-value">0°</div>
                     </div>
                     <div class="servo-control">
-                        <label>Servo 3 (Elbow):</label>
+                        <label><i class="fas fa-angle-double-right"></i> Servo 3 (Elbow):</label>
                         <input type="range" id="servo3" min="-90" max="90" value="0" oninput="updateServo(3, this.value)">
                         <div class="servo-value" id="servo3-value">0°</div>
                     </div>
@@ -721,11 +1141,11 @@ HTML_TEMPLATE = '''
             </div>
             
             <div class="control-panel">
-                <div class="panel-header">📋 Command Log</div>
+                <div class="panel-header"><i class="fas fa-terminal"></i> Command Log</div>
                 <div class="panel-content">
                     <div class="log-output" id="logOutput">
-                        Robot control interface loaded successfully...<br>
-                        Ready for commands...<br>
+                        <span style="color: #00ff88;">[SYSTEM]</span> Robot control interface loaded successfully...<br>
+                        <span style="color: #4facfe;">[READY]</span> Waiting for commands...<br>
                     </div>
                 </div>
             </div>
@@ -750,49 +1170,110 @@ HTML_TEMPLATE = '''
                 });
                 
                 const result = await response.json();
-                logMessage(`RPC ${method}: ${JSON.stringify(result)}`);
+                
+                if (result.error) {
+                    logMessage(`❌ RPC ${method} failed: ${result.error.message}`, 'error');
+                } else {
+                    logMessage(`🔄 RPC ${method} executed`, 'rpc');
+                }
+                
                 return result;
             } catch (error) {
-                logMessage(`RPC Error: ${error.message}`);
+                logMessage(`❌ RPC Connection Error: ${error.message}`, 'error');
                 console.error('RPC Error:', error);
+                return null;
             }
         }
         
         // Logging function
-        function logMessage(message) {
+        function logMessage(message, type = 'info') {
             const logOutput = document.getElementById('logOutput');
-            const timestamp = new Date().toLocaleTimeString();
-            logOutput.innerHTML += `[${timestamp}] ${message}<br>`;
+            const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false });
+            
+            let color = '#00ff88'; // default green
+            let prefix = '[INFO]';
+            
+            switch(type) {
+                case 'success':
+                    color = '#43e97b';
+                    prefix = '[SUCCESS]';
+                    break;
+                case 'error':
+                    color = '#fc466b';
+                    prefix = '[ERROR]';
+                    break;
+                case 'warning':
+                    color = '#fee140';
+                    prefix = '[WARNING]';
+                    break;
+                case 'system':
+                    color = '#4facfe';
+                    prefix = '[SYSTEM]';
+                    break;
+                case 'rpc':
+                    color = '#9f7aea';
+                    prefix = '[RPC]';
+                    break;
+            }
+            
+            logOutput.innerHTML += `<span style="color: #666;">[${timestamp}]</span> <span style="color: ${color};">${prefix}</span> ${message}<br>`;
             logOutput.scrollTop = logOutput.scrollHeight;
+            
+            // Limit log lines to prevent memory issues
+            const lines = logOutput.innerHTML.split('<br>');
+            if (lines.length > 100) {
+                logOutput.innerHTML = lines.slice(-50).join('<br>');
+            }
         }
         
         // Robot function controls
         async function loadFunction(funcNum) {
-            logMessage(`Loading function ${funcNum}...`);
-            await sendRPC('LoadFunc', [funcNum]);
+            const functionNames = {
+                1: 'Color Detection',
+                2: 'Color Tracking', 
+                3: 'Color Sorting',
+                4: 'Face Detection'
+            };
+            logMessage(`Loading ${functionNames[funcNum]}...`, 'system');
+            const result = await sendRPC('LoadFunc', [funcNum]);
+            if (result && result.result) {
+                logMessage(`✅ ${functionNames[funcNum]} loaded successfully`, 'success');
+            }
         }
         
         async function startFunction() {
-            logMessage('Starting current function...');
-            await sendRPC('StartFunc');
+            logMessage('▶️ Starting current function...', 'system');
+            const result = await sendRPC('StartFunc');
+            if (result && result.result) {
+                logMessage('✅ Function started successfully', 'success');
+            }
         }
         
         async function stopFunction() {
-            logMessage('Stopping current function...');
-            await sendRPC('StopFunc');
+            logMessage('⏹️ Stopping current function...', 'system');
+            const result = await sendRPC('StopFunc');
+            if (result && result.result) {
+                logMessage('✅ Function stopped successfully', 'success');
+            }
         }
         
         // Color tracking
         async function setTargetColor(color) {
-            logMessage(`Setting target color to ${color}...`);
-            await sendRPC('ColorTracking', [color]);
+            logMessage(`🎨 Setting target color to ${color}...`, 'system');
+            const result = await sendRPC('ColorTracking', [color]);
+            if (result && result.result) {
+                logMessage(`✅ Target color set to ${color}`, 'success');
+            }
         }
         
         // Servo control
         async function updateServo(servoNum, angle) {
             document.getElementById(`servo${servoNum}-value`).textContent = `${angle}°`;
-            logMessage(`Moving servo ${servoNum} to ${angle}°`);
-            await sendRPC('SetPWMServo', [1000, servoNum, parseInt(angle)]);
+            logMessage(`🦾 Moving servo ${servoNum} to ${angle}°`, 'system');
+            const result = await sendRPC('SetPWMServo', [1000, servoNum, parseInt(angle)]);
+            if (result && result.result) {
+                logMessage(`✅ Servo ${servoNum} moved to ${angle}°`, 'success');
+            }
         }
         
         // Snapshot function
@@ -801,7 +1282,7 @@ HTML_TEMPLATE = '''
             link.href = '/snapshot';
             link.download = `robot_snapshot_${new Date().getTime()}.jpg`;
             link.click();
-            logMessage('Snapshot captured');
+            logMessage('📸 Snapshot captured and downloaded', 'success');
         }
         
         // Status updates
@@ -810,34 +1291,128 @@ HTML_TEMPLATE = '''
                 const response = await fetch('/api/robot_status');
                 const status = await response.json();
                 
-                document.getElementById('cameraStatus').textContent = 
-                    status.camera_active ? 'Active' : 'Inactive';
-                document.getElementById('batteryVoltage').textContent = 
-                    status.battery_voltage !== 'N/A' ? status.battery_voltage.toFixed(1) : '--';
+                // Update camera status
+                const cameraStatus = document.getElementById('cameraStatus');
+                const cameraIndicator = document.getElementById('cameraIndicator');
+                if (status.camera_active) {
+                    cameraStatus.textContent = 'Active';
+                    cameraIndicator.className = 'status-indicator active';
+                } else {
+                    cameraStatus.textContent = 'Inactive';
+                    cameraIndicator.className = 'status-indicator inactive';
+                }
+                
+                // Update battery status
+                const batteryVoltage = document.getElementById('batteryVoltage');
+                const batteryIndicator = document.getElementById('batteryIndicator');
+                if (status.battery_voltage !== 'N/A') {
+                    const voltage = parseFloat(status.battery_voltage);
+                    batteryVoltage.textContent = voltage.toFixed(1);
+                    batteryIndicator.className = voltage > 11.0 ? 'status-indicator active' : 'status-indicator inactive';
+                } else {
+                    batteryVoltage.textContent = '--';
+                    batteryIndicator.className = 'status-indicator inactive';
+                }
             } catch (error) {
                 console.error('Status update error:', error);
+                document.getElementById('cameraIndicator').className = 'status-indicator inactive';
+                document.getElementById('batteryIndicator').className = 'status-indicator inactive';
             }
+        }
+        
+        // Update current time
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { 
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('currentTime').textContent = timeString;
         }
         
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            logMessage('Web interface initialized');
+            logMessage('🚀 Web interface initialized successfully!');
             updateStatus();
+            updateTime();
             setInterval(updateStatus, 5000); // Update every 5 seconds
+            setInterval(updateTime, 1000); // Update every second
+            
+            // Add loading animation to buttons
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                });
+            });
         });
         
         // Handle video stream errors
         document.getElementById('videoStream').addEventListener('error', function() {
-            logMessage('Video stream connection lost');
+            logMessage('📺 Video stream connection lost', 'warning');
         });
         
         document.getElementById('videoStream').addEventListener('load', function() {
-            logMessage('Video stream connected');
+            logMessage('📺 Video stream connected successfully', 'success');
         });
+        
+        // Add welcome message with delay
+        setTimeout(() => {
+            logMessage('🤖 Welcome to ArmPi Mini Robot Control Interface!', 'system');
+            logMessage('💡 Click buttons to control the robot', 'info');
+            logMessage('🎮 Use sliders to move servos in real-time', 'info');
+        }, 1000);
     </script>
 </body>
 </html>
 '''
+
+def startWebServer(camera_instance=None, board_instance=None, ak_instance=None, queue_instance=None):
+    """
+    Start the web server with given instances from main ArmPi_mini.py
+    """
+    global camera, board, AK, QUEUE, img_show
+    
+    # Use provided instances from main program
+    if camera_instance:
+        camera = camera_instance
+    if board_instance:
+        board = board_instance
+    if ak_instance:
+        AK = ak_instance
+    if queue_instance:
+        QUEUE = queue_instance
+    
+    # Set up robot modules if available
+    if ROBOT_AVAILABLE and board and AK:
+        try:
+            set_board()
+        except Exception as e:
+            print(f"Warning: Could not initialize robot board in web server: {e}")
+    
+    # Start camera frame sync thread to share with mjpg_server
+    if camera_instance:
+        # Use shared mjpg_server frames for consistency
+        threading.Thread(target=sync_with_mjpg_server, daemon=True).start()
+    elif ROBOT_AVAILABLE:
+        initialize_robot()
+    else:
+        # Fallback to demo mode
+        threading.Thread(target=create_demo_frames, daemon=True).start()
+    
+    # Disable werkzeug logging
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
+    
+    print("🌐 Web Server starting on http://0.0.0.0:8000")
+    print("   Access the robot control interface in your browser")
+    
+    # Run the Flask application
+    app.run(host='0.0.0.0', port=8000, debug=False, threaded=True, use_reloader=False)
 
 if __name__ == '__main__':
     print("Starting ArmPi Mini Web Server...")
