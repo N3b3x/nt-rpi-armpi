@@ -44,6 +44,21 @@ pip3 install -r requirements.txt
 python3 web_server.py
 ```
 
+### Method 4: System Service (Auto-start on boot)
+```bash
+./install_service.sh
+```
+
+## 📁 Dynamic Path Detection
+
+The web server automatically detects its location and adjusts paths accordingly:
+
+- ✅ **Works from any directory** - no hardcoded paths
+- ✅ **Automatic module discovery** - finds robot modules relative to script location
+- ✅ **Legacy compatibility** - supports old `/home/pi/ArmPi_mini/` structure
+- ✅ **Service installer** - generates correct systemd service files
+- ✅ **Portable** - can be moved anywhere on the filesystem
+
 ## 🌐 Access the Interface
 
 Once started, access the web interface at:

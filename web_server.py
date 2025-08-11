@@ -10,11 +10,16 @@ import threading
 import numpy as np
 from io import BytesIO
 
-# Add the paths to the common and kinematics modules
+# Add the paths to the common and kinematics modules dynamically
 current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(current_dir, 'armpi_mini_sdk', 'common_sdk'))
 sys.path.append(os.path.join(current_dir, 'armpi_mini_sdk', 'kinematics_sdk'))
-sys.path.append('/home/pi/ArmPi_mini/')
+sys.path.append(current_dir)  # Add current directory to Python path
+
+# Legacy path support (if the old structure exists)
+legacy_path = '/home/pi/ArmPi_mini/'
+if os.path.exists(legacy_path) and legacy_path not in sys.path:
+    sys.path.append(legacy_path)
 
 import cv2
 try:

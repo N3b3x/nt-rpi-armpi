@@ -7,11 +7,11 @@ Wants=network.target
 Type=simple
 User=pi
 Group=pi
-WorkingDirectory=/home/pi/ArmPi_mini
-ExecStart=/usr/bin/python3 /home/pi/ArmPi_mini/web_server.py
+WorkingDirectory=REPO_PATH_PLACEHOLDER
+ExecStart=/usr/bin/python3 REPO_PATH_PLACEHOLDER/web_server.py
 Restart=always
 RestartSec=10
-Environment=PYTHONPATH=/home/pi/ArmPi_mini
+Environment=PYTHONPATH=REPO_PATH_PLACEHOLDER
 StandardOutput=journal
 StandardError=journal
 

@@ -2,19 +2,33 @@
 
 This guide shows how to set up the ArmPi Mini Web Server as a system service that starts automatically on boot.
 
-## 🚀 Quick Service Installation
+## 🚀 Quick Service Installation (Recommended)
+
+Use the automated installer that detects your repository location:
 
 ```bash
-# 1. Copy the service file to systemd
-sudo cp armpi-web.service /etc/systemd/system/
+# Run the smart installer (automatically detects paths)
+./install_service.sh
+```
 
-# 2. Reload systemd configuration
+## 📋 Manual Service Installation
+
+If you prefer manual installation:
+
+```bash
+# 1. Generate service file with correct paths
+./install_service.sh  # Creates service file but doesn't install
+
+# 2. Copy the generated service file to systemd
+sudo cp /tmp/armpi-web.service /etc/systemd/system/
+
+# 3. Reload systemd configuration
 sudo systemctl daemon-reload
 
-# 3. Enable the service to start on boot
+# 4. Enable the service to start on boot
 sudo systemctl enable armpi-web
 
-# 4. Start the service immediately
+# 5. Start the service immediately
 sudo systemctl start armpi-web
 ```
 

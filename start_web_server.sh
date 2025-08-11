@@ -7,8 +7,11 @@ echo "🤖 ArmPi Mini Robot Web Server"
 echo "================================================"
 echo ""
 
-# Set the working directory to the script location
-cd "$(dirname "$0")"
+# Set the working directory to the script location (repository root)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+echo "📍 Repository location: $SCRIPT_DIR"
 
 # Check if Python 3 is available
 if ! command -v python3 &> /dev/null; then
