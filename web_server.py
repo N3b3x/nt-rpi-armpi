@@ -46,6 +46,16 @@ app = Flask(__name__)
 # Initialize JSON-RPC 2.0 router
 _rpc = JsonRpc()
 
+# Custom RPC registry for demo mode support
+rpc_functions = {}
+
+def rpc_register(func):
+    """Custom decorator to register RPC functions"""
+    rpc_functions[func.__name__] = func
+    # Add to JsonRpc methods dictionary
+    _rpc.methods[func.__name__] = func
+    return func
+
 # Global variables for camera and robot control
 camera = None
 img_show = None
@@ -181,14 +191,18 @@ def runbymainth(req, pas):
 
 # ============= RPC FUNCTIONS =============
 
-@_rpc.register
+@rpc_register
 def map(x, in_min, in_max, out_min, out_max):
     return map_value(x, in_min, in_max, out_min, out_max)
 
-@_rpc.register
+@rpc_register
 def SetPWMServo(*args, **kwargs):
     ret = (True, (), 'SetPWMServo')
     print("SetPWMServo:", args)
+    
+    if not ROBOT_AVAILABLE:
+        return (True, f"Demo: Servo moved with params {args}", 'SetPWMServo')
+    
     arglen = len(args)
     try:
         servos = args[1:arglen:2]
@@ -208,9 +222,13 @@ def SetPWMServo(*args, **kwargs):
         ret = (False, __RPC_E03, 'SetPWMServo')
     return ret
 
-@_rpc.register
+@rpc_register
 def SetBusServoPulse(*args, **kwargs):
     ret = (True, (), 'SetBusServoPulse')
+    
+    if not ROBOT_AVAILABLE:
+        return (True, f"Demo: Bus servo pulse set with params {args}", 'SetBusServoPulse')
+    
     arglen = len(args)
     if (args[1] * 2 + 2) != arglen or arglen < 4:
         return (False, __RPC_E01, 'SetBusServoPulse')
@@ -229,7 +247,7 @@ def SetBusServoPulse(*args, **kwargs):
         ret = (False, __RPC_E03, 'SetBusServoPulse')
     return ret
 
-@_rpc.register
+@rpc_register
 def GetBatteryVoltage():
     ret = (True, 0, 'GetBatteryVoltage')
     if not ROBOT_AVAILABLE:
@@ -242,83 +260,83 @@ def GetBatteryVoltage():
         ret = (False, __RPC_E03, 'GetBatteryVoltage')
     return ret
 
-@_rpc.register
+@rpc_register
 def LoadFunc(new_func=0):
     if not ROBOT_AVAILABLE:
         return (True, f"Demo: Loaded function {new_func}", 'LoadFunc')
     return runbymainth(running.loadFunc, (new_func, ))
 
-@_rpc.register
+@rpc_register
 def UnloadFunc():
     if not ROBOT_AVAILABLE:
         return (True, "Demo: Function unloaded", 'UnloadFunc')
     return runbymainth(running.unloadFunc, ())
 
-@_rpc.register
+@rpc_register
 def StartFunc():
     if not ROBOT_AVAILABLE:
         return (True, "Demo: Function started", 'StartFunc')
     return runbymainth(running.startFunc, ())
 
-@_rpc.register
+@rpc_register
 def StopFunc():
     if not ROBOT_AVAILABLE:
         return (True, "Demo: Function stopped", 'StopFunc')
     return runbymainth(running.stopFunc, ())
 
-@_rpc.register
+@rpc_register
 def ColorTracking(*target_color):
     if not ROBOT_AVAILABLE:
         return (True, f"Demo: Tracking color {target_color}", 'ColorTracking')
     return runbymainth(color_tracking.setTargetColor, target_color)
 
-@_rpc.register
+@rpc_register
 def ColorSorting(*target_color):
     if not ROBOT_AVAILABLE:
         return (True, f"Demo: Sorting color {target_color}", 'ColorSorting')
     return runbymainth(color_sorting.setTargetColor, target_color)
 
-@_rpc.register
+@rpc_register
 def ColorPalletizing(*target_color):
     if not ROBOT_AVAILABLE:
         return (True, f"Demo: Palletizing color {target_color}", 'ColorPalletizing')
     return runbymainth(color_palletizing.setTargetColor, target_color)
 
-@_rpc.register
+@rpc_register
 def SetLABValue(*lab_value):
     if not ROBOT_AVAILABLE:
         return (True, f"Demo: LAB value set to {lab_value}", 'SetLABValue')
     return runbymainth(lab_adjust.setLABValue, lab_value)
 
-@_rpc.register
+@rpc_register
 def GetLABValue():
     if not ROBOT_AVAILABLE:
         return (True, {"red": ((0, 0, 0), (255, 255, 255))}, 'GetLABValue')
     return (True, lab_adjust.getLABValue()[1], 'GetLABValue')
 
-@_rpc.register
+@rpc_register
 def SaveLABValue(color=''):
     if not ROBOT_AVAILABLE:
         return (True, f"Demo: LAB value saved for {color}", 'SaveLABValue')
     return runbymainth(lab_adjust.saveLABValue, (color, ))
 
-@_rpc.register
+@rpc_register
 def HaveLABAdjust():
     return (True, True, 'HaveLABAdjust')
 
-@_rpc.register
+@rpc_register
 def GetRunningFunc():
     if not ROBOT_AVAILABLE:
         return (True, "Demo Function", 'GetRunningFunc')
     return runbymainth("GetRunningFunc", ())
 
-@_rpc.register
+@rpc_register
 def Heartbeat():
     if not ROBOT_AVAILABLE:
         return (True, "Demo heartbeat", 'Heartbeat')
     return runbymainth(running.doHeartbeat, ())
 
-@_rpc.register
+@rpc_register
 def SetBrushMotor(*args, **kwargs):
     ret = (True, (), 'SetBrushMotor')
     if not ROBOT_AVAILABLE:
@@ -341,7 +359,7 @@ def SetBrushMotor(*args, **kwargs):
         ret = (False, __RPC_E03, 'SetBrushMotor')
     return ret
 
-@_rpc.register
+@rpc_register
 def GetSonarDistance():
     if not ROBOT_AVAILABLE:
         return (True, 25.5, 'GetSonarDistance')
@@ -355,7 +373,7 @@ def GetSonarDistance():
     return ret
 
 # Additional demo/status endpoints
-@_rpc.register
+@rpc_register
 def GetSystemInfo():
     return (True, {
         "robot_available": ROBOT_AVAILABLE,
@@ -394,14 +412,57 @@ def snapshot():
 
 @app.route('/rpc', methods=['POST'])
 def rpc_handler():
-    """Handle JSON-RPC requests"""
+    """Handle JSON-RPC requests with custom registry and demo mode support"""
     try:
         payload = request.get_json()
         if not payload:
             return jsonify({"error": "Empty request body"}), 400
         
-        response_obj = _rpc(payload)
-        return jsonify(response_obj)
+        # Handle JSON-RPC 2.0 format
+        if isinstance(payload, dict):
+            method_name = payload.get('method')
+            params = payload.get('params', [])
+            rpc_id = payload.get('id')
+            
+            if method_name in rpc_functions:
+                try:
+                    # Call the function with parameters
+                    if isinstance(params, list):
+                        result = rpc_functions[method_name](*params)
+                    elif isinstance(params, dict):
+                        result = rpc_functions[method_name](**params)
+                    else:
+                        result = rpc_functions[method_name]()
+                    
+                    # Return JSON-RPC 2.0 response format
+                    return jsonify({
+                        "jsonrpc": "2.0",
+                        "result": result,
+                        "id": rpc_id
+                    })
+                except Exception as e:
+                    return jsonify({
+                        "jsonrpc": "2.0",
+                        "error": {
+                            "code": -32603,
+                            "message": f"Internal error: {str(e)}"
+                        },
+                        "id": rpc_id
+                    })
+            else:
+                return jsonify({
+                    "jsonrpc": "2.0",
+                    "error": {
+                        "code": -32601,
+                        "message": f"Method not found: {method_name}"
+                    },
+                    "id": rpc_id
+                })
+        else:
+            # Fallback to original RPC handler for compatibility
+            response_obj = _rpc(payload)
+            return jsonify(response_obj)
+            
     except Exception as e:
         return jsonify({"error": f"RPC Error: {str(e)}"}), 500
 
@@ -1371,11 +1432,14 @@ HTML_TEMPLATE = '''
 </html>
 '''
 
-def startWebServer(camera_instance=None, board_instance=None, ak_instance=None, queue_instance=None):
+def startWebServer(camera_instance=None, board_instance=None, ak_instance=None, queue_instance=None, robot_available=True):
     """
     Start the web server with given instances from main ArmPi_mini.py
     """
-    global camera, board, AK, QUEUE, img_show
+    global camera, board, AK, QUEUE, img_show, ROBOT_AVAILABLE
+    
+    # Set robot availability flag
+    ROBOT_AVAILABLE = robot_available
     
     # Use provided instances from main program
     if camera_instance:
@@ -1415,7 +1479,11 @@ def startWebServer(camera_instance=None, board_instance=None, ak_instance=None, 
     app.run(host='0.0.0.0', port=8000, debug=False, threaded=True, use_reloader=False)
 
 if __name__ == '__main__':
-    print("Starting ArmPi Mini Web Server...")
+    print("Starting ArmPi Mini Web Server in standalone mode...")
+    
+    # Set ROBOT_AVAILABLE to False when running standalone since we don't have hardware
+    ROBOT_AVAILABLE = False
+    print(f"Robot modules available: {ROBOT_AVAILABLE}")
     
     # Initialize robot hardware
     initialize_robot()
