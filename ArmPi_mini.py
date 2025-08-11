@@ -50,7 +50,7 @@ def startMiniPi():
                      daemon=True).start()  # mjpq steam server
     
     # Use project-relative loading image to avoid hardcoded absolute paths
-    loading_picture_path = os.path.join(current_dir, 'CameraCalibration', 'loading.png')
+    loading_picture_path = os.path.join(current_dir, 'CameraCalibration', 'loading.jpg')
     loading_picture = cv2.imread(loading_picture_path)
     cam = Camera.Camera()  # camera read
     cam.camera_open()
