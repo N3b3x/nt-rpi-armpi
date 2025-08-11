@@ -1,0 +1,19 @@
+[Unit]
+Description=ArmPi Mini Web Server
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/ArmPi_mini
+ExecStart=/usr/bin/python3 /home/pi/ArmPi_mini/web_server.py
+Restart=always
+RestartSec=10
+Environment=PYTHONPATH=/home/pi/ArmPi_mini
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
