@@ -371,16 +371,30 @@ def application(request):
     dispatcher["echo"] = lambda s: s
     dispatcher["add"] = lambda a, b: a + b
 
+    # Serve a simple help page for non-POST requests
+    if request.method != 'POST':
+        help_html = (
+            "<html><body>"
+            "<h3>ArmPi Mini JSON-RPC 2.0</h3>"
+            "<p>POST JSON-RPC requests to this endpoint.</p>"
+            "<pre>curl -s -X POST http://{host}/ -H 'Content-Type: application/json' "
+            "-d '{\"jsonrpc\":\"2.0\",\"method\":\"echo\",\"params\":[\"hi\"],\"id\":1}'</pre>"
+            "</body></html>".format(host=request.host)
+        )
+        return Response(help_html, mimetype='text/html')
+
     # Parse request payload and dispatch via jsonrpc2
-    payload_bytes = request.data
-    if isinstance(payload_bytes, bytes):
-        try:
+    payload_bytes = request.data or b""
+    if not payload_bytes:
+        return Response("Empty request body; send JSON-RPC 2.0 payload.", status=400, mimetype='text/plain')
+
+    try:
+        if isinstance(payload_bytes, bytes):
             payload = json.loads(payload_bytes.decode("utf-8"))
-        except Exception:
-            # Fallback: try raw bytes as JSON (unlikely but safe)
+        else:
             payload = json.loads(payload_bytes)
-    else:
-        payload = json.loads(payload_bytes)
+    except Exception:
+        return Response("Invalid JSON payload.", status=400, mimetype='text/plain')
 
     response_obj = _rpc(payload)
     return Response(json.dumps(response_obj), mimetype='application/json')
