@@ -8,6 +8,8 @@ import time
 import logging
 import threading
 import numpy as np
+import shutil
+import datetime
 from io import BytesIO
 
 # Add the paths to the common and kinematics modules dynamically
@@ -643,6 +645,187 @@ def serve_3d_model(filename):
 def combined_view():
     """Combined Camera + 3D page (stacked)."""
     return render_template_string(HTML_COMBINED_TEMPLATE)
+
+# ============= CAMERA CALIBRATION ROUTES =============
+
+@app.route('/calibration')
+def calibration_interface():
+    """Camera calibration management interface"""
+    return render_template_string(HTML_CALIBRATION_TEMPLATE)
+
+@app.route('/api/calibration/status')
+def calibration_status():
+    """Get current calibration status"""
+    try:
+        old_file = os.path.join(current_dir, "CameraCalibration", "calibration_param.npz")
+        new_file = os.path.join(current_dir, "imx477", "calibration_data.npz")
+        
+        old_exists = os.path.exists(old_file)
+        new_exists = os.path.exists(new_file)
+        
+        status = {
+            "old_calibration": {
+                "exists": old_exists,
+                "path": old_file,
+                "size": os.path.getsize(old_file) if old_exists else 0,
+                "description": "Legacy calibration (always applied, may cause blur)"
+            },
+            "new_calibration": {
+                "exists": new_exists,
+                "path": new_file,
+                "size": os.path.getsize(new_file) if new_exists else 0,
+                "description": "IMX477 calibration (optional, toggle with 'u' key)"
+            },
+            "recommendation": "Remove old calibration to fix blur" if old_exists else "Use IMX477 modules for best camera control"
+        }
+        
+        return jsonify(status)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/calibration/backup', methods=['POST'])
+def backup_calibration():
+    """Backup all calibration files"""
+    try:
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_dir = os.path.join(current_dir, f"calibration_backup_{timestamp}")
+        
+        if not os.path.exists(backup_dir):
+            os.makedirs(backup_dir)
+        
+        files_to_backup = [
+            os.path.join(current_dir, "CameraCalibration", "calibration_param.npz"),
+            os.path.join(current_dir, "imx477", "calibration_data.npz")
+        ]
+        
+        backed_up = []
+        for file_path in files_to_backup:
+            if os.path.exists(file_path):
+                backup_path = os.path.join(backup_dir, os.path.basename(file_path))
+                shutil.copy2(file_path, backup_path)
+                backed_up.append({
+                    "original": file_path,
+                    "backup": backup_path,
+                    "size": os.path.getsize(file_path)
+                })
+        
+        return jsonify({
+            "success": True,
+            "backup_dir": backup_dir,
+            "files_backed_up": backed_up,
+            "message": f"Backup created with {len(backed_up)} files"
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/calibration/remove_old', methods=['POST'])
+def remove_old_calibration():
+    """Remove problematic old calibration file"""
+    try:
+        old_file = os.path.join(current_dir, "CameraCalibration", "calibration_param.npz")
+        
+        if os.path.exists(old_file):
+            os.remove(old_file)
+            return jsonify({
+                "success": True,
+                "message": "Old calibration file removed. Camera should now use raw feed without blur.",
+                "file_removed": old_file
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "message": "Old calibration file not found (already removed?)",
+                "file_path": old_file
+            })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/calibration/toggle_camera', methods=['POST'])
+def toggle_camera_calibration():
+    """Toggle calibration on the current camera instance"""
+    try:
+        global camera
+        data = request.get_json()
+        enable = data.get('enable', False)
+        
+        if camera and hasattr(camera, 'set_calibration'):
+            camera.set_calibration(enable)
+            return jsonify({
+                "success": True,
+                "message": f"Camera calibration {'enabled' if enable else 'disabled'}",
+                "calibration_enabled": enable
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "message": "Camera not available or doesn't support calibration toggle"
+            })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/calibration/list_backups')
+def list_calibration_backups():
+    """List available calibration backups"""
+    try:
+        backups = []
+        for item in os.listdir(current_dir):
+            if item.startswith('calibration_backup_') and os.path.isdir(os.path.join(current_dir, item)):
+                backup_path = os.path.join(current_dir, item)
+                files = os.listdir(backup_path)
+                backups.append({
+                    "name": item,
+                    "path": backup_path,
+                    "files": files,
+                    "created": datetime.datetime.fromtimestamp(os.path.getctime(backup_path)).strftime("%Y-%m-%d %H:%M:%S")
+                })
+        
+        # Sort by creation time (newest first)
+        backups.sort(key=lambda x: x['created'], reverse=True)
+        
+        return jsonify({
+            "backups": backups,
+            "count": len(backups)
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/calibration/restore', methods=['POST'])
+def restore_calibration():
+    """Restore calibration from backup"""
+    try:
+        data = request.get_json()
+        backup_name = data.get('backup_name')
+        
+        if not backup_name:
+            return jsonify({"error": "backup_name required"}), 400
+        
+        backup_dir = os.path.join(current_dir, backup_name)
+        if not os.path.exists(backup_dir):
+            return jsonify({"error": "Backup not found"}), 404
+        
+        restored = []
+        for file_name in os.listdir(backup_dir):
+            src = os.path.join(backup_dir, file_name)
+            if file_name == "calibration_param.npz":
+                dst = os.path.join(current_dir, "CameraCalibration", "calibration_param.npz")
+            elif file_name == "calibration_data.npz":
+                dst = os.path.join(current_dir, "imx477", "calibration_data.npz")
+            else:
+                continue
+            
+            shutil.copy2(src, dst)
+            restored.append({
+                "file": file_name,
+                "restored_to": dst
+            })
+        
+        return jsonify({
+            "success": True,
+            "message": f"Restored {len(restored)} files from backup",
+            "restored_files": restored
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 def generate_frames():
     """Generate video frames for streaming"""
@@ -1287,6 +1470,7 @@ HTML_TEMPLATE = '''
                     <button class="btn btn-secondary" onclick="takeSnapshot()">📸 Take Snapshot</button>
                     <a href="/3d" class="btn btn-primary" style="display: inline-block; text-decoration: none; margin-left: 0.5rem;"><i class="fas fa-cube"></i> 3D Model Viewer</a>
                     <a href="/combined" class="btn btn-secondary" style="display: inline-block; text-decoration: none; margin-left: 0.5rem;"><i class="fas fa-columns"></i> Combined View</a>
+                    <a href="/calibration" class="btn btn-warning" style="display: inline-block; text-decoration: none; margin-left: 0.5rem;"><i class="fas fa-camera"></i> Camera Calibration</a>
                 </div>
                 <!-- Big command log under the camera -->
                 <div class="control-panel" style="margin-top: 1rem;">
@@ -2778,6 +2962,7 @@ HTML_3D_TEMPLATE = '''
         <div style="margin-top:0.5rem">
             <a href="/" class="btn btn-primary" style="text-decoration:none; padding:0.6rem 1rem; border-radius:10px; display:inline-block"><i class="fas fa-arrow-left"></i> Back to Camera</a>
             <a href="/combined" class="btn btn-secondary" style="text-decoration:none; padding:0.6rem 1rem; border-radius:10px; display:inline-block; margin-left:0.5rem"><i class="fas fa-columns"></i> Combined View</a>
+            <a href="/calibration" class="btn btn-warning" style="text-decoration:none; padding:0.6rem 1rem; border-radius:10px; display:inline-block; margin-left:0.5rem"><i class="fas fa-camera"></i> Calibration</a>
         </div>
         <div class="status-bar" id="statusBar">
             <span class="status-indicator active" id="cameraIndicator"></span>
@@ -3458,6 +3643,7 @@ HTML_COMBINED_TEMPLATE = '''
         .btn + .btn { margin-left:.5rem }
         .btn-primary { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) }
         .btn-secondary { background: rgba(255,255,255,0.15) }
+        .btn-warning { background: linear-gradient(135deg, #ffd93d 0%, #ff9500 100%) }
         #combined3dCanvasContainer { width: 100%; height: 420px; border-radius: 12px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); border: 2px solid rgba(255,255,255,0.1) }
     </style>
  </head>
@@ -3467,6 +3653,7 @@ HTML_COMBINED_TEMPLATE = '''
      <div>
        <a class="btn btn-primary" href="/"><i class="fas fa-video"></i> Camera</a>
        <a class="btn btn-secondary" href="/3d"><i class="fas fa-cube"></i> 3D Viewer</a>
+       <a class="btn btn-warning" href="/calibration"><i class="fas fa-camera"></i> Calibration</a>
      </div>
    </div>
    <div class="container">
@@ -3520,6 +3707,638 @@ HTML_COMBINED_TEMPLATE = '''
    </script>
  </body>
  </html>
+'''
+
+HTML_CALIBRATION_TEMPLATE = '''
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera Calibration Manager - ArmPi Mini</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .nav-bar {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .nav-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+        
+        .card {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .status-card {
+            background: linear-gradient(135deg, #f6f9fc 0%, #ffffff 100%);
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 5px solid #4facfe;
+        }
+        
+        .status-card.warning {
+            border-left-color: #ff6b6b;
+            background: linear-gradient(135deg, #fff5f5 0%, #ffffff 100%);
+        }
+        
+        .status-card.success {
+            border-left-color: #51cf66;
+            background: linear-gradient(135deg, #f3fdf3 0%, #ffffff 100%);
+        }
+        
+        .status-title {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .icon {
+            font-size: 1.5em;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4);
+        }
+        
+        .btn.danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        }
+        
+        .btn.warning {
+            background: linear-gradient(135deg, #ffd93d 0%, #ff9500 100%);
+        }
+        
+        .btn.success {
+            background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+        }
+        
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .action-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .action-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .log-area {
+            background: #1e1e1e;
+            color: #00ff00;
+            border-radius: 10px;
+            padding: 15px;
+            height: 200px;
+            overflow-y: scroll;
+            font-family: 'Courier New', monospace;
+            margin-top: 20px;
+        }
+        
+        .backup-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+        }
+        
+        .backup-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .backup-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #4facfe;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #e0e0e0;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎥 Camera Calibration Manager</h1>
+            <p>Fix camera blur and manage calibration settings</p>
+        </div>
+        
+        <div class="nav-bar">
+            <button class="nav-btn" onclick="location.href='/'">🏠 Home</button>
+            <button class="nav-btn" onclick="location.href='/3d'">🎮 3D View</button>
+            <button class="nav-btn" onclick="refreshStatus()">🔄 Refresh</button>
+        </div>
+        
+        <div class="status-grid">
+            <div class="status-card" id="oldCalibCard">
+                <div class="status-title">
+                    <span class="icon">📷</span>
+                    Legacy Calibration System
+                </div>
+                <p id="oldCalibStatus">Checking...</p>
+                <div id="oldCalibDetails"></div>
+            </div>
+            
+            <div class="status-card" id="newCalibCard">
+                <div class="status-title">
+                    <span class="icon">🎯</span>
+                    IMX477 Calibration System
+                </div>
+                <p id="newCalibStatus">Checking...</p>
+                <div id="newCalibDetails"></div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>🔧 Quick Actions</h2>
+            <div class="actions-grid">
+                <div class="action-card">
+                    <h3>📦 Backup Calibration</h3>
+                    <p>Create a backup of all calibration files before making changes</p>
+                    <button class="btn" onclick="backupCalibration()">Create Backup</button>
+                </div>
+                
+                <div class="action-card">
+                    <h3>🗑️ Fix Camera Blur</h3>
+                    <p>Remove problematic old calibration that causes blurring</p>
+                    <button class="btn danger" onclick="removeOldCalibration()">Remove Old Calibration</button>
+                </div>
+                
+                <div class="action-card">
+                    <h3>🎛️ Toggle Live Calibration</h3>
+                    <p>Enable/disable calibration on current camera feed</p>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="liveCalibrationToggle" onchange="toggleLiveCalibration()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                
+                <div class="action-card">
+                    <h3>📋 View Backups</h3>
+                    <p>Manage and restore from previous calibration backups</p>
+                    <button class="btn warning" onclick="showBackups()">Manage Backups</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card" id="backupSection" style="display:none;">
+            <h2>📂 Calibration Backups</h2>
+            <div id="backupList" class="backup-list"></div>
+        </div>
+        
+        <div class="card">
+            <h2>📊 System Recommendation</h2>
+            <div id="recommendation" class="status-card">
+                <p>Loading recommendations...</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>📝 Activity Log</h2>
+            <div id="logArea" class="log-area"></div>
+        </div>
+    </div>
+    
+    <script>
+        let calibrationStatus = null;
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshStatus();
+            logMessage('🚀 Camera Calibration Manager loaded', 'system');
+        });
+        
+        // Refresh calibration status
+        async function refreshStatus() {
+            try {
+                logMessage('🔄 Checking calibration status...', 'info');
+                const response = await fetch('/api/calibration/status');
+                calibrationStatus = await response.json();
+                
+                if (calibrationStatus.error) {
+                    throw new Error(calibrationStatus.error);
+                }
+                
+                updateStatusDisplay();
+                updateRecommendation();
+                logMessage('✅ Status updated successfully', 'success');
+                
+            } catch (error) {
+                logMessage(`❌ Error checking status: ${error.message}`, 'error');
+            }
+        }
+        
+        // Update status display
+        function updateStatusDisplay() {
+            const oldCard = document.getElementById('oldCalibCard');
+            const newCard = document.getElementById('newCalibCard');
+            
+            // Update old calibration status
+            if (calibrationStatus.old_calibration.exists) {
+                oldCard.className = 'status-card warning';
+                document.getElementById('oldCalibStatus').innerHTML = '⚠️ Active (May cause blur)';
+                document.getElementById('oldCalibDetails').innerHTML = `
+                    <small>Size: ${calibrationStatus.old_calibration.size} bytes<br>
+                    ${calibrationStatus.old_calibration.description}</small>
+                `;
+            } else {
+                oldCard.className = 'status-card success';
+                document.getElementById('oldCalibStatus').innerHTML = '✅ Removed (Good!)';
+                document.getElementById('oldCalibDetails').innerHTML = `
+                    <small>No automatic calibration applied</small>
+                `;
+            }
+            
+            // Update new calibration status
+            if (calibrationStatus.new_calibration.exists) {
+                newCard.className = 'status-card success';
+                document.getElementById('newCalibStatus').innerHTML = '📊 Available';
+                document.getElementById('newCalibDetails').innerHTML = `
+                    <small>Size: ${calibrationStatus.new_calibration.size} bytes<br>
+                    ${calibrationStatus.new_calibration.description}</small>
+                `;
+            } else {
+                newCard.className = 'status-card';
+                document.getElementById('newCalibStatus').innerHTML = '📄 Not calibrated';
+                document.getElementById('newCalibDetails').innerHTML = `
+                    <small>No IMX477 calibration data found</small>
+                `;
+            }
+        }
+        
+        // Update recommendation
+        function updateRecommendation() {
+            const recDiv = document.getElementById('recommendation');
+            
+            if (calibrationStatus.old_calibration.exists) {
+                recDiv.className = 'status-card warning pulse';
+                recDiv.innerHTML = `
+                    <h3>🚨 Action Required</h3>
+                    <p><strong>Your camera is likely blurry due to automatic calibration correction.</strong></p>
+                    <p>Recommendation: Remove the old calibration file to fix the blur.</p>
+                    <button class="btn danger" onclick="removeOldCalibration()">Fix Blur Now</button>
+                `;
+            } else {
+                recDiv.className = 'status-card success';
+                recDiv.innerHTML = `
+                    <h3>✅ Camera Configuration Optimal</h3>
+                    <p>No problematic calibration detected. Your camera should be using raw feed.</p>
+                    <p>You can use IMX477 modules for advanced camera control with optional calibration.</p>
+                `;
+            }
+        }
+        
+        // Backup calibration files
+        async function backupCalibration() {
+            try {
+                logMessage('📦 Creating calibration backup...', 'info');
+                const response = await fetch('/api/calibration/backup', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                
+                logMessage(`✅ Backup created: ${result.backup_dir}`, 'success');
+                logMessage(`📁 Files backed up: ${result.files_backed_up.length}`, 'info');
+                
+                // Show success animation
+                showToast('Backup created successfully!', 'success');
+                
+            } catch (error) {
+                logMessage(`❌ Backup failed: ${error.message}`, 'error');
+                showToast('Backup failed!', 'error');
+            }
+        }
+        
+        // Remove old calibration
+        async function removeOldCalibration() {
+            if (!confirm('Are you sure you want to remove the old calibration file? This should fix camera blur.')) {
+                return;
+            }
+            
+            try {
+                logMessage('🗑️ Removing old calibration file...', 'info');
+                const response = await fetch('/api/calibration/remove_old', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                
+                logMessage(`✅ ${result.message}`, 'success');
+                showToast('Camera blur should be fixed!', 'success');
+                
+                // Refresh status after removal
+                setTimeout(refreshStatus, 1000);
+                
+            } catch (error) {
+                logMessage(`❌ Removal failed: ${error.message}`, 'error');
+                showToast('Removal failed!', 'error');
+            }
+        }
+        
+        // Toggle live calibration
+        async function toggleLiveCalibration() {
+            const toggle = document.getElementById('liveCalibrationToggle');
+            const enabled = toggle.checked;
+            
+            try {
+                logMessage(`🎛️ ${enabled ? 'Enabling' : 'Disabling'} live calibration...`, 'info');
+                const response = await fetch('/api/calibration/toggle_camera', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enable: enabled })
+                });
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                
+                logMessage(`✅ ${result.message}`, 'success');
+                
+            } catch (error) {
+                logMessage(`❌ Toggle failed: ${error.message}`, 'error');
+                // Reset toggle on failure
+                toggle.checked = !enabled;
+            }
+        }
+        
+        // Show backups
+        async function showBackups() {
+            try {
+                logMessage('📂 Loading backup list...', 'info');
+                const response = await fetch('/api/calibration/list_backups');
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                
+                const backupSection = document.getElementById('backupSection');
+                const backupList = document.getElementById('backupList');
+                
+                if (result.backups.length === 0) {
+                    backupList.innerHTML = '<div class="backup-item">No backups found</div>';
+                } else {
+                    backupList.innerHTML = result.backups.map(backup => `
+                        <div class="backup-item">
+                            <div>
+                                <strong>${backup.name}</strong><br>
+                                <small>Created: ${backup.created} | Files: ${backup.files.join(', ')}</small>
+                            </div>
+                            <button class="btn" onclick="restoreBackup('${backup.name}')">Restore</button>
+                        </div>
+                    `).join('');
+                }
+                
+                backupSection.style.display = 'block';
+                logMessage(`📋 Found ${result.backups.length} backups`, 'info');
+                
+            } catch (error) {
+                logMessage(`❌ Failed to load backups: ${error.message}`, 'error');
+            }
+        }
+        
+        // Restore backup
+        async function restoreBackup(backupName) {
+            if (!confirm(`Restore calibration from backup: ${backupName}?`)) {
+                return;
+            }
+            
+            try {
+                logMessage(`🔄 Restoring from backup: ${backupName}...`, 'info');
+                const response = await fetch('/api/calibration/restore', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ backup_name: backupName })
+                });
+                const result = await response.json();
+                
+                if (result.error) {
+                    throw new Error(result.error);
+                }
+                
+                logMessage(`✅ ${result.message}`, 'success');
+                showToast('Backup restored successfully!', 'success');
+                
+                // Refresh status after restore
+                setTimeout(refreshStatus, 1000);
+                
+            } catch (error) {
+                logMessage(`❌ Restore failed: ${error.message}`, 'error');
+                showToast('Restore failed!', 'error');
+            }
+        }
+        
+        // Log message to activity log
+        function logMessage(message, type = 'info') {
+            const logArea = document.getElementById('logArea');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}\n`;
+            
+            logArea.textContent += logEntry;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+        
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 25px;
+                border-radius: 10px;
+                color: white;
+                font-weight: bold;
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+                ${type === 'success' ? 'background: linear-gradient(135deg, #51cf66, #40c057);' : 
+                  type === 'error' ? 'background: linear-gradient(135deg, #ff6b6b, #ee5a52);' : 
+                  'background: linear-gradient(135deg, #4facfe, #00f2fe);'}
+            `;
+            toast.textContent = message;
+            
+            // Add animation style
+            if (!document.getElementById('toastStyle')) {
+                const style = document.createElement('style');
+                style.id = 'toastStyle';
+                style.textContent = `
+                    @keyframes slideIn {
+                        from { transform: translateX(100%); opacity: 0; }
+                        to { transform: translateX(0); opacity: 1; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            document.body.appendChild(toast);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
 '''
 
 def startWebServer(camera_instance=None, board_instance=None, ak_instance=None, queue_instance=None, robot_available=True):

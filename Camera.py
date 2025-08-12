@@ -13,21 +13,32 @@ if sys.version_info.major == 2:
     sys.exit(0)
 
 class Camera:
-    def __init__(self, resolution=(640, 480)):
+    def __init__(self, resolution=(640, 480), enable_calibration=False):
         self.cap = None
         self.width = resolution[0]
         self.height = resolution[1]
         self.frame = None
         self.opened = False
-        # load parameter
-        self.param_data = np.load(calibration_param_path + '.npz')        
-        # obtain parameter
-        self.dim = tuple(self.param_data['dim_array'])
-        self.k = np.array(self.param_data['k_array'].tolist())
-        self.d = np.array(self.param_data['d_array'].tolist())
-        self.p = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(self.k, self.d, self.dim ,None)
-        self.Knew = self.p.copy()
-        self.map1, self.map2 = cv2.fisheye.initUndistortRectifyMap(self.k, self.d, np.eye(3), self.Knew, self.dim, cv2.CV_16SC2)
+        self.enable_calibration = enable_calibration
+        
+        # Only load calibration parameters if enabled
+        if self.enable_calibration:
+            try:
+                # load parameter
+                self.param_data = np.load(calibration_param_path + '.npz')        
+                # obtain parameter
+                self.dim = tuple(self.param_data['dim_array'])
+                self.k = np.array(self.param_data['k_array'].tolist())
+                self.d = np.array(self.param_data['d_array'].tolist())
+                self.p = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(self.k, self.d, self.dim ,None)
+                self.Knew = self.p.copy()
+                self.map1, self.map2 = cv2.fisheye.initUndistortRectifyMap(self.k, self.d, np.eye(3), self.Knew, self.dim, cv2.CV_16SC2)
+                print("Camera calibration loaded and enabled")
+            except Exception as e:
+                print(f"Warning: Could not load calibration data: {e}")
+                self.enable_calibration = False
+        else:
+            print("Camera calibration disabled - using raw camera feed")
         
         self.th = threading.Thread(target=self.camera_task, args=(), daemon=True)
         self.th.start()
@@ -53,14 +64,38 @@ class Camera:
         except Exception as e:
             print('Failed to close camera:', e)
 
+    def set_calibration(self, enable):
+        """Enable or disable calibration correction"""
+        self.enable_calibration = enable
+        if enable:
+            try:
+                self.param_data = np.load(calibration_param_path + '.npz')        
+                self.dim = tuple(self.param_data['dim_array'])
+                self.k = np.array(self.param_data['k_array'].tolist())
+                self.d = np.array(self.param_data['d_array'].tolist())
+                self.p = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(self.k, self.d, self.dim ,None)
+                self.Knew = self.p.copy()
+                self.map1, self.map2 = cv2.fisheye.initUndistortRectifyMap(self.k, self.d, np.eye(3), self.Knew, self.dim, cv2.CV_16SC2)
+                print("Camera calibration enabled")
+            except Exception as e:
+                print(f"Error loading calibration: {e}")
+                self.enable_calibration = False
+        else:
+            print("Camera calibration disabled")
+
     def camera_task(self):
         while True:
             try:
                 if self.opened and self.cap.isOpened():
                     ret, raw_img = self.cap.read()
                     if ret:
-                        correct_img = cv2.remap(raw_img, self.map1, self.map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
-                        self.frame = cv2.resize(correct_img, (self.width, self.height), interpolation=cv2.INTER_NEAREST) 
+                        if self.enable_calibration and hasattr(self, 'map1') and hasattr(self, 'map2'):
+                            # Apply calibration correction
+                            correct_img = cv2.remap(raw_img, self.map1, self.map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+                            self.frame = cv2.resize(correct_img, (self.width, self.height), interpolation=cv2.INTER_NEAREST)
+                        else:
+                            # Use raw image without calibration
+                            self.frame = cv2.resize(raw_img, (self.width, self.height), interpolation=cv2.INTER_NEAREST)
                     else:
                         self.frame = None
                         cap = cv2.VideoCapture(-1)
