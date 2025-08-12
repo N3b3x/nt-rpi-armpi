@@ -62,6 +62,7 @@ img_show = None
 quality = (int(cv2.IMWRITE_JPEG_QUALITY), 70)
 HWSONAR = None
 QUEUE = None
+board = None
 
 # RPC Error codes
 __RPC_E01 = "E01 - Invalid number of parameter!"
@@ -167,6 +168,40 @@ def set_board():
 def map_value(x, in_min, in_max, out_min, out_max):
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
+def clamp(value, min_val, max_val):
+    return max(min_val, min(max_val, value))
+
+def safe_board_call(method_name, *args, **kwargs):
+    """Safely call a board method whether it's on the instance or class."""
+    try:
+        if 'board' in globals() and board is not None and hasattr(board, method_name):
+            return getattr(board, method_name)(*args, **kwargs)
+        # Fallback to class/static style if available
+        if 'Board' in globals() and hasattr(Board, method_name):
+            return getattr(Board, method_name)(*args, **kwargs)
+    except Exception as e:
+        print(f"Board call error {method_name}: {e}")
+        raise
+    raise NameError("Board is not available")
+
+def read_battery_voltage_safe():
+    try:
+        if not ROBOT_AVAILABLE:
+            return 12.4
+        # Try instance then class
+        if 'board' in globals() and board is not None:
+            if hasattr(board, 'getBattery'):
+                return board.getBattery()
+            if hasattr(board, 'get_battery'):
+                return board.get_battery()
+        if 'Board' in globals():
+            if hasattr(Board, 'getBattery'):
+                return Board.getBattery()
+        return None
+    except Exception as e:
+        print(f"read_battery_voltage_safe error: {e}")
+        return None
+
 def runbymainth(req, pas):
     if callable(req):
         event = threading.Event()
@@ -205,16 +240,29 @@ def SetPWMServo(*args, **kwargs):
     
     arglen = len(args)
     try:
-        servos = args[1:arglen:2]
-        pulses = args[2:arglen:2]
-        use_times = args[0]
+        servos = list(args[1:arglen:2])
+        angles_or_pulses = list(args[2:arglen:2])
+        use_times_ms = args[0]
         data = []
-        
-        dat = zip(servos, pulses)
-        for (s, p) in dat:
-            pulses = int(map_value(p, 90, -90, 500, 2500))
-            data.extend([[s, pulses]])
-        board.pwm_servo_set_position(use_times/1000.0, data)
+
+        for (servo_id, value) in zip(servos, angles_or_pulses):
+            # Support three input styles:
+            # -90..90 degrees, 0..180 degrees, or direct pulse (>= 300)
+            if isinstance(value, (int, float)):
+                if -90 <= value <= 90:
+                    pulse_us = int(map_value(value, -90, 90, 500, 2500))
+                elif 0 <= value <= 180:
+                    pulse_us = int(map_value(value, 0, 180, 500, 2500))
+                else:
+                    # Treat as direct microseconds
+                    pulse_us = int(value)
+            else:
+                pulse_us = 1500
+            pulse_us = clamp(pulse_us, 500, 2500)
+            data.append([servo_id, pulse_us])
+
+        # Call through board instance safely
+        safe_board_call('pwm_servo_set_position', use_times_ms/1000.0, data)
         data.clear()
         
     except Exception as e:
@@ -239,9 +287,9 @@ def SetBusServoPulse(*args, **kwargs):
         for s in servos:
            if s < 1 or s > 6:
                 return (False, __RPC_E02)
-        dat = zip(servos, pulses)
-        for (s, p) in dat:
-            Board.setBusServoPulse(s, p, use_times)
+        for (s, p) in zip(servos, pulses):
+            pulse_us = int(clamp(p, 500, 2500))
+            safe_board_call('setBusServoPulse', s, pulse_us, use_times)
     except Exception as e:
         print(e)
         ret = (False, __RPC_E03, 'SetBusServoPulse')
@@ -254,7 +302,10 @@ def GetBatteryVoltage():
         # Return demo battery voltage
         return (True, 12.4, 'GetBatteryVoltage')
     try:
-        ret = (True, Board.getBattery(), 'GetBatteryVoltage')
+        vb = read_battery_voltage_safe()
+        if vb is None:
+            return (False, __RPC_E03, 'GetBatteryVoltage')
+        ret = (True, vb, 'GetBatteryVoltage')
     except Exception as e:
         print(e)
         ret = (False, __RPC_E03, 'GetBatteryVoltage')
@@ -354,7 +405,7 @@ def SetBrushMotor(*args, **kwargs):
         dat = zip(motors, speeds)
 
         for m, s in dat:
-            Board.setMotor(m, s)
+            safe_board_call('setMotor', m, s)
     except:
         ret = (False, __RPC_E03, 'SetBrushMotor')
     return ret
@@ -493,6 +544,11 @@ def serve_3d_model(filename):
         return send_from_directory('CAD', filename)
     except Exception as e:
         return f"Model not found: {e}", 404
+
+@app.route('/combined')
+def combined_view():
+    """Combined Camera + 3D page (stacked)."""
+    return render_template_string(HTML_COMBINED_TEMPLATE)
 
 def generate_frames():
     """Generate video frames for streaming"""
@@ -2050,6 +2106,10 @@ HTML_3D_TEMPLATE = '''
 <body>
     <div class="header">
         <h1>ArmPi Mini 3D Model Viewer</h1>
+        <div style="margin-top:0.5rem">
+            <a href="/" class="btn btn-primary" style="text-decoration:none; padding:0.6rem 1rem; border-radius:10px; display:inline-block"><i class="fas fa-arrow-left"></i> Back to Camera</a>
+            <a href="/combined" class="btn btn-secondary" style="text-decoration:none; padding:0.6rem 1rem; border-radius:10px; display:inline-block; margin-left:0.5rem"><i class="fas fa-columns"></i> Combined View</a>
+        </div>
         <div class="status-bar" id="statusBar">
             <span class="status-indicator active" id="cameraIndicator"></span>
             Camera: <span id="cameraStatus">Connecting...</span> 
@@ -2571,6 +2631,90 @@ HTML_3D_TEMPLATE = '''
     </script>
 </body>
 </html>
+'''
+
+HTML_COMBINED_TEMPLATE = '''
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 ArmPi Mini — Combined View</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; margin:0 }
+        .header { padding: 1rem; text-align:center }
+        .container { max-width: 1280px; margin: 0 auto; padding: 1rem }
+        .card { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 16px; padding: 1rem; box-shadow: 0 10px 30px rgba(0,0,0,0.2); margin-bottom: 1rem }
+        .btn { padding: .6rem 1rem; border-radius:10px; border:1px solid rgba(255,255,255,0.25); color:#fff; text-decoration:none; display:inline-block }
+        .btn + .btn { margin-left:.5rem }
+        .btn-primary { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%) }
+        .btn-secondary { background: rgba(255,255,255,0.15) }
+        #combined3dCanvasContainer { width: 100%; height: 420px; border-radius: 12px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); border: 2px solid rgba(255,255,255,0.1) }
+    </style>
+ </head>
+ <body>
+   <div class="header">
+     <h2>ArmPi Mini — Combined View</h2>
+     <div>
+       <a class="btn btn-primary" href="/"><i class="fas fa-video"></i> Camera</a>
+       <a class="btn btn-secondary" href="/3d"><i class="fas fa-cube"></i> 3D Viewer</a>
+     </div>
+   </div>
+   <div class="container">
+     <div class="card">
+       <h3 style="margin:0 0 .5rem 0">📹 Live Camera</h3>
+       <img id="combinedVideo" src="/video_feed" style="max-width:100%; border-radius:12px; border:2px solid rgba(255,255,255,0.1)" />
+     </div>
+     <div class="card">
+       <h3 style="margin:0 0 .5rem 0">🎮 3D Model</h3>
+       <div id="combined3dCanvasContainer"></div>
+       <div style="margin-top:.6rem">
+          <a class="btn btn-secondary" href="#" onclick="loadModel2('armpi_mini.stl')"><i class="fas fa-robot"></i> Full Robot</a>
+          <a class="btn btn-secondary" href="#" onclick="resetCamera2()"><i class="fas fa-redo"></i> Reset View</a>
+          <a class="btn btn-secondary" href="#" onclick="toggleWireframe2()"><i class="fas fa-eye"></i> Wireframe</a>
+       </div>
+     </div>
+   </div>
+   <script>
+     let scene2, camera2, renderer2, controls2, currentModel2, autoRotate2=false, isWire2=false;
+     function init3DViewer2(){
+        const c = document.getElementById('combined3dCanvasContainer');
+        scene2 = new THREE.Scene();
+        scene2.background = new THREE.Color(0x1a1a2e);
+        camera2 = new THREE.PerspectiveCamera(75, c.clientWidth/c.clientHeight, .1, 1000);
+        camera2.position.set(0,0,100);
+        renderer2 = new THREE.WebGLRenderer({antialias:true, alpha:true});
+        renderer2.setSize(c.clientWidth, c.clientHeight);
+        c.appendChild(renderer2.domElement);
+        controls2 = new THREE.OrbitControls(camera2, renderer2.domElement);
+        scene2.add(new THREE.AmbientLight(0x404040, .5));
+        const d = new THREE.DirectionalLight(0xffffff,.9); d.position.set(1,1,1); scene2.add(d);
+        scene2.add(new THREE.GridHelper(200,50,0x444444,0x444444));
+        function animate(){ requestAnimationFrame(animate); if(autoRotate2&&currentModel2){ currentModel2.rotation.y+=.01;} controls2.update(); renderer2.render(scene2,camera2);} animate();
+     }
+     function loadModel2(filename){
+        const c = document.getElementById('combined3dCanvasContainer');
+        if(currentModel2){ scene2.remove(currentModel2); }
+        const loader = new THREE.STLLoader();
+        loader.load(`/models/${filename}`, (geometry)=>{
+          const mat = new THREE.MeshPhongMaterial({color:0x4facfe, shininess:100, transparent:true, opacity:0.95});
+          const mesh = new THREE.Mesh(geometry, mat);
+          geometry.computeBoundingBox(); const box = geometry.boundingBox; const center = box.getCenter(new THREE.Vector3()); geometry.translate(-center.x,-center.y,-center.z);
+          const size = box.getSize(new THREE.Vector3()); const maxDim = Math.max(size.x,size.y,size.z); mesh.scale.setScalar(50/maxDim);
+          scene2.add(mesh); currentModel2 = mesh;
+        });
+     }
+     function resetCamera2(){ camera2.position.set(0,0,100); controls2.reset(); }
+     function toggleWireframe2(){ if(currentModel2){ isWire2=!isWire2; currentModel2.material.wireframe=isWire2; } }
+     window.addEventListener('resize', ()=>{ const c=document.getElementById('combined3dCanvasContainer'); if(!c||!camera2||!renderer2)return; camera2.aspect=c.clientWidth/c.clientHeight; camera2.updateProjectionMatrix(); renderer2.setSize(c.clientWidth,c.clientHeight); });
+     document.addEventListener('DOMContentLoaded', ()=>{ init3DViewer2(); });
+   </script>
+ </body>
+ </html>
 '''
 
 def startWebServer(camera_instance=None, board_instance=None, ak_instance=None, queue_instance=None, robot_available=True):

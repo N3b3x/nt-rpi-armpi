@@ -25,6 +25,30 @@ from werkzeug.serving import run_simple
 from werkzeug.wrappers import Request, Response
 from jsonrpc2 import JsonRpc
 
+# Hardware availability and safe Board access helpers
+ROBOT_AVAILABLE = True
+try:
+    from common.ros_robot_controller_sdk import Board  # type: ignore
+except Exception as e:
+    print(f"Robot Board not available: {e}")
+    Board = None  # type: ignore
+    ROBOT_AVAILABLE = False
+
+board = None  # Will be injected by main process
+
+def clamp(value, min_val, max_val):
+    return max(min_val, min(max_val, value))
+
+def safe_board_call(method_name, *args, **kwargs):
+    """Safely call a board method whether it's on the instance or class."""
+    # Prefer instance method on injected board
+    if board is not None and hasattr(board, method_name):
+        return getattr(board, method_name)(*args, **kwargs)
+    # Fall back to class/static if available
+    if Board is not None and hasattr(Board, method_name):
+        return getattr(Board, method_name)(*args, **kwargs)
+    raise NameError("Board is not available")
+
 # Compatibility dispatcher to preserve existing decorator and mapping usage
 class _Dispatcher(dict):
     def __init__(self, rpc: JsonRpc) -> None:
@@ -83,21 +107,29 @@ data = []
 @dispatcher.add_method
 def SetPWMServo(*args, **kwargs):
     ret = (True, (), 'SetPWMServo')
-    print("SetPWMServo:",args)
+    print("SetPWMServo:", args)
+    if not ROBOT_AVAILABLE:
+        return (True, f"Demo: Servo moved with params {args}", 'SetPWMServo')
     arglen = len(args)
     try:
-        servos = args[1:arglen:2]
-        pulses = args[2:arglen:2]
-        use_times = args[0]
+        servos = list(args[1:arglen:2])
+        values = list(args[2:arglen:2])
+        use_times_ms = args[0]
         data = []
-        
-        dat = zip(servos, pulses)
-        for (s, p) in dat:
-            pulses = int(map(p,90,-90,500,2500))
-            data.extend([[s,pulses]])
-        board.pwm_servo_set_position(use_times/1000.0, data)
+        for (s, v) in zip(servos, values):
+            if isinstance(v, (int, float)):
+                if -90 <= v <= 90:
+                    pulse_us = int((v - (-90)) * (2500 - 500) / (90 - (-90)) + 500)
+                elif 0 <= v <= 180:
+                    pulse_us = int((v - 0) * (2500 - 500) / (180 - 0) + 500)
+                else:
+                    pulse_us = int(v)
+            else:
+                pulse_us = 1500
+            pulse_us = clamp(pulse_us, 500, 2500)
+            data.append([s, pulse_us])
+        safe_board_call('pwm_servo_set_position', use_times_ms/1000.0, data)
         data.clear()
-        
     except Exception as e:
         print('error3:', e)
         ret = (False, __RPC_E03, 'SetPWMServo')
@@ -116,9 +148,9 @@ def SetBusServoPulse(*args, **kwargs):
         for s in servos:
            if s < 1 or s > 6:
                 return (False, __RPC_E02)
-        dat = zip(servos, pulses)
-        for (s, p) in dat:
-            Board.setBusServoPulse(s, p, use_times)
+        for (s, p) in zip(servos, pulses):
+            pulse_us = int(clamp(p, 500, 2500))
+            safe_board_call('setBusServoPulse', s, pulse_us, use_times)
     except Exception as e:
         print(e)
         ret = (False, __RPC_E03, 'SetBusServoPulse')
@@ -146,7 +178,7 @@ def GetBusServosDeviation(args):
         return (False, __RPC_E01, 'GetBusServosDeviation')
     try:
         for i in range(1, 7):
-            dev = Board.getBusServoDeviation(i)
+            dev = safe_board_call('getBusServoDeviation', i)
             if dev is None:
                 dev = 999
             data.append(dev)
@@ -163,7 +195,7 @@ def SaveBusServosDeviation(args):
         return (False, __RPC_E01, 'SaveBusServosDeviation')
     try:
         for i in range(1, 7):
-            dev = Board.saveBusServoDeviation(i)
+            safe_board_call('saveBusServoDeviation', i)
     except Exception as e:
         print(e)
         ret = (False, __RPC_E03, 'SaveBusServosDeviation')
@@ -176,7 +208,7 @@ def UnloadBusServo(args):
         return (False, __RPC_E01, 'UnloadBusServo')
     try:
         for i in range(1, 7):
-            Board.unloadBusServo(i)
+            safe_board_call('unloadBusServo', i)
     except Exception as e:
         print(e)
         ret = (False, __RPC_E03, 'UnloadBusServo')
@@ -189,7 +221,7 @@ def GetBusServosPulse(args):
         return (False, __RPC_E01, 'GetBusServosPulse')
     try:
         for i in range(1, 7):
-            pulse = Board.getBusServoPulse(i)
+            pulse = safe_board_call('getBusServoPulse', i)
             if pulse is None:
                 ret = (False, __RPC_E04, 'GetBusServosPulse')
                 return ret
@@ -236,7 +268,15 @@ def GetSonarDistance():
 def GetBatteryVoltage():
     ret = (True, 0, 'GetBatteryVoltage')
     try:
-        ret = (True, Board.getBattery(), 'GetBatteryVoltage')
+        vb = None
+        try:
+            if board is not None and hasattr(board, 'getBattery'):
+                vb = board.getBattery()
+        except Exception:
+            vb = None
+        if vb is None and Board is not None and hasattr(Board, 'getBattery'):
+            vb = Board.getBattery()
+        ret = (True, vb, 'GetBatteryVoltage')
     except Exception as e:
         print(e)
         ret = (False, __RPC_E03, 'GetBatteryVoltage')
