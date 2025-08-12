@@ -184,6 +184,50 @@ def safe_board_call(method_name, *args, **kwargs):
         raise
     raise NameError("Board is not available")
 
+def load_servo_map():
+    try:
+        import yaml
+        map_path = os.path.join(current_dir, 'config', 'servo_map.yaml')
+        if not os.path.exists(map_path):
+            return None
+        with open(map_path, 'r') as f:
+            return yaml.safe_load(f)
+    except Exception as e:
+        print(f"Failed to load servo_map.yaml: {e}")
+        return None
+
+SERVO_MAP = load_servo_map()
+
+def apply_servo_map(servo_id, angle_deg_or_pulse):
+    """Map logical angle (0..180 or -90..90) or pulse to final pulse using config (invert/offset/range)."""
+    value = angle_deg_or_pulse
+    # Detect degrees or direct pulse
+    if isinstance(value, (int, float)):
+        if -90 <= value <= 90:
+            pulse = int(map_value(value, -90, 90, 500, 2500))
+        elif 0 <= value <= 180:
+            pulse = int(map_value(value, 0, 180, 500, 2500))
+        else:
+            pulse = int(value)
+    else:
+        pulse = 1500
+
+    if SERVO_MAP and 'servos' in SERVO_MAP:
+        for s in SERVO_MAP['servos']:
+            if int(s.get('id', -1)) == int(servo_id):
+                pmin = int(s.get('pulse_min', 500))
+                pmax = int(s.get('pulse_max', 2500))
+                off = int(s.get('offset_pulse', 0))
+                inv = bool(s.get('invert', False))
+                # invert within range if requested
+                if inv:
+                    # invert around mid
+                    mid = (pmin + pmax) // 2
+                    pulse = mid - (pulse - mid)
+                pulse = clamp(pulse + off, pmin, pmax)
+                return pulse
+    return clamp(pulse, 500, 2500)
+
 def read_battery_voltage_safe():
     try:
         if not ROBOT_AVAILABLE:
@@ -246,19 +290,7 @@ def SetPWMServo(*args, **kwargs):
         data = []
 
         for (servo_id, value) in zip(servos, angles_or_pulses):
-            # Support three input styles:
-            # -90..90 degrees, 0..180 degrees, or direct pulse (>= 300)
-            if isinstance(value, (int, float)):
-                if -90 <= value <= 90:
-                    pulse_us = int(map_value(value, -90, 90, 500, 2500))
-                elif 0 <= value <= 180:
-                    pulse_us = int(map_value(value, 0, 180, 500, 2500))
-                else:
-                    # Treat as direct microseconds
-                    pulse_us = int(value)
-            else:
-                pulse_us = 1500
-            pulse_us = clamp(pulse_us, 500, 2500)
+            pulse_us = apply_servo_map(servo_id, value)
             data.append([servo_id, pulse_us])
 
         # Call through board instance safely
@@ -1265,19 +1297,14 @@ HTML_TEMPLATE = '''
                 <div class="panel-header"><i class="fas fa-robot"></i> Servo Control (0–180°, center at 90°)</div>
                 <div class="panel-content">
                     <div class="servo-control">
-                        <label><i class="fas fa-grip-lines"></i> Gripper (ID 1)</label>
-                        <input type="range" id="servo1" min="0" max="180" value="90" oninput="updateServo(1, this.value)">
-                        <div class="servo-value" id="servo1-value">90°</div>
+                        <label><i class="fas fa-sync"></i> Base (ID 6)</label>
+                        <input type="range" id="servo6" min="0" max="180" value="90" oninput="updateServo(6, this.value)">
+                        <div class="servo-value" id="servo6-value">90°</div>
                     </div>
                     <div class="servo-control">
-                        <label><i class="fas fa-sync"></i> Base (ID 2)</label>
-                        <input type="range" id="servo2" min="0" max="180" value="90" oninput="updateServo(2, this.value)">
-                        <div class="servo-value" id="servo2-value">90°</div>
-                    </div>
-                    <div class="servo-control">
-                        <label><i class="fas fa-arrows-alt-v"></i> Shoulder (ID 3)</label>
-                        <input type="range" id="servo3" min="0" max="180" value="90" oninput="updateServo(3, this.value)">
-                        <div class="servo-value" id="servo3-value">90°</div>
+                        <label><i class="fas fa-arrows-alt-v"></i> Shoulder (ID 5)</label>
+                        <input type="range" id="servo5" min="0" max="180" value="90" oninput="updateServo(5, this.value)">
+                        <div class="servo-value" id="servo5-value">90°</div>
                     </div>
                     <div class="servo-control">
                         <label><i class="fas fa-angle-double-right"></i> Elbow (ID 4)</label>
@@ -1285,9 +1312,14 @@ HTML_TEMPLATE = '''
                         <div class="servo-value" id="servo4-value">90°</div>
                     </div>
                     <div class="servo-control">
-                        <label><i class="fas fa-hand-paper"></i> Wrist (ID 5)</label>
-                        <input type="range" id="servo5" min="0" max="180" value="90" oninput="updateServo(5, this.value)">
-                        <div class="servo-value" id="servo5-value">90°</div>
+                        <label><i class="fas fa-hand-paper"></i> Wrist (ID 3)</label>
+                        <input type="range" id="servo3" min="0" max="180" value="90" oninput="updateServo(3, this.value)">
+                        <div class="servo-value" id="servo3-value">90°</div>
+                    </div>
+                    <div class="servo-control">
+                        <label><i class="fas fa-grip-lines"></i> Gripper (ID 1)</label>
+                        <input type="range" id="servo1" min="0" max="180" value="90" oninput="updateServo(1, this.value)">
+                        <div class="servo-value" id="servo1-value">90°</div>
                     </div>
                 </div>
             </div>
