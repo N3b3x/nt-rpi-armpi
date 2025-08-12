@@ -580,21 +580,51 @@ def robot_status():
 @app.route('/api/servo_config')
 def servo_config():
     cfg = SERVO_MAP if SERVO_MAP else {"servos": []}
-    # Provide sensible defaults and ensure ids are present
-    out = {"servos": []}
+    # Provide comprehensive servo configuration
+    out = {"servos": [], "config_loaded": bool(SERVO_MAP), "timestamp": time.time()}
     seen = set()
     for s in cfg.get('servos', []):
         sid = int(s.get('id', -1))
         if sid <= 0 or sid in seen:
             continue
         seen.add(sid)
+        deg_min = int(s.get('degrees_min', 0))
+        deg_max = int(s.get('degrees_max', 180))
+        default_deg = int(s.get('default_degrees', (deg_min + deg_max)//2))
+        
         out['servos'].append({
             "id": sid,
-            "degrees_min": int(s.get('degrees_min', 0)),
-            "degrees_max": int(s.get('degrees_max', 180)),
-            "default_degrees": int(s.get('default_degrees', (int(s.get('degrees_min', 0)) + int(s.get('degrees_max', 180)))//2))
+            "name": s.get('name', f'Servo {sid}'),
+            "degrees_min": deg_min,
+            "degrees_max": deg_max,
+            "default_degrees": default_deg,
+            "pulse_min": int(s.get('pulse_min', 500)),
+            "pulse_max": int(s.get('pulse_max', 2500)),
+            "invert": bool(s.get('invert', False)),
+            "offset_pulse": int(s.get('offset_pulse', 0))
         })
+    
+    # Sort by ID for consistent ordering
+    out['servos'].sort(key=lambda x: x['id'])
     return jsonify(out)
+
+@app.route('/api/servo_config/reload', methods=['POST'])
+def reload_servo_config():
+    """Reload servo configuration from YAML file"""
+    global SERVO_MAP
+    try:
+        SERVO_MAP = load_servo_map()
+        return jsonify({
+            "success": True, 
+            "message": "Servo configuration reloaded successfully",
+            "config_loaded": bool(SERVO_MAP),
+            "servo_count": len(SERVO_MAP.get('servos', [])) if SERVO_MAP else 0
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False, 
+            "message": f"Failed to reload servo configuration: {str(e)}"
+        }), 500
 
 @app.route('/3d')
 def landing_3d():
@@ -1329,63 +1359,34 @@ HTML_TEMPLATE = '''
             <div class="control-panel">
                 <div class="panel-header">
                     <div style="display: flex; align-items: center; justify-content: space-between;">
-                        <span><i class="fas fa-robot"></i> Servo Control (0–180°, center at 90°)</span>
-                        <button class="btn btn-secondary" onclick="resetAllServos()" style="font-size: 0.8rem; padding: 0.3rem 0.8rem;" title="Reset all servos to center">
-                            <i class="fas fa-home"></i> Reset All
-                        </button>
+                        <span id="servoControlTitle"><i class="fas fa-robot"></i> Servo Control (Loading...)</span>
+                        <div>
+                            <button class="btn btn-secondary" onclick="reloadServoConfig()" style="font-size: 0.8rem; padding: 0.3rem 0.8rem; margin-right: 0.5rem;" title="Reload servo config from YAML">
+                                <i class="fas fa-sync"></i> Reload
+                            </button>
+                            <button class="btn btn-secondary" onclick="resetAllServos()" style="font-size: 0.8rem; padding: 0.3rem 0.8rem;" title="Reset all servos to center">
+                                <i class="fas fa-home"></i> Reset All
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div class="panel-content">
-                    <div class="servo-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                        <div class="servo-control" style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; transition: all 0.3s ease;">
-                            <label style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600;">
-                                <i class="fas fa-sync" style="margin-right: 0.5rem; color: #4facfe;"></i> 
-                                Base (ID 6)
-                                <span class="servo-value" id="servo6-value" style="margin-left: auto; color: #43e97b; font-weight: bold;">90°</span>
-                            </label>
-                            <input type="range" id="servo6" min="0" max="180" value="90" oninput="updateServo(6, this.value)" style="width: 100%; margin-bottom: 0.5rem;">
-                            <input class="servo-value" id="servo6-input" type="number" step="1" min="0" max="180" value="90" onkeydown="onServoInputKey(event, 6)" style="width: 100%; padding: 0.3rem; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; text-align: center;">
-                        </div>
-                        <div class="servo-control" style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; transition: all 0.3s ease;">
-                            <label style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600;">
-                                <i class="fas fa-arrows-alt-v" style="margin-right: 0.5rem; color: #4facfe;"></i> 
-                                Shoulder (ID 5)
-                                <span class="servo-value" id="servo5-value" style="margin-left: auto; color: #43e97b; font-weight: bold;">90°</span>
-                            </label>
-                            <input type="range" id="servo5" min="0" max="180" value="90" oninput="updateServo(5, this.value)" style="width: 100%; margin-bottom: 0.5rem;">
-                            <input class="servo-value" id="servo5-input" type="number" step="1" min="0" max="180" value="90" onkeydown="onServoInputKey(event, 5)" style="width: 100%; padding: 0.3rem; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; text-align: center;">
-                        </div>
-                        <div class="servo-control" style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; transition: all 0.3s ease;">
-                            <label style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600;">
-                                <i class="fas fa-angle-double-right" style="margin-right: 0.5rem; color: #4facfe;"></i> 
-                                Elbow (ID 4)
-                                <span class="servo-value" id="servo4-value" style="margin-left: auto; color: #43e97b; font-weight: bold;">90°</span>
-                            </label>
-                            <input type="range" id="servo4" min="0" max="180" value="90" oninput="updateServo(4, this.value)" style="width: 100%; margin-bottom: 0.5rem;">
-                            <input class="servo-value" id="servo4-input" type="number" step="1" min="0" max="180" value="90" onkeydown="onServoInputKey(event, 4)" style="width: 100%; padding: 0.3rem; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; text-align: center;">
-                        </div>
-                        <div class="servo-control" style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; transition: all 0.3s ease;">
-                            <label style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600;">
-                                <i class="fas fa-hand-paper" style="margin-right: 0.5rem; color: #4facfe;"></i> 
-                                Wrist (ID 3)
-                                <span class="servo-value" id="servo3-value" style="margin-left: auto; color: #43e97b; font-weight: bold;">90°</span>
-                            </label>
-                            <input type="range" id="servo3" min="0" max="180" value="90" oninput="updateServo(3, this.value)" style="width: 100%; margin-bottom: 0.5rem;">
-                            <input class="servo-value" id="servo3-input" type="number" step="1" min="0" max="180" value="90" onkeydown="onServoInputKey(event, 3)" style="width: 100%; padding: 0.3rem; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; text-align: center;">
-                        </div>
+                    <div id="servoConfigStatus" style="margin-bottom: 1rem; padding: 0.5rem; border-radius: 5px; font-size: 0.85rem; display: none;">
+                        <i class="fas fa-info-circle"></i> <span id="configStatusText">Loading servo configuration...</span>
                     </div>
-                    <div class="servo-control" style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; margin-top: 1rem; transition: all 0.3s ease;">
-                        <label style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600;">
-                            <i class="fas fa-grip-lines" style="margin-right: 0.5rem; color: #fa709a;"></i> 
-                            Gripper (ID 1)
-                            <span class="servo-value" id="servo1-value" style="margin-left: auto; color: #43e97b; font-weight: bold;">90°</span>
-                        </label>
-                        <input type="range" id="servo1" min="0" max="180" value="90" oninput="updateServo(1, this.value)" style="width: 100%; margin-bottom: 0.5rem;">
-                        <input class="servo-value" id="servo1-input" type="number" step="1" min="0" max="180" value="90" onkeydown="onServoInputKey(event, 1)" style="width: 100%; padding: 0.3rem; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; text-align: center;">
+                    <div id="servoControlsContainer" style="display: grid; gap: 1rem;">
+                        <!-- Servo controls will be dynamically generated here -->
+                        <div style="text-align: center; color: rgba(255,255,255,0.7); padding: 2rem;">
+                            <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 0.5rem;"></i><br>
+                            Loading servo configuration...
+                        </div>
                     </div>
                     <div style="margin-top: 1rem; padding: 0.8rem; background: rgba(67, 233, 123, 0.1); border-radius: 8px; font-size: 0.85rem;">
                         <i class="fas fa-info-circle" style="color: #43e97b; margin-right: 0.5rem;"></i>
                         <strong>Batch Control:</strong> Adjust multiple servos, then press <kbd style="background: rgba(255,255,255,0.2); padding: 0.2rem 0.4rem; border-radius: 3px;">Enter</kbd> in any field to move all modified servos simultaneously.
+                        <br><small style="color: rgba(255,255,255,0.6); margin-top: 0.3rem; display: block;">
+                            Servo ranges are automatically loaded from <code>config/servo_map.yaml</code>
+                        </small>
                     </div>
                 </div>
             </div>
@@ -1689,7 +1690,22 @@ HTML_TEMPLATE = '''
          }
 
          async function updateServo(servoNum, angleDeg) {
-            const angle = parseInt(angleDeg);
+            let angle = parseInt(angleDeg);
+            
+            // Validate against servo configuration limits
+            if (servoConfigData && servoConfigData.servos) {
+                const servoConfig = servoConfigData.servos.find(s => s.id === servoNum);
+                if (servoConfig) {
+                    // Clamp to valid range
+                    angle = Math.max(servoConfig.degrees_min, Math.min(servoConfig.degrees_max, angle));
+                    
+                    // Warn if value was clamped
+                    if (angle !== parseInt(angleDeg)) {
+                        logMessage(`⚠️ Servo ${servoNum} clamped from ${angleDeg}° to ${angle}° (range: ${servoConfig.degrees_min}°-${servoConfig.degrees_max}°)`, 'warning');
+                    }
+                }
+            }
+            
             const range = document.getElementById(`servo${servoNum}`);
             const input = document.getElementById(`servo${servoNum}-input`);
             const valueDisplay = document.getElementById(`servo${servoNum}-value`);
@@ -1717,32 +1733,66 @@ HTML_TEMPLATE = '''
             scheduleBatchSend();
         }
         
-        // Reset all servos to center position
-        async function resetAllServos() {
-            const servoIds = [6, 5, 4, 3, 1]; // All servo IDs
-            const centerAngle = 90;
-            
-            logMessage('🏠 Resetting all servos to center position...', 'system');
-            
-            // Reset all UI elements and queue for batch update
-            servoIds.forEach(id => {
-                const range = document.getElementById(`servo${id}`);
-                const input = document.getElementById(`servo${id}-input`);
-                const valueDisplay = document.getElementById(`servo${id}-value`);
-                
-                if (range) range.value = centerAngle;
-                if (input) input.value = centerAngle;
-                if (valueDisplay) valueDisplay.textContent = `${centerAngle}°`;
-                
-                editedAngles[id] = centerAngle;
-            });
-            
-            // Send batch command to reset all servos
-            clearTimeout(batchTimeout);
-            await sendBatchEdited();
-            
-            logMessage('✅ All servos reset to center position', 'success');
-        }
+                 // Reset all servos to their default positions from config
+         async function resetAllServos() {
+             if (!servoConfigData || !servoConfigData.servos) {
+                 logMessage('❌ No servo configuration available for reset', 'error');
+                 return;
+             }
+             
+             logMessage('🏠 Resetting all servos to default positions...', 'system');
+             
+             // Reset all UI elements using config defaults
+             servoConfigData.servos.forEach(servo => {
+                 const range = document.getElementById(`servo${servo.id}`);
+                 const input = document.getElementById(`servo${servo.id}-input`);
+                 const valueDisplay = document.getElementById(`servo${servo.id}-value`);
+                 
+                 if (range) range.value = servo.default_degrees;
+                 if (input) input.value = servo.default_degrees;
+                 if (valueDisplay) valueDisplay.textContent = `${servo.default_degrees}°`;
+                 
+                 editedAngles[servo.id] = servo.default_degrees;
+             });
+             
+             // Send batch command to reset all servos
+             clearTimeout(batchTimeout);
+             await sendBatchEdited();
+             
+             logMessage('✅ All servos reset to default positions', 'success');
+         }
+         
+         // Reload servo configuration from YAML
+         async function reloadServoConfig() {
+             try {
+                 showConfigStatus('🔄 Reloading servo configuration...', 'info');
+                 logMessage('🔄 Reloading servo configuration from YAML...', 'system');
+                 
+                 const response = await fetch('/api/servo_config/reload', {
+                     method: 'POST',
+                     headers: {
+                         'Content-Type': 'application/json'
+                     }
+                 });
+                 
+                 const result = await response.json();
+                 
+                 if (result.success) {
+                     logMessage(`✅ ${result.message} (${result.servo_count} servos)`, 'success');
+                     showConfigStatus(`✅ ${result.message}`, 'success');
+                     
+                     // Fetch the updated configuration
+                     await fetchServoConfig();
+                 } else {
+                     logMessage(`❌ ${result.message}`, 'error');
+                     showConfigStatus(`❌ ${result.message}`, 'error');
+                 }
+             } catch (error) {
+                 const errorMsg = `Failed to reload servo config: ${error.message}`;
+                 logMessage(`❌ ${errorMsg}`, 'error');
+                 showConfigStatus(`❌ ${errorMsg}`, 'error');
+             }
+         }
 
         function onServoInputKey(e, servoNum){
             if (e.key !== 'Enter') return;
@@ -1848,30 +1898,180 @@ HTML_TEMPLATE = '''
             }
         }
 
+        // Global servo configuration
+        let servoConfigData = null;
+        let lastConfigTimestamp = 0;
+        
         async function fetchServoConfig() {
             try {
                 const res = await fetch('/api/servo_config');
                 const cfg = await res.json();
-                if (!cfg || !cfg.servos) return;
-                servoIdsFromConfig = [];
-                cfg.servos.forEach(s => {
-                    const id = s.id;
-                    servoIdsFromConfig.push(id);
-                    const degMin = s.degrees_min ?? 0;
-                    const degMax = s.degrees_max ?? 180;
-                    const defDeg = s.default_degrees ?? Math.round((degMin + degMax)/2);
-                    const slider = document.getElementById(`servo${id}`);
-                    const input  = document.getElementById(`servo${id}-input`);
-                    if (slider) {
-                        slider.min = degMin;
-                        slider.max = degMax;
-                        slider.value = defDeg;
-                    }
-                    if (input) input.value = defDeg;
-                });
+                
+                if (!cfg || !cfg.servos) {
+                    showConfigStatus('❌ No servo configuration found', 'error');
+                    return;
+                }
+                
+                // Check if config has changed
+                if (cfg.timestamp !== lastConfigTimestamp) {
+                    servoConfigData = cfg;
+                    lastConfigTimestamp = cfg.timestamp;
+                    generateServoControls(cfg);
+                    updateServoControlTitle(cfg);
+                    showConfigStatus(`✅ Loaded ${cfg.servos.length} servos from YAML config`, 'success');
+                    logMessage(`🔧 Servo config loaded: ${cfg.servos.length} servos from YAML`, 'system');
+                } else {
+                    // Config hasn't changed, just update existing controls
+                    applyServoLimits(cfg);
+                }
+                
+                servoIdsFromConfig = cfg.servos.map(s => s.id);
+                
             } catch(e) {
                 console.error('Failed to load servo config', e);
+                showConfigStatus('❌ Failed to load servo configuration', 'error');
+                logMessage('❌ Failed to load servo configuration', 'error');
             }
+        }
+        
+        function updateServoControlTitle(cfg) {
+            const title = document.getElementById('servoControlTitle');
+            if (title) {
+                const configText = cfg.config_loaded ? 
+                    `Servo Control (${cfg.servos.length} servos from YAML)` : 
+                    'Servo Control (Default ranges)';
+                title.innerHTML = `<i class="fas fa-robot"></i> ${configText}`;
+            }
+        }
+        
+        function showConfigStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('servoConfigStatus');
+            const statusText = document.getElementById('configStatusText');
+            
+            if (statusDiv && statusText) {
+                statusText.textContent = message;
+                statusDiv.style.display = 'block';
+                
+                // Style based on type
+                const colors = {
+                    'success': 'rgba(67, 233, 123, 0.1)',
+                    'error': 'rgba(231, 76, 60, 0.1)',
+                    'warning': 'rgba(254, 225, 64, 0.1)',
+                    'info': 'rgba(79, 172, 254, 0.1)'
+                };
+                statusDiv.style.background = colors[type] || colors['info'];
+                
+                // Auto-hide success messages
+                if (type === 'success') {
+                    setTimeout(() => {
+                        statusDiv.style.display = 'none';
+                    }, 3000);
+                }
+            }
+        }
+        
+        function getServoIcon(name) {
+            const iconMap = {
+                'gripper': 'fas fa-grip-lines',
+                'wrist': 'fas fa-hand-paper', 
+                'elbow': 'fas fa-angle-double-right',
+                'shoulder': 'fas fa-arrows-alt-v',
+                'base': 'fas fa-sync'
+            };
+            return iconMap[name.toLowerCase()] || 'fas fa-cog';
+        }
+        
+        function getServoColor(name) {
+            const colorMap = {
+                'gripper': '#fa709a',
+                'wrist': '#4facfe',
+                'elbow': '#4facfe', 
+                'shoulder': '#4facfe',
+                'base': '#4facfe'
+            };
+            return colorMap[name.toLowerCase()] || '#4facfe';
+        }
+        
+        function generateServoControls(cfg) {
+            const container = document.getElementById('servoControlsContainer');
+            if (!container) return;
+            
+            // Clear existing controls
+            container.innerHTML = '';
+            
+            // Set grid layout based on number of servos
+            const servoCount = cfg.servos.length;
+            if (servoCount <= 4) {
+                container.style.gridTemplateColumns = 'repeat(2, 1fr)';
+            } else {
+                container.style.gridTemplateColumns = 'repeat(3, 1fr)';
+            }
+            
+            cfg.servos.forEach(servo => {
+                const servoDiv = document.createElement('div');
+                servoDiv.className = 'servo-control';
+                servoDiv.style.cssText = 'background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; transition: all 0.3s ease;';
+                
+                const icon = getServoIcon(servo.name);
+                const color = getServoColor(servo.name);
+                const displayName = servo.name.charAt(0).toUpperCase() + servo.name.slice(1);
+                
+                servoDiv.innerHTML = `
+                    <label style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600;">
+                        <i class="${icon}" style="margin-right: 0.5rem; color: ${color};"></i> 
+                        ${displayName} (ID ${servo.id})
+                        <span class="servo-value" id="servo${servo.id}-value" style="margin-left: auto; color: #43e97b; font-weight: bold;">${servo.default_degrees}°</span>
+                    </label>
+                    <div style="margin-bottom: 0.5rem; font-size: 0.75rem; color: rgba(255,255,255,0.6);">
+                        Range: ${servo.degrees_min}° to ${servo.degrees_max}°
+                    </div>
+                    <input type="range" id="servo${servo.id}" 
+                           min="${servo.degrees_min}" max="${servo.degrees_max}" value="${servo.default_degrees}" 
+                           oninput="updateServo(${servo.id}, this.value)"
+                           style="width: 100%; margin-bottom: 0.5rem;">
+                    <input class="servo-value" id="servo${servo.id}-input" 
+                           type="number" step="1" min="${servo.degrees_min}" max="${servo.degrees_max}" value="${servo.default_degrees}" 
+                           onkeydown="onServoInputKey(event, ${servo.id})"
+                           style="width: 100%; padding: 0.3rem; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; text-align: center;">
+                `;
+                
+                container.appendChild(servoDiv);
+            });
+            
+            // If no servos, show a message
+            if (cfg.servos.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; color: rgba(255,255,255,0.7); padding: 2rem; grid-column: 1 / -1;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 1.5rem; margin-bottom: 0.5rem; color: #fee140;"></i><br>
+                        No servos configured in YAML file
+                    </div>
+                `;
+            }
+        }
+        
+        function applyServoLimits(cfg) {
+            cfg.servos.forEach(servo => {
+                const slider = document.getElementById(`servo${servo.id}`);
+                const input = document.getElementById(`servo${servo.id}-input`);
+                
+                if (slider) {
+                    slider.min = servo.degrees_min;
+                    slider.max = servo.degrees_max;
+                    // Only reset value if it's outside the new range
+                    if (parseInt(slider.value) < servo.degrees_min || parseInt(slider.value) > servo.degrees_max) {
+                        slider.value = servo.default_degrees;
+                    }
+                }
+                
+                if (input) {
+                    input.min = servo.degrees_min;
+                    input.max = servo.degrees_max;
+                    // Only reset value if it's outside the new range
+                    if (parseInt(input.value) < servo.degrees_min || parseInt(input.value) > servo.degrees_max) {
+                        input.value = servo.default_degrees;
+                    }
+                }
+            });
         }
         
         // Snapshot function
