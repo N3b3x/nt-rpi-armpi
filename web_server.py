@@ -1327,32 +1327,65 @@ HTML_TEMPLATE = '''
             </div>
             
             <div class="control-panel">
-                <div class="panel-header"><i class="fas fa-robot"></i> Servo Control (0–180°, center at 90°)</div>
+                <div class="panel-header">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <span><i class="fas fa-robot"></i> Servo Control (0–180°, center at 90°)</span>
+                        <button class="btn btn-secondary" onclick="resetAllServos()" style="font-size: 0.8rem; padding: 0.3rem 0.8rem;" title="Reset all servos to center">
+                            <i class="fas fa-home"></i> Reset All
+                        </button>
+                    </div>
+                </div>
                 <div class="panel-content">
-                    <div class="servo-control">
-                        <label><i class="fas fa-sync"></i> Base (ID 6)</label>
-                        <input type="range" id="servo6" min="0" max="180" value="90" oninput="updateServo(6, this.value)">
-                        <input class="servo-value" id="servo6-input" type="number" step="1" min="0" max="180" value="90" onkeydown="onServoInputKey(event, 6)">
+                    <div class="servo-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="servo-control" style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; transition: all 0.3s ease;">
+                            <label style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600;">
+                                <i class="fas fa-sync" style="margin-right: 0.5rem; color: #4facfe;"></i> 
+                                Base (ID 6)
+                                <span class="servo-value" id="servo6-value" style="margin-left: auto; color: #43e97b; font-weight: bold;">90°</span>
+                            </label>
+                            <input type="range" id="servo6" min="0" max="180" value="90" oninput="updateServo(6, this.value)" style="width: 100%; margin-bottom: 0.5rem;">
+                            <input class="servo-value" id="servo6-input" type="number" step="1" min="0" max="180" value="90" onkeydown="onServoInputKey(event, 6)" style="width: 100%; padding: 0.3rem; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; text-align: center;">
+                        </div>
+                        <div class="servo-control" style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; transition: all 0.3s ease;">
+                            <label style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600;">
+                                <i class="fas fa-arrows-alt-v" style="margin-right: 0.5rem; color: #4facfe;"></i> 
+                                Shoulder (ID 5)
+                                <span class="servo-value" id="servo5-value" style="margin-left: auto; color: #43e97b; font-weight: bold;">90°</span>
+                            </label>
+                            <input type="range" id="servo5" min="0" max="180" value="90" oninput="updateServo(5, this.value)" style="width: 100%; margin-bottom: 0.5rem;">
+                            <input class="servo-value" id="servo5-input" type="number" step="1" min="0" max="180" value="90" onkeydown="onServoInputKey(event, 5)" style="width: 100%; padding: 0.3rem; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; text-align: center;">
+                        </div>
+                        <div class="servo-control" style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; transition: all 0.3s ease;">
+                            <label style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600;">
+                                <i class="fas fa-angle-double-right" style="margin-right: 0.5rem; color: #4facfe;"></i> 
+                                Elbow (ID 4)
+                                <span class="servo-value" id="servo4-value" style="margin-left: auto; color: #43e97b; font-weight: bold;">90°</span>
+                            </label>
+                            <input type="range" id="servo4" min="0" max="180" value="90" oninput="updateServo(4, this.value)" style="width: 100%; margin-bottom: 0.5rem;">
+                            <input class="servo-value" id="servo4-input" type="number" step="1" min="0" max="180" value="90" onkeydown="onServoInputKey(event, 4)" style="width: 100%; padding: 0.3rem; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; text-align: center;">
+                        </div>
+                        <div class="servo-control" style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; transition: all 0.3s ease;">
+                            <label style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600;">
+                                <i class="fas fa-hand-paper" style="margin-right: 0.5rem; color: #4facfe;"></i> 
+                                Wrist (ID 3)
+                                <span class="servo-value" id="servo3-value" style="margin-left: auto; color: #43e97b; font-weight: bold;">90°</span>
+                            </label>
+                            <input type="range" id="servo3" min="0" max="180" value="90" oninput="updateServo(3, this.value)" style="width: 100%; margin-bottom: 0.5rem;">
+                            <input class="servo-value" id="servo3-input" type="number" step="1" min="0" max="180" value="90" onkeydown="onServoInputKey(event, 3)" style="width: 100%; padding: 0.3rem; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; text-align: center;">
+                        </div>
                     </div>
-                    <div class="servo-control">
-                        <label><i class="fas fa-arrows-alt-v"></i> Shoulder (ID 5)</label>
-                        <input type="range" id="servo5" min="0" max="180" value="90" oninput="updateServo(5, this.value)">
-                        <input class="servo-value" id="servo5-input" type="number" step="1" min="0" max="180" value="90" onkeydown="onServoInputKey(event, 5)">
+                    <div class="servo-control" style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 10px; margin-top: 1rem; transition: all 0.3s ease;">
+                        <label style="display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: 600;">
+                            <i class="fas fa-grip-lines" style="margin-right: 0.5rem; color: #fa709a;"></i> 
+                            Gripper (ID 1)
+                            <span class="servo-value" id="servo1-value" style="margin-left: auto; color: #43e97b; font-weight: bold;">90°</span>
+                        </label>
+                        <input type="range" id="servo1" min="0" max="180" value="90" oninput="updateServo(1, this.value)" style="width: 100%; margin-bottom: 0.5rem;">
+                        <input class="servo-value" id="servo1-input" type="number" step="1" min="0" max="180" value="90" onkeydown="onServoInputKey(event, 1)" style="width: 100%; padding: 0.3rem; border-radius: 5px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: white; text-align: center;">
                     </div>
-                    <div class="servo-control">
-                        <label><i class="fas fa-angle-double-right"></i> Elbow (ID 4)</label>
-                        <input type="range" id="servo4" min="0" max="180" value="90" oninput="updateServo(4, this.value)">
-                        <input class="servo-value" id="servo4-input" type="number" step="1" min="0" max="180" value="90" onkeydown="onServoInputKey(event, 4)">
-                    </div>
-                    <div class="servo-control">
-                        <label><i class="fas fa-hand-paper"></i> Wrist (ID 3)</label>
-                        <input type="range" id="servo3" min="0" max="180" value="90" oninput="updateServo(3, this.value)">
-                        <input class="servo-value" id="servo3-input" type="number" step="1" min="0" max="180" value="90" onkeydown="onServoInputKey(event, 3)">
-                    </div>
-                    <div class="servo-control">
-                        <label><i class="fas fa-grip-lines"></i> Gripper (ID 1)</label>
-                        <input type="range" id="servo1" min="0" max="180" value="90" oninput="updateServo(1, this.value)">
-                        <input class="servo-value" id="servo1-input" type="number" step="1" min="0" max="180" value="90" onkeydown="onServoInputKey(event, 1)">
+                    <div style="margin-top: 1rem; padding: 0.8rem; background: rgba(67, 233, 123, 0.1); border-radius: 8px; font-size: 0.85rem;">
+                        <i class="fas fa-info-circle" style="color: #43e97b; margin-right: 0.5rem;"></i>
+                        <strong>Batch Control:</strong> Adjust multiple servos, then press <kbd style="background: rgba(255,255,255,0.2); padding: 0.2rem 0.4rem; border-radius: 3px;">Enter</kbd> in any field to move all modified servos simultaneously.
                     </div>
                 </div>
             </div>
@@ -1466,32 +1499,249 @@ HTML_TEMPLATE = '''
             }
         }
         
-        // Color tracking
+        // Color tracking with animation sync
         async function setTargetColor(color) {
             logMessage(`🎨 Setting target color to ${color}...`, 'system');
             const result = await sendRPC('ColorTracking', [color]);
             if (result && result.result) {
                 logMessage(`✅ Target color set to ${color}`, 'success');
+                
+                // Sync landing page animation colors
+                updateAnimationColors(color);
             }
         }
         
-        // Servo control
-         // Edited angles queue for batched send on Enter
+        // Update animation colors based on selected color
+        function updateAnimationColors(color) {
+            const colorMappings = {
+                'red': {
+                    primary: 'linear-gradient(135deg, #e53e3e 0%, #ff6b6b 100%)',
+                    secondary: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                    accent: 'linear-gradient(135deg, #fc466b 0%, #3f5efb 100%)'
+                },
+                'green': {
+                    primary: 'linear-gradient(135deg, #38a169 0%, #48bb78 100%)',
+                    secondary: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                    accent: 'linear-gradient(135deg, #00f2fe 0%, #4facfe 100%)'
+                },
+                'blue': {
+                    primary: 'linear-gradient(135deg, #3182ce 0%, #4299e1 100%)',
+                    secondary: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+                    accent: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                },
+                'yellow': {
+                    primary: 'linear-gradient(135deg, #d69e2e 0%, #ecc94b 100%)',
+                    secondary: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                    accent: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)'
+                },
+                'purple': {
+                    primary: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    secondary: 'linear-gradient(135deg, #805ad5 0%, #9f7aea 100%)',
+                    accent: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+                },
+                'orange': {
+                    primary: 'linear-gradient(135deg, #dd6b20 0%, #ed8936 100%)',
+                    secondary: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                    accent: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)'
+                }
+            };
+            
+            const selectedColors = colorMappings[color] || colorMappings['purple']; // fallback to purple
+            
+            // Update CSS custom properties for smooth transition
+            const root = document.documentElement;
+            root.style.setProperty('--primary-gradient', selectedColors.primary);
+            root.style.setProperty('--secondary-gradient', selectedColors.secondary);
+            root.style.setProperty('--accent-gradient', selectedColors.accent);
+            
+            // Animate the body background
+            document.body.style.background = selectedColors.primary;
+            
+            // Update active color button visual feedback
+            document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.querySelector(`.color-btn.${color}`);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+                activeBtn.style.transform = 'scale(1.1)';
+                activeBtn.style.boxShadow = '0 0 20px rgba(255,255,255,0.4)';
+                
+                // Reset scale after animation
+                setTimeout(() => {
+                    activeBtn.style.transform = '';
+                    activeBtn.style.boxShadow = '';
+                }, 300);
+            }
+            
+            logMessage(`🌈 Animation colors updated to ${color} theme`, 'info');
+        }
+        
+        // Servo control - Improved batching system
          const editedAngles = {};
          let servoIdsFromConfig = [];
+         let batchTimeout = null;
+         const BATCH_DELAY = 500; // ms to wait before sending batch
+         
+         // Enhanced camera simulation for realistic servo movement visualization
+         let isTrackingCamera = false;
+         let previousServoPositions = {};
+         
+         function updateCameraPosition() {
+             if (!currentModel) return;
+             
+             // Get current servo positions using correct servo IDs
+             const servo6 = parseInt(document.getElementById('servo6')?.value || 90); // Base
+             const servo5 = parseInt(document.getElementById('servo5')?.value || 90); // Shoulder
+             const servo4 = parseInt(document.getElementById('servo4')?.value || 90); // Elbow
+             const servo3 = parseInt(document.getElementById('servo3')?.value || 90); // Wrist
+             const servo1 = parseInt(document.getElementById('servo1')?.value || 90); // Gripper
+             
+             // Check if any servos actually moved
+             const currentPositions = { servo6, servo5, servo4, servo3, servo1 };
+             const hasMovement = Object.keys(currentPositions).some(key => 
+                 previousServoPositions[key] !== currentPositions[key]
+             );
+             
+             if (hasMovement && currentModel) {
+                 // Convert servo angles to radians (center at 90°)
+                 const baseRotation = (servo6 - 90) * (Math.PI / 180) * 0.8; // Base rotation
+                 const shoulderTilt = (servo5 - 90) * (Math.PI / 180) * 0.2; // Shoulder influence
+                 const elbowFine = (servo4 - 90) * (Math.PI / 180) * 0.1; // Elbow fine adjustment
+                 
+                 // Smoothly animate the model to new positions
+                 const animateToPosition = (startTime) => {
+                     const elapsed = Date.now() - startTime;
+                     const duration = 800; // ms for smooth animation
+                     const progress = Math.min(elapsed / duration, 1);
+                     const easeProgress = 1 - Math.pow(1 - progress, 2); // easeOutQuad
+                     
+                     // Store original rotation at start of animation
+                     if (!currentModel.originalRotation) {
+                         currentModel.originalRotation = { 
+                             x: currentModel.rotation.x,
+                             y: currentModel.rotation.y,
+                             z: currentModel.rotation.z
+                         };
+                     }
+                     
+                     // Calculate target rotations
+                     const targetY = currentModel.originalRotation.y + baseRotation;
+                     const targetX = currentModel.originalRotation.x + shoulderTilt;
+                     const targetZ = currentModel.originalRotation.z + elbowFine;
+                     
+                     // Interpolate to target positions
+                     currentModel.rotation.y = currentModel.originalRotation.y + 
+                         (targetY - currentModel.originalRotation.y) * easeProgress;
+                     currentModel.rotation.x = currentModel.originalRotation.x + 
+                         (targetX - currentModel.originalRotation.x) * easeProgress;
+                     currentModel.rotation.z = currentModel.originalRotation.z + 
+                         (targetZ - currentModel.originalRotation.z) * easeProgress;
+                     
+                     // Dynamic camera positioning to follow the action
+                     if (camera && controls) {
+                         const radius = 6;
+                         const cameraAngle = currentModel.rotation.y * 0.3;
+                         
+                         // Calculate new camera position
+                         const targetCameraX = Math.sin(cameraAngle) * radius;
+                         const targetCameraZ = Math.cos(cameraAngle) * radius;
+                         const targetCameraY = 3 + Math.sin(shoulderTilt) * 2;
+                         
+                         // Smooth camera movement
+                         camera.position.x += (targetCameraX - camera.position.x) * 0.05;
+                         camera.position.z += (targetCameraZ - camera.position.z) * 0.05;
+                         camera.position.y += (targetCameraY - camera.position.y) * 0.03;
+                         
+                         // Keep camera looking at the model center
+                         controls.target.set(0, 1, 0);
+                         controls.update();
+                     }
+                     
+                     // Continue animation until complete
+                     if (progress < 1) {
+                         requestAnimationFrame(() => animateToPosition(startTime));
+                     } else {
+                         // Clear original rotation for next movement
+                         currentModel.originalRotation = null;
+                         logMessage(`📷 Camera animation complete - servos: Base:${servo6}°, Shoulder:${servo5}°, Elbow:${servo4}°`, 'system');
+                     }
+                 };
+                 
+                 // Start animation
+                 animateToPosition(Date.now());
+                 logMessage(`🎬 Animating camera for servo movement: Base:${servo6}°, Shoulder:${servo5}°`, 'info');
+             }
+             
+             // Store current positions for next comparison
+             previousServoPositions = currentPositions;
+         }
+         
+         // Auto-start camera tracking on servo interaction
+         function startCameraTracking() {
+             if (!isTrackingCamera) {
+                 isTrackingCamera = true;
+                 logMessage('📹 Camera tracking enabled', 'info');
+             }
+         }
+         
+         function stopCameraTracking() {
+             isTrackingCamera = false;
+             logMessage('📹 Camera tracking disabled', 'info');
+         }
 
          async function updateServo(servoNum, angleDeg) {
             const angle = parseInt(angleDeg);
             const range = document.getElementById(`servo${servoNum}`);
             const input = document.getElementById(`servo${servoNum}-input`);
+            const valueDisplay = document.getElementById(`servo${servoNum}-value`);
+            
             if (range) range.value = angle;
             if (input) input.value = angle;
-            logMessage(`🦾 Moving servo ${servoNum} to ${angle}°`, 'system');
-            // Backend supports 0–180 directly; use 1000ms smoothing time
-            const result = await sendRPC('SetPWMServo', [1000, servoNum, angle]);
-            if (result && result.result) {
-                logMessage(`✅ Servo ${servoNum} moved to ${angle}°`, 'success');
+            if (valueDisplay) valueDisplay.textContent = `${angle}°`;
+            
+            // Queue this change for batching
+            editedAngles[servoNum] = angle;
+            
+            // Add visual feedback that servo is queued for update
+            const servoControl = range ? range.closest('.servo-control') : null;
+            if (servoControl) {
+                servoControl.style.borderLeft = '3px solid #4facfe';
+                setTimeout(() => {
+                    servoControl.style.borderLeft = '';
+                }, 500);
             }
+            
+            // Show pending status
+            logMessage(`📝 Servo ${servoNum} queued: ${angle}° (pending batch)`, 'system');
+            
+            // Schedule batch send
+            scheduleBatchSend();
+        }
+        
+        // Reset all servos to center position
+        async function resetAllServos() {
+            const servoIds = [6, 5, 4, 3, 1]; // All servo IDs
+            const centerAngle = 90;
+            
+            logMessage('🏠 Resetting all servos to center position...', 'system');
+            
+            // Reset all UI elements and queue for batch update
+            servoIds.forEach(id => {
+                const range = document.getElementById(`servo${id}`);
+                const input = document.getElementById(`servo${id}-input`);
+                const valueDisplay = document.getElementById(`servo${id}-value`);
+                
+                if (range) range.value = centerAngle;
+                if (input) input.value = centerAngle;
+                if (valueDisplay) valueDisplay.textContent = `${centerAngle}°`;
+                
+                editedAngles[id] = centerAngle;
+            });
+            
+            // Send batch command to reset all servos
+            clearTimeout(batchTimeout);
+            await sendBatchEdited();
+            
+            logMessage('✅ All servos reset to center position', 'success');
         }
 
         function onServoInputKey(e, servoNum){
@@ -1506,35 +1756,95 @@ HTML_TEMPLATE = '''
             if (angle < min) angle = min;
             if (angle > max) angle = max;
             input.value = angle;
-            // Queue this edit
+            slider.value = angle; // Also update the slider visual
+            
+            // Update servo immediately on Enter
             editedAngles[servoNum] = angle;
-            // Send all queued edits in one batch
+            
+            // Force immediate batch send on Enter - this will send ALL pending servos
+            clearTimeout(batchTimeout);
             sendBatchEdited();
+            
+            // Log which servo triggered the batch send for clarity
+            logMessage(`🎯 Servo ${servoNum} triggered batch send (Enter pressed)`, 'info');
+        }
+
+        function scheduleBatchSend() {
+            // Clear existing timeout
+            clearTimeout(batchTimeout);
+            
+            // Schedule new batch send
+            batchTimeout = setTimeout(() => {
+                sendBatchEdited();
+            }, BATCH_DELAY);
         }
 
         async function sendBatchEdited(){
             const ids = Object.keys(editedAngles);
             if (ids.length === 0) return;
+            
+            // Clear timeout since we're sending now
+            clearTimeout(batchTimeout);
+            
             // Build params: [duration_ms, id1, angle1, id2, angle2, ...]
             const params = [1000];
+            const servoDetails = [];
             ids.forEach(k => {
                 params.push(parseInt(k), parseInt(editedAngles[k]));
+                servoDetails.push(`Servo ${k}: ${editedAngles[k]}°`);
             });
-            logMessage(`🧩 Batch moving servos: ${ids.join(', ')}`, 'system');
+            
+            logMessage(`🧩 Batch moving ${ids.length} servo(s): ${servoDetails.join(', ')}`, 'system');
             const result = await sendRPC('SetPWMServo', params);
+            
             if (result && result.result) {
-                logMessage('✅ Batch move complete', 'success');
-                // Sync sliders/inputs and clear queue
+                logMessage(`✅ Batch move complete: ${servoDetails.join(', ')}`, 'success');
+                
+                // Sync all servo displays with visual feedback
                 ids.forEach(k => {
                     const range = document.getElementById(`servo${k}`);
                     const input = document.getElementById(`servo${k}-input`);
+                    const valueDisplay = document.getElementById(`servo${k}-value`);
+                    const servoControl = range ? range.closest('.servo-control') : null;
+                    
                     if (range) range.value = editedAngles[k];
                     if (input) input.value = editedAngles[k];
+                    if (valueDisplay) valueDisplay.textContent = `${editedAngles[k]}°`;
+                    
+                    // Add visual feedback for successful move
+                    if (servoControl) {
+                        servoControl.style.background = 'rgba(67, 233, 123, 0.1)';
+                        servoControl.style.border = '1px solid rgba(67, 233, 123, 0.3)';
+                        setTimeout(() => {
+                            servoControl.style.background = '';
+                            servoControl.style.border = '';
+                        }, 1000);
+                    }
                 });
-                // Clear edits
+                
+                // Trigger camera update to show servo movement
+                if (typeof updateCameraPosition === 'function') {
+                    updateCameraPosition();
+                }
+                
+                // Clear the queue
                 for (const k of ids) delete editedAngles[k];
             } else {
-                logMessage('❌ Batch move failed', 'error');
+                logMessage('❌ Batch move failed - check servo connections', 'error');
+                
+                // Add visual feedback for failed move
+                ids.forEach(k => {
+                    const range = document.getElementById(`servo${k}`);
+                    const servoControl = range ? range.closest('.servo-control') : null;
+                    if (servoControl) {
+                        servoControl.style.background = 'rgba(231, 76, 60, 0.1)';
+                        servoControl.style.border = '1px solid rgba(231, 76, 60, 0.3)';
+                        setTimeout(() => {
+                            servoControl.style.background = '';
+                            servoControl.style.border = '';
+                        }, 2000);
+                    }
+                });
             }
         }
 
@@ -2356,6 +2666,49 @@ HTML_3D_TEMPLATE = '''
                          </button>
                      </div>
                      <div style="margin-top: 1rem;">
+                         <strong style="color: rgba(255,255,255,0.9);">Model Flip Controls:</strong>
+                         <div style="margin-top: 0.5rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+                             <div style="text-align: center;">
+                                 <div style="font-size: 0.8rem; color: rgba(255,255,255,0.7); margin-bottom: 0.3rem;">X-Axis</div>
+                                 <div style="display: flex; gap: 0.2rem;">
+                                     <button class="btn btn-warning" style="flex: 1; font-size: 0.8rem; padding: 0.3rem;" onclick="flipModel('x', 1)" title="Normal X">
+                                         <i class="fas fa-arrow-right"></i>
+                                     </button>
+                                     <button class="btn btn-warning" style="flex: 1; font-size: 0.8rem; padding: 0.3rem;" onclick="flipModel('x', -1)" title="Flip X">
+                                         <i class="fas fa-arrow-left"></i>
+                                     </button>
+                                 </div>
+                             </div>
+                             <div style="text-align: center;">
+                                 <div style="font-size: 0.8rem; color: rgba(255,255,255,0.7); margin-bottom: 0.3rem;">Y-Axis</div>
+                                 <div style="display: flex; gap: 0.2rem;">
+                                     <button class="btn btn-warning" style="flex: 1; font-size: 0.8rem; padding: 0.3rem;" onclick="flipModel('y', 1)" title="Normal Y">
+                                         <i class="fas fa-arrow-up"></i>
+                                     </button>
+                                     <button class="btn btn-warning" style="flex: 1; font-size: 0.8rem; padding: 0.3rem;" onclick="flipModel('y', -1)" title="Flip Y">
+                                         <i class="fas fa-arrow-down"></i>
+                                     </button>
+                                 </div>
+                             </div>
+                             <div style="text-align: center;">
+                                 <div style="font-size: 0.8rem; color: rgba(255,255,255,0.7); margin-bottom: 0.3rem;">Z-Axis</div>
+                                 <div style="display: flex; gap: 0.2rem;">
+                                     <button class="btn btn-warning" style="flex: 1; font-size: 0.8rem; padding: 0.3rem;" onclick="flipModel('z', 1)" title="Normal Z">
+                                         <i class="fas fa-level-up-alt"></i>
+                                     </button>
+                                     <button class="btn btn-warning" style="flex: 1; font-size: 0.8rem; padding: 0.3rem;" onclick="flipModel('z', -1)" title="Flip Z">
+                                         <i class="fas fa-level-down-alt"></i>
+                                     </button>
+                                 </div>
+                             </div>
+                         </div>
+                         <div style="margin-top: 0.5rem; text-align: center;">
+                             <button class="btn btn-secondary" onclick="resetFlips()" style="font-size: 0.8rem; padding: 0.4rem 1rem;" title="Reset all orientations">
+                                 <i class="fas fa-undo-alt"></i> Reset All
+                             </button>
+                         </div>
+                     </div>
+                     <div style="margin-top: 1rem;">
                          <strong style="color: rgba(255,255,255,0.9);">Model Info:</strong>
                          <div id="modelInfo" style="margin-top: 0.5rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 10px; font-size: 0.9rem; color: rgba(255,255,255,0.7);">
                              No model loaded
@@ -2510,6 +2863,7 @@ HTML_3D_TEMPLATE = '''
                  // Three.js 3D Viewer Variables
          let scene, camera, renderer, controls, currentModel;
          let isWireframe = false;
+         let modelFlips = { x: 1, y: 1, z: 1 }; // Track flip states
          
          // Initialize 3D Viewer
          function init3DViewer() {
@@ -2624,6 +2978,9 @@ HTML_3D_TEMPLATE = '''
                          scene.add(mesh);
                          currentModel = mesh;
                          
+                         // Reset flip states for new model
+                         modelFlips = { x: 1, y: 1, z: 1 };
+                         
                          // Update model information
                          updateModelInfo(filename, geometry);
                          
@@ -2696,6 +3053,95 @@ HTML_3D_TEMPLATE = '''
                  logMessage('⏸️ Auto-rotation disabled', 'system');
              }
          }
+         
+                 // Enhanced Model flip functionality with directional controls
+        function flipModel(axis, direction = null) {
+            if (!currentModel) {
+                logMessage('❌ No model loaded to flip', 'warning');
+                return;
+            }
+            
+            // If direction is specified, use it; otherwise toggle
+            if (direction !== null) {
+                modelFlips[axis] = direction;
+            } else {
+                modelFlips[axis] *= -1;
+            }
+            
+            // Apply the flip transformation with smooth animation
+            const targetScale = {
+                x: Math.abs(currentModel.scale.x) * modelFlips.x,
+                y: Math.abs(currentModel.scale.y) * modelFlips.y,
+                z: Math.abs(currentModel.scale.z) * modelFlips.z
+            };
+            
+            // Animate the flip for better UX
+            const startScale = { ...currentModel.scale };
+            const duration = 300; // ms
+            const startTime = Date.now();
+            
+            function animateFlip() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeProgress = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+                
+                if (axis === 'x') {
+                    currentModel.scale.x = startScale.x + (targetScale.x - startScale.x) * easeProgress;
+                } else if (axis === 'y') {
+                    currentModel.scale.y = startScale.y + (targetScale.y - startScale.y) * easeProgress;
+                } else if (axis === 'z') {
+                    currentModel.scale.z = startScale.z + (targetScale.z - startScale.z) * easeProgress;
+                }
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animateFlip);
+                } else {
+                    // Ensure exact final values
+                    if (axis === 'x') currentModel.scale.x = targetScale.x;
+                    else if (axis === 'y') currentModel.scale.y = targetScale.y;
+                    else if (axis === 'z') currentModel.scale.z = targetScale.z;
+                }
+            }
+            
+            animateFlip();
+            logMessage(`🔄 Model flipped along ${axis.toUpperCase()}-axis (${modelFlips[axis] > 0 ? 'normal' : 'flipped'})`, 'system');
+        }
+        
+        // Reset all flips to normal
+        function resetFlips() {
+            if (!currentModel) {
+                logMessage('❌ No model loaded to reset', 'warning');
+                return;
+            }
+            
+            modelFlips = { x: 1, y: 1, z: 1 };
+            const baseScale = 2; // Adjust based on your model's default scale
+            
+            // Animate back to normal
+            const targetScale = { x: baseScale, y: baseScale, z: baseScale };
+            const startScale = { ...currentModel.scale };
+            const duration = 500;
+            const startTime = Date.now();
+            
+            function animateReset() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeProgress = 1 - Math.pow(1 - progress, 3);
+                
+                currentModel.scale.x = startScale.x + (targetScale.x - startScale.x) * easeProgress;
+                currentModel.scale.y = startScale.y + (targetScale.y - startScale.y) * easeProgress;
+                currentModel.scale.z = startScale.z + (targetScale.z - startScale.z) * easeProgress;
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animateReset);
+                } else {
+                    currentModel.scale.set(baseScale, baseScale, baseScale);
+                }
+            }
+            
+            animateReset();
+            logMessage('🔄 Model orientation reset to normal', 'system');
+        }
          
          // Lighting toggle
          let lightingEnabled = true;
