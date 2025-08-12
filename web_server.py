@@ -164,7 +164,11 @@ def set_board():
     color_palletizing.AK = AK
     
     color_detect.initMove()
-    board.set_buzzer(1900, 0.3, 0.7, 1)
+    # Softer, shorter beep on init
+    try:
+        board.set_buzzer(1200, 0.05, 0.0, 1)
+    except Exception:
+        pass
 
 # Utility functions
 def map_value(x, in_min, in_max, out_min, out_max):
@@ -1080,6 +1084,7 @@ HTML_TEMPLATE = '''
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
+            overflow: visible; /* prevent children from being clipped */
             animation: slideInRight 1s ease-out;
         }
         
@@ -1089,7 +1094,7 @@ HTML_TEMPLATE = '''
             border: 1px solid var(--glass-border);
             border-radius: 20px;
             box-shadow: 0 15px 35px var(--shadow-color);
-            overflow: hidden;
+            overflow: visible; /* allow inner content to extend */
             transition: all 0.3s ease;
             animation: fadeInScale 0.6s ease-out;
         }
@@ -1124,6 +1129,7 @@ HTML_TEMPLATE = '''
         .panel-content {
             padding: 2rem;
             background: rgba(255, 255, 255, 0.05);
+            overflow: visible; /* ensure nested grids/sliders are not clipped */
         }
         
         @keyframes fadeInUp {
@@ -1558,7 +1564,7 @@ HTML_TEMPLATE = '''
                     <div id="servoConfigStatus" style="margin-bottom: 1rem; padding: 0.5rem; border-radius: 5px; font-size: 0.85rem; display: none;">
                         <i class="fas fa-info-circle"></i> <span id="configStatusText">Loading servo configuration...</span>
                     </div>
-                    <div id="servoControlsContainer" style="display: grid; gap: 1rem;">
+                    <div id="servoControlsContainer" style="display: grid; gap: 1rem; grid-auto-rows: minmax(min-content, auto); align-content: start; overflow: visible;">
                         <!-- Servo controls will be dynamically generated here -->
                         <div style="text-align: center; color: rgba(255,255,255,0.7); padding: 2rem;">
                             <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; margin-bottom: 0.5rem;"></i><br>
