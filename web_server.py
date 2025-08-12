@@ -1332,27 +1332,27 @@ HTML_TEMPLATE = '''
                     <div class="servo-control">
                         <label><i class="fas fa-sync"></i> Base (ID 6)</label>
                         <input type="range" id="servo6" min="0" max="180" value="90" oninput="updateServo(6, this.value)">
-                        <div class="servo-value" id="servo6-value">90°</div>
+                        <input class="servo-value" id="servo6-input" type="number" min="0" max="180" value="90" oninput="onServoInputChange(6, this.value)">
                     </div>
                     <div class="servo-control">
                         <label><i class="fas fa-arrows-alt-v"></i> Shoulder (ID 5)</label>
                         <input type="range" id="servo5" min="0" max="180" value="90" oninput="updateServo(5, this.value)">
-                        <div class="servo-value" id="servo5-value">90°</div>
+                        <input class="servo-value" id="servo5-input" type="number" min="0" max="180" value="90" oninput="onServoInputChange(5, this.value)">
                     </div>
                     <div class="servo-control">
                         <label><i class="fas fa-angle-double-right"></i> Elbow (ID 4)</label>
                         <input type="range" id="servo4" min="0" max="180" value="90" oninput="updateServo(4, this.value)">
-                        <div class="servo-value" id="servo4-value">90°</div>
+                        <input class="servo-value" id="servo4-input" type="number" min="0" max="180" value="90" oninput="onServoInputChange(4, this.value)">
                     </div>
                     <div class="servo-control">
                         <label><i class="fas fa-hand-paper"></i> Wrist (ID 3)</label>
                         <input type="range" id="servo3" min="0" max="180" value="90" oninput="updateServo(3, this.value)">
-                        <div class="servo-value" id="servo3-value">90°</div>
+                        <input class="servo-value" id="servo3-input" type="number" min="0" max="180" value="90" oninput="onServoInputChange(3, this.value)">
                     </div>
                     <div class="servo-control">
                         <label><i class="fas fa-grip-lines"></i> Gripper (ID 1)</label>
                         <input type="range" id="servo1" min="0" max="180" value="90" oninput="updateServo(1, this.value)">
-                        <div class="servo-value" id="servo1-value">90°</div>
+                        <input class="servo-value" id="servo1-input" type="number" min="0" max="180" value="90" oninput="onServoInputChange(1, this.value)">
                     </div>
                 </div>
             </div>
@@ -1478,13 +1478,21 @@ HTML_TEMPLATE = '''
         // Servo control
          async function updateServo(servoNum, angleDeg) {
             const angle = parseInt(angleDeg);
-            document.getElementById(`servo${servoNum}-value`).textContent = `${angle}°`;
+            const range = document.getElementById(`servo${servoNum}`);
+            const input = document.getElementById(`servo${servoNum}-input`);
+            if (range) range.value = angle;
+            if (input) input.value = angle;
             logMessage(`🦾 Moving servo ${servoNum} to ${angle}°`, 'system');
             // Backend supports 0–180 directly; use 1000ms smoothing time
             const result = await sendRPC('SetPWMServo', [1000, servoNum, angle]);
             if (result && result.result) {
                 logMessage(`✅ Servo ${servoNum} moved to ${angle}°`, 'success');
             }
+        }
+
+        function onServoInputChange(servoNum, value){
+            const angle = parseInt(value);
+            updateServo(servoNum, angle);
         }
 
         async function fetchServoConfig() {
@@ -1498,15 +1506,13 @@ HTML_TEMPLATE = '''
                     const degMax = s.degrees_max ?? 180;
                     const defDeg = s.default_degrees ?? Math.round((degMin + degMax)/2);
                     const slider = document.getElementById(`servo${id}`);
-                    const label  = document.getElementById(`servo${id}-value`);
+                    const input  = document.getElementById(`servo${id}-input`);
                     if (slider) {
                         slider.min = degMin;
                         slider.max = degMax;
                         slider.value = defDeg;
                     }
-                    if (label) {
-                        label.textContent = `${defDeg}°`;
-                    }
+                    if (input) input.value = defDeg;
                 });
             } catch(e) {
                 console.error('Failed to load servo config', e);
