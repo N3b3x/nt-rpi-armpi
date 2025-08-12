@@ -1332,27 +1332,27 @@ HTML_TEMPLATE = '''
                     <div class="servo-control">
                         <label><i class="fas fa-sync"></i> Base (ID 6)</label>
                         <input type="range" id="servo6" min="0" max="180" value="90" oninput="updateServo(6, this.value)">
-                        <input class="servo-value" id="servo6-input" type="number" min="0" max="180" value="90" oninput="onServoInputChange(6, this.value)">
+                        <input class="servo-value" id="servo6-input" type="number" step="1" min="0" max="180" value="90" onkeydown="onServoInputKey(event, 6)">
                     </div>
                     <div class="servo-control">
                         <label><i class="fas fa-arrows-alt-v"></i> Shoulder (ID 5)</label>
                         <input type="range" id="servo5" min="0" max="180" value="90" oninput="updateServo(5, this.value)">
-                        <input class="servo-value" id="servo5-input" type="number" min="0" max="180" value="90" oninput="onServoInputChange(5, this.value)">
+                        <input class="servo-value" id="servo5-input" type="number" step="1" min="0" max="180" value="90" onkeydown="onServoInputKey(event, 5)">
                     </div>
                     <div class="servo-control">
                         <label><i class="fas fa-angle-double-right"></i> Elbow (ID 4)</label>
                         <input type="range" id="servo4" min="0" max="180" value="90" oninput="updateServo(4, this.value)">
-                        <input class="servo-value" id="servo4-input" type="number" min="0" max="180" value="90" oninput="onServoInputChange(4, this.value)">
+                        <input class="servo-value" id="servo4-input" type="number" step="1" min="0" max="180" value="90" onkeydown="onServoInputKey(event, 4)">
                     </div>
                     <div class="servo-control">
                         <label><i class="fas fa-hand-paper"></i> Wrist (ID 3)</label>
                         <input type="range" id="servo3" min="0" max="180" value="90" oninput="updateServo(3, this.value)">
-                        <input class="servo-value" id="servo3-input" type="number" min="0" max="180" value="90" oninput="onServoInputChange(3, this.value)">
+                        <input class="servo-value" id="servo3-input" type="number" step="1" min="0" max="180" value="90" onkeydown="onServoInputKey(event, 3)">
                     </div>
                     <div class="servo-control">
                         <label><i class="fas fa-grip-lines"></i> Gripper (ID 1)</label>
                         <input type="range" id="servo1" min="0" max="180" value="90" oninput="updateServo(1, this.value)">
-                        <input class="servo-value" id="servo1-input" type="number" min="0" max="180" value="90" oninput="onServoInputChange(1, this.value)">
+                        <input class="servo-value" id="servo1-input" type="number" step="1" min="0" max="180" value="90" onkeydown="onServoInputKey(event, 1)">
                     </div>
                 </div>
             </div>
@@ -1490,8 +1490,18 @@ HTML_TEMPLATE = '''
             }
         }
 
-        function onServoInputChange(servoNum, value){
-            const angle = parseInt(value);
+        function onServoInputKey(e, servoNum){
+            if (e.key !== 'Enter') return;
+            const input = document.getElementById(`servo${servoNum}-input`);
+            const slider = document.getElementById(`servo${servoNum}`);
+            if (!input || !slider) return;
+            const min = parseInt(slider.min);
+            const max = parseInt(slider.max);
+            let angle = parseInt(input.value);
+            if (isNaN(angle)) angle = min;
+            if (angle < min) angle = min;
+            if (angle > max) angle = max;
+            input.value = angle;
             updateServo(servoNum, angle);
         }
 
