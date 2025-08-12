@@ -1191,6 +1191,17 @@ HTML_TEMPLATE = '''
                 <div style="margin-top: 1rem;">
                     <button class="btn btn-secondary" onclick="takeSnapshot()">📸 Take Snapshot</button>
                     <a href="/3d" class="btn btn-primary" style="display: inline-block; text-decoration: none; margin-left: 0.5rem;"><i class="fas fa-cube"></i> 3D Model Viewer</a>
+                    <a href="/combined" class="btn btn-secondary" style="display: inline-block; text-decoration: none; margin-left: 0.5rem;"><i class="fas fa-columns"></i> Combined View</a>
+                </div>
+                <!-- Big command log under the camera -->
+                <div class="control-panel" style="margin-top: 1rem;">
+                    <div class="panel-header"><i class="fas fa-terminal"></i> Command Log</div>
+                    <div class="panel-content">
+                        <div class="log-output" id="logOutput">
+                            <span style="color: #00ff88;">[SYSTEM]</span> Robot control interface loaded successfully...<br>
+                            <span style="color: #4facfe;">[READY]</span> Waiting for commands...<br>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1251,35 +1262,37 @@ HTML_TEMPLATE = '''
             </div>
             
             <div class="control-panel">
-                <div class="panel-header"><i class="fas fa-robot"></i> Servo Control</div>
+                <div class="panel-header"><i class="fas fa-robot"></i> Servo Control (0–180°, center at 90°)</div>
                 <div class="panel-content">
                     <div class="servo-control">
-                        <label><i class="fas fa-compass"></i> Servo 1 (Base):</label>
-                        <input type="range" id="servo1" min="-90" max="90" value="0" oninput="updateServo(1, this.value)">
-                        <div class="servo-value" id="servo1-value">0°</div>
+                        <label><i class="fas fa-grip-lines"></i> Gripper (ID 1)</label>
+                        <input type="range" id="servo1" min="0" max="180" value="90" oninput="updateServo(1, this.value)">
+                        <div class="servo-value" id="servo1-value">90°</div>
                     </div>
                     <div class="servo-control">
-                        <label><i class="fas fa-arrows-alt-v"></i> Servo 2 (Shoulder):</label>
-                        <input type="range" id="servo2" min="-90" max="90" value="0" oninput="updateServo(2, this.value)">
-                        <div class="servo-value" id="servo2-value">0°</div>
+                        <label><i class="fas fa-sync"></i> Base (ID 2)</label>
+                        <input type="range" id="servo2" min="0" max="180" value="90" oninput="updateServo(2, this.value)">
+                        <div class="servo-value" id="servo2-value">90°</div>
                     </div>
                     <div class="servo-control">
-                        <label><i class="fas fa-angle-double-right"></i> Servo 3 (Elbow):</label>
-                        <input type="range" id="servo3" min="-90" max="90" value="0" oninput="updateServo(3, this.value)">
-                        <div class="servo-value" id="servo3-value">0°</div>
+                        <label><i class="fas fa-arrows-alt-v"></i> Shoulder (ID 3)</label>
+                        <input type="range" id="servo3" min="0" max="180" value="90" oninput="updateServo(3, this.value)">
+                        <div class="servo-value" id="servo3-value">90°</div>
+                    </div>
+                    <div class="servo-control">
+                        <label><i class="fas fa-angle-double-right"></i> Elbow (ID 4)</label>
+                        <input type="range" id="servo4" min="0" max="180" value="90" oninput="updateServo(4, this.value)">
+                        <div class="servo-value" id="servo4-value">90°</div>
+                    </div>
+                    <div class="servo-control">
+                        <label><i class="fas fa-hand-paper"></i> Wrist (ID 5)</label>
+                        <input type="range" id="servo5" min="0" max="180" value="90" oninput="updateServo(5, this.value)">
+                        <div class="servo-value" id="servo5-value">90°</div>
                     </div>
                 </div>
             </div>
             
-            <div class="control-panel">
-                <div class="panel-header"><i class="fas fa-terminal"></i> Command Log</div>
-                <div class="panel-content">
-                    <div class="log-output" id="logOutput">
-                        <span style="color: #00ff88;">[SYSTEM]</span> Robot control interface loaded successfully...<br>
-                        <span style="color: #4facfe;">[READY]</span> Waiting for commands...<br>
-                    </div>
-                </div>
-            </div>
+            <!-- Sidebar command log removed: moved below camera for always-visible large log -->
         </div>
     </div>
 
@@ -1398,10 +1411,12 @@ HTML_TEMPLATE = '''
         }
         
         // Servo control
-        async function updateServo(servoNum, angle) {
+        async function updateServo(servoNum, angleDeg0to180) {
+            const angle = parseInt(angleDeg0to180);
             document.getElementById(`servo${servoNum}-value`).textContent = `${angle}°`;
             logMessage(`🦾 Moving servo ${servoNum} to ${angle}°`, 'system');
-            const result = await sendRPC('SetPWMServo', [1000, servoNum, parseInt(angle)]);
+            // Backend supports 0–180 directly; use 1000ms smoothing time
+            const result = await sendRPC('SetPWMServo', [1000, servoNum, angle]);
             if (result && result.result) {
                 logMessage(`✅ Servo ${servoNum} moved to ${angle}°`, 'success');
             }
