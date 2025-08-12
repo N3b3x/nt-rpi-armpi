@@ -319,9 +319,11 @@ def SetBusServoPulse(*args, **kwargs):
         for s in servos:
            if s < 1 or s > 6:
                 return (False, __RPC_E02)
+        # Batch call for bus servos via SDK API
+        positions = []
         for (s, p) in zip(servos, pulses):
-            pulse_us = int(clamp(p, 500, 2500))
-            safe_board_call('setBusServoPulse', s, pulse_us, use_times)
+            positions.append([int(s), int(clamp(p, 500, 2500))])
+        safe_board_call('bus_servo_set_position', use_times/1000.0, positions)
     except Exception as e:
         print(e)
         ret = (False, __RPC_E03, 'SetBusServoPulse')
@@ -434,10 +436,15 @@ def SetBrushMotor(*args, **kwargs):
         for m in motors:
             if m < 1 or m > 4:
                 return (False, __RPC_E02)
-        dat = zip(motors, speeds)
-
-        for m, s in dat:
-            safe_board_call('setMotor', m, s)
+        # Batch speeds into one call according to SDK signature
+        speeds_list = []
+        for m, s in zip(motors, speeds):
+            speeds_list.append([int(m), float(s)])
+        # Prefer set_motor_speed; fall back to set_motor_duty if needed
+        try:
+            safe_board_call('set_motor_speed', speeds_list)
+        except Exception:
+            safe_board_call('set_motor_duty', speeds_list)
     except:
         ret = (False, __RPC_E03, 'SetBrushMotor')
     return ret

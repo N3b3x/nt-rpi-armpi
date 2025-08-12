@@ -49,6 +49,51 @@ def safe_board_call(method_name, *args, **kwargs):
         return getattr(Board, method_name)(*args, **kwargs)
     raise NameError("Board is not available")
 
+# Optional per-servo mapping via YAML
+import os
+import yaml
+
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, os.pardir, os.pardir))
+
+def load_servo_map():
+    try:
+        map_path = os.path.join(REPO_ROOT, 'config', 'servo_map.yaml')
+        if not os.path.exists(map_path):
+            return None
+        with open(map_path, 'r') as f:
+            return yaml.safe_load(f)
+    except Exception:
+        return None
+
+SERVO_MAP = load_servo_map()
+
+def apply_servo_map(servo_id, angle_deg_or_pulse):
+    value = angle_deg_or_pulse
+    # degrees or raw pulse
+    if isinstance(value, (int, float)):
+        if -90 <= value <= 90:
+            pulse = int((value - (-90)) * (2500 - 500) / (90 - (-90)) + 500)
+        elif 0 <= value <= 180:
+            pulse = int((value - 0) * (2500 - 500) / (180 - 0) + 500)
+        else:
+            pulse = int(value)
+    else:
+        pulse = 1500
+
+    if SERVO_MAP and 'servos' in SERVO_MAP:
+        for s in SERVO_MAP['servos']:
+            if int(s.get('id', -1)) == int(servo_id):
+                pmin = int(s.get('pulse_min', 500))
+                pmax = int(s.get('pulse_max', 2500))
+                off  = int(s.get('offset_pulse', 0))
+                inv  = bool(s.get('invert', False))
+                if inv:
+                    mid = (pmin + pmax) // 2
+                    pulse = mid - (pulse - mid)
+                return clamp(pulse + off, pmin, pmax)
+    return clamp(pulse, 500, 2500)
+
 # Compatibility dispatcher to preserve existing decorator and mapping usage
 class _Dispatcher(dict):
     def __init__(self, rpc: JsonRpc) -> None:
@@ -117,16 +162,7 @@ def SetPWMServo(*args, **kwargs):
         use_times_ms = args[0]
         data = []
         for (s, v) in zip(servos, values):
-            if isinstance(v, (int, float)):
-                if -90 <= v <= 90:
-                    pulse_us = int((v - (-90)) * (2500 - 500) / (90 - (-90)) + 500)
-                elif 0 <= v <= 180:
-                    pulse_us = int((v - 0) * (2500 - 500) / (180 - 0) + 500)
-                else:
-                    pulse_us = int(v)
-            else:
-                pulse_us = 1500
-            pulse_us = clamp(pulse_us, 500, 2500)
+            pulse_us = apply_servo_map(s, v)
             data.append([s, pulse_us])
         safe_board_call('pwm_servo_set_position', use_times_ms/1000.0, data)
         data.clear()
@@ -148,9 +184,10 @@ def SetBusServoPulse(*args, **kwargs):
         for s in servos:
            if s < 1 or s > 6:
                 return (False, __RPC_E02)
+        positions = []
         for (s, p) in zip(servos, pulses):
-            pulse_us = int(clamp(p, 500, 2500))
-            safe_board_call('setBusServoPulse', s, pulse_us, use_times)
+            positions.append([int(s), int(clamp(p, 500, 2500))])
+        safe_board_call('bus_servo_set_position', use_times/1000.0, positions)
     except Exception as e:
         print(e)
         ret = (False, __RPC_E03, 'SetBusServoPulse')
