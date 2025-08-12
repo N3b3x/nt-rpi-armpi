@@ -35,8 +35,8 @@ servos:
     id: 6
     invert: false
     offset_pulse: 0
-    degrees_min: 0
-    degrees_max: 180
+    degrees_min: -90
+    degrees_max: 90
     pulse_min: 500
     pulse_max: 2500
 

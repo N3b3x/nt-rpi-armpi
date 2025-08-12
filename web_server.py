@@ -199,33 +199,39 @@ def load_servo_map():
 SERVO_MAP = load_servo_map()
 
 def apply_servo_map(servo_id, angle_deg_or_pulse):
-    """Map logical angle (0..180 or -90..90) or pulse to final pulse using config (invert/offset/range)."""
+    """Map angle (based on YAML degrees_min/max if present) or raw pulse to final pulse using config (invert/offset/range)."""
     value = angle_deg_or_pulse
-    # Detect degrees or direct pulse
-    if isinstance(value, (int, float)):
-        if -90 <= value <= 90:
-            pulse = int(map_value(value, -90, 90, 500, 2500))
-        elif 0 <= value <= 180:
-            pulse = int(map_value(value, 0, 180, 500, 2500))
-        else:
-            pulse = int(value)
+    # Detect raw microseconds
+    if isinstance(value, (int, float)) and value >= 300:
+        pulse = int(value)
     else:
-        pulse = 1500
+        # Treat as degrees. Prefer YAML degrees_min/max if configured.
+        deg_min_cfg, deg_max_cfg = -90, 180
+        pmin_cfg, pmax_cfg = 500, 2500
+        off_cfg, inv_cfg = 0, False
+        if SERVO_MAP and 'servos' in SERVO_MAP:
+            for s in SERVO_MAP['servos']:
+                if int(s.get('id', -1)) == int(servo_id):
+                    deg_min_cfg = int(s.get('degrees_min', 0))
+                    deg_max_cfg = int(s.get('degrees_max', 180))
+                    pmin_cfg = int(s.get('pulse_min', 500))
+                    pmax_cfg = int(s.get('pulse_max', 2500))
+                    off_cfg = int(s.get('offset_pulse', 0))
+                    inv_cfg = bool(s.get('invert', False))
+                    break
+        try:
+            angle = float(value)
+        except Exception:
+            angle = 0.0
+        # Map angle from YAML range to pulse range
+        pulse = int(map_value(angle, deg_min_cfg, deg_max_cfg, pmin_cfg, pmax_cfg))
+        # Apply invert around mid if requested
+        if inv_cfg:
+            mid = (pmin_cfg + pmax_cfg) // 2
+            pulse = mid - (pulse - mid)
+        # Apply offset and clamp
+        pulse = clamp(pulse + off_cfg, pmin_cfg, pmax_cfg)
 
-    if SERVO_MAP and 'servos' in SERVO_MAP:
-        for s in SERVO_MAP['servos']:
-            if int(s.get('id', -1)) == int(servo_id):
-                pmin = int(s.get('pulse_min', 500))
-                pmax = int(s.get('pulse_max', 2500))
-                off = int(s.get('offset_pulse', 0))
-                inv = bool(s.get('invert', False))
-                # invert within range if requested
-                if inv:
-                    # invert around mid
-                    mid = (pmin + pmax) // 2
-                    pulse = mid - (pulse - mid)
-                pulse = clamp(pulse + off, pmin, pmax)
-                return pulse
     return clamp(pulse, 500, 2500)
 
 def read_battery_voltage_safe():
@@ -570,6 +576,25 @@ def robot_status():
             "camera_active": False,
             "battery_voltage": "N/A"
         })
+
+@app.route('/api/servo_config')
+def servo_config():
+    cfg = SERVO_MAP if SERVO_MAP else {"servos": []}
+    # Provide sensible defaults and ensure ids are present
+    out = {"servos": []}
+    seen = set()
+    for s in cfg.get('servos', []):
+        sid = int(s.get('id', -1))
+        if sid <= 0 or sid in seen:
+            continue
+        seen.add(sid)
+        out['servos'].append({
+            "id": sid,
+            "degrees_min": int(s.get('degrees_min', 0)),
+            "degrees_max": int(s.get('degrees_max', 180)),
+            "default_degrees": int(s.get('default_degrees', (int(s.get('degrees_min', 0)) + int(s.get('degrees_max', 180)))//2))
+        })
+    return jsonify(out)
 
 @app.route('/3d')
 def landing_3d():
@@ -1152,6 +1177,7 @@ HTML_TEMPLATE = '''
             border: 1px solid rgba(0, 255, 136, 0.2);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
             position: relative;
+            text-align: left;
         }
         
         .log-output::before {
@@ -1450,14 +1476,40 @@ HTML_TEMPLATE = '''
         }
         
         // Servo control
-        async function updateServo(servoNum, angleDeg0to180) {
-            const angle = parseInt(angleDeg0to180);
+         async function updateServo(servoNum, angleDeg) {
+            const angle = parseInt(angleDeg);
             document.getElementById(`servo${servoNum}-value`).textContent = `${angle}°`;
             logMessage(`🦾 Moving servo ${servoNum} to ${angle}°`, 'system');
             // Backend supports 0–180 directly; use 1000ms smoothing time
             const result = await sendRPC('SetPWMServo', [1000, servoNum, angle]);
             if (result && result.result) {
                 logMessage(`✅ Servo ${servoNum} moved to ${angle}°`, 'success');
+            }
+        }
+
+        async function fetchServoConfig() {
+            try {
+                const res = await fetch('/api/servo_config');
+                const cfg = await res.json();
+                if (!cfg || !cfg.servos) return;
+                cfg.servos.forEach(s => {
+                    const id = s.id;
+                    const degMin = s.degrees_min ?? 0;
+                    const degMax = s.degrees_max ?? 180;
+                    const defDeg = s.default_degrees ?? Math.round((degMin + degMax)/2);
+                    const slider = document.getElementById(`servo${id}`);
+                    const label  = document.getElementById(`servo${id}-value`);
+                    if (slider) {
+                        slider.min = degMin;
+                        slider.max = degMax;
+                        slider.value = defDeg;
+                    }
+                    if (label) {
+                        label.textContent = `${defDeg}°`;
+                    }
+                });
+            } catch(e) {
+                console.error('Failed to load servo config', e);
             }
         }
         
@@ -1521,6 +1573,7 @@ HTML_TEMPLATE = '''
         document.addEventListener('DOMContentLoaded', function() {
             logMessage('🚀 Web interface initialized successfully!');
             updateStatus();
+            fetchServoConfig();
             updateTime();
             setInterval(updateStatus, 5000); // Update every 5 seconds
             setInterval(updateTime, 1000); // Update every second
@@ -2091,7 +2144,7 @@ HTML_3D_TEMPLATE = '''
             box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);
         }
         
-        .log-output {
+         .log-output {
             background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
             color: #00ff88;
             font-family: 'JetBrains Mono', 'Courier New', monospace;
@@ -2104,6 +2157,7 @@ HTML_3D_TEMPLATE = '''
             border: 1px solid rgba(0, 255, 136, 0.2);
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
             position: relative;
+             text-align: left;
         }
         
         .log-output::before {
