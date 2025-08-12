@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 ArmPi Mini - YAML Servo Configuration Demo</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --shadow-color: rgba(0, 0, 0, 0.2);
+            --text-light: rgba(255, 255, 255, 0.9);
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--primary-gradient);
+            color: #333;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        .panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            box-shadow: 0 15px 35px var(--shadow-color);
+            overflow: hidden;
+        }
+        
+        .panel-header {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            color: var(--text-light);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        
+        .panel-content {
+            padding: 1.5rem;
+        }
+        
+        .yaml-config {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin-bottom: 1rem;
+        }
+        
+        .servo-demo {
+            background: rgba(255,255,255,0.05);
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+        
+        .range-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 0.5rem;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            margin: 0.5rem 0;
+        }
+        
+        .info-box {
+            background: rgba(67, 233, 123, 0.1);
+            border: 1px solid rgba(67, 233, 123, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .warning-box {
+            background: rgba(254, 225, 64, 0.1);
+            border: 1px solid rgba(254, 225, 64, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 2rem;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 4px 8px var(--shadow-color);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 ArmPi Mini Servo Configuration Demo</h1>
+        <p>Dynamic YAML-based servo limits and controls</p>
+    </div>
+    
+    <div class="container">
+        <div class="panel">
+            <div class="panel-header">
+                <i class="fas fa-file-code"></i> YAML Configuration (config/servo_map.yaml)
+            </div>
+            <div class="panel-content">
+                <div class="info-box">
+                    <i class="fas fa-info-circle" style="color: #43e97b;"></i>
+                    <strong>Note:</strong> This configuration defines the actual servo limits that are dynamically loaded into the interface.
+                </div>
+                
+                <div class="yaml-config">servos:
+  - name: gripper
+    id: 1
+    invert: false
+    offset_pulse: 0
+    <span style="color: #fbbf24;">degrees_min: 0</span>
+    <span style="color: #fbbf24;">degrees_max: 90</span>
+    pulse_min: 1500
+    pulse_max: 2500
+  - name: wrist
+    id: 3
+    invert: false
+    offset_pulse: 0
+    <span style="color: #fbbf24;">degrees_min: -90</span>
+    <span style="color: #fbbf24;">degrees_max: 90</span>
+    pulse_min: 500
+    pulse_max: 2500
+  - name: elbow
+    id: 4
+    invert: false
+    offset_pulse: 0
+    <span style="color: #fbbf24;">degrees_min: -90</span>
+    <span style="color: #fbbf24;">degrees_max: 90</span>
+    pulse_min: 500
+    pulse_max: 2500
+  - name: shoulder
+    id: 5
+    invert: false
+    offset_pulse: 0
+    <span style="color: #fbbf24;">degrees_min: -90</span>
+    <span style="color: #fbbf24;">degrees_max: 90</span>
+    pulse_min: 500
+    pulse_max: 2500
+  - name: base
+    id: 6
+    invert: false
+    offset_pulse: 0
+    <span style="color: #fbbf24;">degrees_min: -90</span>
+    <span style="color: #fbbf24;">degrees_max: 90</span>
+    pulse_min: 500
+    pulse_max: 2500</div>
+                
+                <div class="warning-box">
+                    <i class="fas fa-exclamation-triangle" style="color: #fbbf24;"></i>
+                    <strong>Important:</strong> The degrees_min and degrees_max values control the actual servo range limits in the interface.
+                </div>
+            </div>
+        </div>
+        
+        <div class="panel">
+            <div class="panel-header">
+                <i class="fas fa-robot"></i> Dynamic Servo Controls
+            </div>
+            <div class="panel-content">
+                <div class="info-box">
+                    <i class="fas fa-check-circle" style="color: #43e97b;"></i>
+                    <strong>Enhanced Features:</strong>
+                    <ul style="margin-top: 0.5rem; margin-left: 1.5rem;">
+                        <li>✅ Limits automatically loaded from YAML</li>
+                        <li>✅ Dynamic control generation</li>
+                        <li>✅ Live config reload without restart</li>
+                        <li>✅ Range validation and clamping</li>
+                        <li>✅ Proper servo names and icons</li>
+                    </ul>
+                </div>
+                
+                <div class="servo-demo">
+                    <h4><i class="fas fa-grip-lines" style="color: #fa709a;"></i> Gripper (ID 1)</h4>
+                    <div class="range-display">
+                        <span>0°</span>
+                        <span style="color: #43e97b;">45°</span>
+                        <span>90°</span>
+                    </div>
+                    <input type="range" min="0" max="90" value="45" style="accent-color: #fa709a;">
+                    <div style="font-size: 0.8rem; color: rgba(255,255,255,0.7);">
+                        Range: 0° to 90° (Limited opening range)
+                    </div>
+                </div>
+                
+                <div class="servo-demo">
+                    <h4><i class="fas fa-hand-paper" style="color: #4facfe;"></i> Wrist (ID 3)</h4>
+                    <div class="range-display">
+                        <span>-90°</span>
+                        <span style="color: #43e97b;">0°</span>
+                        <span>90°</span>
+                    </div>
+                    <input type="range" min="-90" max="90" value="0" style="accent-color: #4facfe;">
+                    <div style="font-size: 0.8rem; color: rgba(255,255,255,0.7);">
+                        Range: -90° to 90° (Full rotation)
+                    </div>
+                </div>
+                
+                <div class="servo-demo">
+                    <h4><i class="fas fa-sync" style="color: #4facfe;"></i> Base (ID 6)</h4>
+                    <div class="range-display">
+                        <span>-90°</span>
+                        <span style="color: #43e97b;">0°</span>
+                        <span>90°</span>
+                    </div>
+                    <input type="range" min="-90" max="90" value="0" style="accent-color: #4facfe;">
+                    <div style="font-size: 0.8rem; color: rgba(255,255,255,0.7);">
+                        Range: -90° to 90° (180° total rotation)
+                    </div>
+                </div>
+                
+                <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(79, 172, 254, 0.1); border-radius: 8px;">
+                    <h4 style="color: #4facfe; margin-bottom: 0.5rem;">
+                        <i class="fas fa-code"></i> Implementation Benefits
+                    </h4>
+                    <ul style="margin-left: 1.5rem; font-size: 0.9rem; line-height: 1.6;">
+                        <li><strong>Safety:</strong> Prevents invalid servo positions</li>
+                        <li><strong>Flexibility:</strong> Easy to modify limits in YAML</li>
+                        <li><strong>Accuracy:</strong> Reflects real hardware constraints</li>
+                        <li><strong>User Experience:</strong> Clear visual range indicators</li>
+                        <li><strong>Maintainability:</strong> Centralized configuration</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div style="margin-top: 2rem; text-align: center; color: rgba(255,255,255,0.7);">
+        <p><i class="fas fa-info-circle"></i> This demo shows how servo ranges are dynamically loaded from the YAML configuration file</p>
+        <p style="margin-top: 0.5rem;">In the actual interface, these controls are generated automatically based on your servo_map.yaml file</p>
+    </div>
+</body>
+</html>
