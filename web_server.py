@@ -1476,6 +1476,10 @@ HTML_TEMPLATE = '''
         }
         
         // Servo control
+         // Edited angles queue for batched send on Enter
+         const editedAngles = {};
+         let servoIdsFromConfig = [];
+
          async function updateServo(servoNum, angleDeg) {
             const angle = parseInt(angleDeg);
             const range = document.getElementById(`servo${servoNum}`);
@@ -1502,7 +1506,36 @@ HTML_TEMPLATE = '''
             if (angle < min) angle = min;
             if (angle > max) angle = max;
             input.value = angle;
-            updateServo(servoNum, angle);
+            // Queue this edit
+            editedAngles[servoNum] = angle;
+            // Send all queued edits in one batch
+            sendBatchEdited();
+        }
+
+        async function sendBatchEdited(){
+            const ids = Object.keys(editedAngles);
+            if (ids.length === 0) return;
+            // Build params: [duration_ms, id1, angle1, id2, angle2, ...]
+            const params = [1000];
+            ids.forEach(k => {
+                params.push(parseInt(k), parseInt(editedAngles[k]));
+            });
+            logMessage(`🧩 Batch moving servos: ${ids.join(', ')}`, 'system');
+            const result = await sendRPC('SetPWMServo', params);
+            if (result && result.result) {
+                logMessage('✅ Batch move complete', 'success');
+                // Sync sliders/inputs and clear queue
+                ids.forEach(k => {
+                    const range = document.getElementById(`servo${k}`);
+                    const input = document.getElementById(`servo${k}-input`);
+                    if (range) range.value = editedAngles[k];
+                    if (input) input.value = editedAngles[k];
+                });
+                // Clear edits
+                for (const k of ids) delete editedAngles[k];
+            } else {
+                logMessage('❌ Batch move failed', 'error');
+            }
         }
 
         async function fetchServoConfig() {
@@ -1510,8 +1543,10 @@ HTML_TEMPLATE = '''
                 const res = await fetch('/api/servo_config');
                 const cfg = await res.json();
                 if (!cfg || !cfg.servos) return;
+                servoIdsFromConfig = [];
                 cfg.servos.forEach(s => {
                     const id = s.id;
+                    servoIdsFromConfig.push(id);
                     const degMin = s.degrees_min ?? 0;
                     const degMax = s.degrees_max ?? 180;
                     const defDeg = s.default_degrees ?? Math.round((degMin + degMax)/2);
