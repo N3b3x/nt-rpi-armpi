@@ -19,9 +19,27 @@ import rpc_server
 import mjpg_server
 import web_server
 import numpy as np
-import functions.running as running
-from my_kinematics.arm_move_ik import *
-from common.ros_robot_controller_sdk import Board
+
+# Initialize ROBOT_AVAILABLE flag
+ROBOT_AVAILABLE = True
+
+# Try to import robot-specific modules
+try:
+    import functions.running as running
+    from my_kinematics.arm_move_ik import *
+    from common.ros_robot_controller_sdk import Board
+    print("Robot modules loaded successfully")
+except ImportError as e:
+    print(f"Robot modules not available: {e}")
+    ROBOT_AVAILABLE = False
+    # Create dummy classes for demo mode
+    class DummyBoard:
+        def enable_reception(self): pass
+        def set_buzzer(self, *args): pass
+    class DummyAK:
+        def __init__(self): self.board = None
+    ArmIK = lambda: DummyAK()
+    Board = DummyBoard
 
 if sys.version_info.major == 2:
     print('Please run this program with python3!')
@@ -29,8 +47,17 @@ if sys.version_info.major == 2:
 
 # instantiate inverse kinematics library
 AK = ArmIK()
-board = Board()
-board.enable_reception()    
+
+# Initialize Board with try-except
+board = None
+try:
+    board = Board()
+    board.enable_reception()
+    print("Board initialized successfully")
+except Exception as e:
+    print(f"Board initialization failed: {e}")
+    ROBOT_AVAILABLE = False
+    board = DummyBoard()
 
 QUEUE_RPC = queue.Queue(10)
 
@@ -89,13 +116,15 @@ def create_default_loading_screen():
     return img
 
 def startMiniPi():
-    global HWEXT, HWSONIC
+    global HWEXT, HWSONIC, cam, ROBOT_AVAILABLE
     
-    
-    AK.board = board
-    rpc_server.board = board
-    rpc_server.AK = AK
-    rpc_server.set_board()    
+    if ROBOT_AVAILABLE:
+        AK.board = board
+        rpc_server.board = board
+        rpc_server.AK = AK
+        rpc_server.set_board()
+    else:
+        print("Running in demo mode - hardware features disabled")
 
     rpc_server.QUEUE = QUEUE_RPC
 
@@ -105,7 +134,7 @@ def startMiniPi():
                      daemon=True).start()  # mjpeg steam server
     
     # Start the modern web server with all integrated functionality
-    print("🌐 Starting integrated web server on port 8000...")
+    print("Starting integrated web server on port 8000...")
     print("   Access the modern robot control interface at:")
     print("   http://localhost:8000")
     try:
@@ -116,8 +145,22 @@ def startMiniPi():
     except:
         pass
     
+    # Initialize Camera with try-except
+    cam = None
+    try:
+        cam = Camera.Camera()  # camera read
+        cam.camera_open()
+        if ROBOT_AVAILABLE:
+            running.cam = cam
+        print("Camera initialized successfully")
+    except Exception as e:
+        print(f"Camera initialization failed: {e}")
+        ROBOT_AVAILABLE = False
+        cam = None
+    
+    # Start web server with ROBOT_AVAILABLE flag
     threading.Thread(target=web_server.startWebServer,
-                     args=(cam, board, AK, QUEUE_RPC),
+                     args=(cam, board, AK, QUEUE_RPC, ROBOT_AVAILABLE),
                      daemon=True).start()  # integrated web server
     
     # Use project-relative loading image to avoid hardcoded absolute paths
@@ -133,9 +176,6 @@ def startMiniPi():
             cv2.imwrite(loading_picture_path, loading_picture)
         except:
             pass
-    cam = Camera.Camera()  # camera read
-    cam.camera_open()
-    running.cam = cam
 
     while True:
         time.sleep(0.03)
@@ -151,8 +191,8 @@ def startMiniPi():
 
         # execute function game program
         try:
-            if running.RunningFunc > 0 and running.RunningFunc <= 9:
-                if cam.frame is not None:
+            if ROBOT_AVAILABLE and running.RunningFunc > 0 and running.RunningFunc <= 9:
+                if cam and cam.frame is not None:
                     frame = cam.frame.copy()
                     img = running.CurrentEXE().run(frame)
                     if running.RunningFunc == 9:
@@ -162,10 +202,13 @@ def startMiniPi():
                 else:
                     mjpg_server.img_show = loading_picture
             else:
-                mjpg_server.img_show = cam.frame
-                #cam.frame = None
+                if cam and cam.frame is not None:
+                    mjpg_server.img_show = cam.frame
+                else:
+                    mjpg_server.img_show = loading_picture
         except KeyboardInterrupt:
-            print('RunningFunc1', running.RunningFunc)
+            if ROBOT_AVAILABLE:
+                print('RunningFunc1', running.RunningFunc)
             break
 
 if __name__ == '__main__':
