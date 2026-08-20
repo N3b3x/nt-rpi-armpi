@@ -4347,7 +4347,7 @@ HTML_CALIBRATION_TEMPLATE = '''
 </html>
 '''
 
-def startWebServer(camera_instance=None, board_instance=None, ak_instance=None, queue_instance=None, robot_available=True):
+def startWebServer(camera_instance=None, board_instance=None, ak_instance=None, queue_instance=None, robot_available=True, port=8000):
     """
     Start the web server with given instances from main ArmPi_mini.py
     """
@@ -4387,11 +4387,11 @@ def startWebServer(camera_instance=None, board_instance=None, ak_instance=None, 
     log = logging.getLogger('werkzeug')
     log.setLevel(logging.ERROR)
     
-    print("🌐 Web Server starting on http://0.0.0.0:8000")
-    print("   Access the robot control interface in your browser")
+    print(f"🌐 Demo web UI starting on http://0.0.0.0:{port}")
+    print("   Official cell API is appliance v1 on :8000 (/v1/hello)")
     
     # Run the Flask application
-    app.run(host='0.0.0.0', port=8000, debug=False, threaded=True, use_reloader=False)
+    app.run(host='0.0.0.0', port=int(port), debug=False, threaded=True, use_reloader=False)
 
 if __name__ == '__main__':
     print("Starting ArmPi Mini Web Server in standalone mode...")

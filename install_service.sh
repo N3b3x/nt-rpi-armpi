@@ -14,14 +14,14 @@ REPO_PATH="$SCRIPT_DIR"
 
 echo "📍 Detected repository location: $REPO_PATH"
 
-# Check if web_server.py exists in this directory
-if [ ! -f "$REPO_PATH/web_server.py" ]; then
-    echo "❌ Error: web_server.py not found in $REPO_PATH"
+# Official cell path is the full stack (RPC + MJPEG + interpolator + appliance API).
+if [ ! -f "$REPO_PATH/ArmPi_mini.py" ]; then
+    echo "❌ Error: ArmPi_mini.py not found in $REPO_PATH"
     echo "   Please run this script from the ArmPi Mini repository directory"
     exit 1
 fi
 
-echo "✅ Found web_server.py in repository"
+echo "✅ Found ArmPi_mini.py (appliance v1 host, not web-only)"
 
 # Check if running as root (needed for systemd service installation)
 if [ "$EUID" -eq 0 ]; then
@@ -53,7 +53,7 @@ echo "🔨 Creating service file with dynamic paths..."
 
 cat > "$SERVICE_FILE" << EOF
 [Unit]
-Description=ArmPi Mini Web Server
+Description=ArmPi Mini appliance v1 (ArmPi_mini.py — not web-only)
 After=network.target
 Wants=network.target
 
@@ -62,10 +62,12 @@ Type=simple
 User=$SERVICE_USER
 Group=$SERVICE_GROUP
 WorkingDirectory=$REPO_PATH
-ExecStart=/usr/bin/python3 $REPO_PATH/web_server.py
+ExecStart=/usr/bin/python3 $REPO_PATH/ArmPi_mini.py
 Restart=always
 RestartSec=10
 Environment=PYTHONPATH=$REPO_PATH
+Environment=ARMPI_PORT=8000
+Environment=ARMPI_DEMO_UI_PORT=8081
 StandardOutput=journal
 StandardError=journal
 
@@ -174,9 +176,11 @@ echo "================================================"
 echo "🎉 Installation Complete!"
 echo "================================================"
 echo ""
-echo "📱 Access the web interface at:"
-echo "   http://localhost:8000"
-echo "   http://$(hostname -I | awk '{print $1}' 2>/dev/null || echo '[your-ip]'):8000"
+echo "📱 Official appliance API (cell brain):"
+echo "   http://localhost:8000/v1/hello"
+echo "   http://$(hostname -I | awk '{print $1}' 2>/dev/null || echo '[your-ip]'):8000/v1/hello"
+echo "📱 Demo Flask UI (engineering only):"
+echo "   http://localhost:8081"
 echo ""
 echo "🔧 Service Management Commands:"
 echo "   sudo systemctl status armpi-web     # Check status"

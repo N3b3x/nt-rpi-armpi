@@ -132,11 +132,40 @@ def startMiniPi():
                      daemon=True).start()  # rpc server
     threading.Thread(target=mjpg_server.startMjpgServer,
                      daemon=True).start()  # mjpeg steam server
+
+    # Official appliance v1 on :8000. Demo Flask UI moves to :8081 so both can run.
+    appliance = None
+    try:
+        from appliance.interpolator import TrajectoryInterpolator
+        from appliance.server import Appliance, serve as serve_appliance
+        from appliance.board_io import write_batched_pwm
+
+        def _main_thread_write(duration_s, packet):
+            write_batched_pwm(board, duration_s, packet)
+
+        motion = TrajectoryInterpolator(write_packet=_main_thread_write, rate_hz=80.0)
+        appliance = Appliance(
+            token=os.environ.get("ARMPI_TOKEN", ""),
+            motion=motion,
+            background=False,
+            ak=AK if ROBOT_AVAILABLE else None,
+        )
+        if ROBOT_AVAILABLE and hasattr(board, "get_battery"):
+            appliance.battery_fn = board.get_battery
+        elif ROBOT_AVAILABLE and hasattr(board, "GetBatteryVoltage"):
+            appliance.battery_fn = board.GetBatteryVoltage
+        port = int(os.environ.get("ARMPI_PORT", "8000"))
+        httpd = serve_appliance(port=port, app=appliance)
+        threading.Thread(target=httpd.serve_forever, daemon=True).start()
+        print(f"ArmPi appliance v1 on 0.0.0.0:{port} (token={'set' if appliance.token else 'off'})")
+    except Exception as exc:
+        print(f"Appliance v1 failed to start: {exc}")
+        appliance = None
     
-    # Start the modern web server with all integrated functionality
-    print("Starting integrated web server on port 8000...")
-    print("   Access the modern robot control interface at:")
-    print("   http://localhost:8000")
+    demo_port = int(os.environ.get("ARMPI_DEMO_UI_PORT", "8081"))
+    print(f"Starting demo web UI on port {demo_port}...")
+    print("   Official cell API: http://localhost:8000/v1/hello")
+    print(f"   Demo UI:           http://localhost:{demo_port}")
     try:
         import socket
         hostname = socket.gethostname()
@@ -160,8 +189,8 @@ def startMiniPi():
     
     # Start web server with ROBOT_AVAILABLE flag
     threading.Thread(target=web_server.startWebServer,
-                     args=(cam, board, AK, QUEUE_RPC, ROBOT_AVAILABLE),
-                     daemon=True).start()  # integrated web server
+                     args=(cam, board, AK, QUEUE_RPC, ROBOT_AVAILABLE, demo_port),
+                     daemon=True).start()  # demo UI (official API is appliance :8000)
     
     # Use project-relative loading image to avoid hardcoded absolute paths
     loading_picture_path = os.path.join(current_dir, 'CameraCalibration', 'loading.jpg')
@@ -178,7 +207,7 @@ def startMiniPi():
             pass
 
     while True:
-        time.sleep(0.03)
+        time.sleep(0.012)  # ~80 Hz interpolator ticks on this thread (do not write Board from HTTP)
         # execute the RPC command to be executed in the current thread
         while True:
             try:
@@ -186,8 +215,16 @@ def startMiniPi():
                 event, params, *_ = ret
                 ret[2] = req(params)  # execute PRC command
                 event.set()
-            except:
+            except Exception:
                 break
+
+        if appliance is not None:
+            appliance.motion.tick()
+            if appliance.record.active_id:
+                appliance.record.append_joints(
+                    list(appliance.motion.state.joints_deg),
+                    time.time() - appliance.started,
+                )
 
         # execute function game program
         try:

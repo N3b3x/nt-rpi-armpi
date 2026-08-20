@@ -1,0 +1,18 @@
+[Unit]
+Description=ArmPi Mini appliance v1 (cell service)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=REPO_PATH_PLACEHOLDER
+ExecStart=/usr/bin/python3 REPO_PATH_PLACEHOLDER/ArmPi_mini.py
+Restart=always
+RestartSec=5
+Environment=PYTHONPATH=REPO_PATH_PLACEHOLDER
+Environment=ARMPI_PORT=8000
+Environment=ARMPI_DEMO_UI_PORT=8081
+
+[Install]
+WantedBy=multi-user.target
